@@ -128,9 +128,11 @@ input,select{background:rgba(255,255,255,.92);border:0;box-shadow:inset 0 0 0 1.
 .day .cnt{font-size:10px;color:var(--muted);font-family:var(--sans)}
 .day .exam{font-size:10px;font-weight:700;color:var(--late);font-family:var(--sans);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 
-/* 알림 안내 */
-.notice{border-radius:24px;padding:16px 20px;display:flex;align-items:center;gap:14px;background:linear-gradient(180deg,#34409A,#6A6CCB);border:1px solid rgba(255,255,255,.35);color:#E4E3FF;font-size:13px}
-.notice b{display:block;font-family:var(--serif);font-size:18px;color:#fff}
+.pick{display:flex;gap:6px}
+.pick select{flex:1}
+.pick .ghost{white-space:nowrap;min-height:44px;padding:0 12px}
+.newsubj{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:10px;align-items:end;padding:12px;border-radius:16px;background:rgba(236,234,251,.7)}
+@media (max-width:560px){.newsubj{grid-template-columns:minmax(0,1fr)}}
 
 /* settings */
 details.set{background:var(--glass-2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--glass-edge);border-radius:24px;padding:0 20px}
@@ -158,7 +160,7 @@ details.set summary{cursor:pointer;padding:16px 0;font-family:var(--serif);font-
   <header class="top">
     <div>
       <div class="script">daily note</div>
-      <h1>오늘도 조금씩, 복습 노트</h1>
+      <h1>Connecting The Dots</h1>
       <div class="sub" id="todayLabel"></div>
     </div>
     <div class="status" id="status">불러오는 중…</div>
@@ -180,7 +182,10 @@ details.set summary{cursor:pointer;padding:16px 0;font-family:var(--serif);font-
           <input id="fTitle" required maxlength="120" placeholder="예) 일본어 활용 — て형 규칙">
         </label>
         <label>과목
-          <select id="fSubject" required></select>
+          <span class="pick">
+            <select id="fSubject" required></select>
+            <button class="ghost" id="openNewSubj" type="button" aria-expanded="false" aria-controls="newSubjWrap">+ 새 과목</button>
+          </span>
         </label>
         <label>공부한 날
           <input id="fDate" type="date" required>
@@ -193,6 +198,11 @@ details.set summary{cursor:pointer;padding:16px 0;font-family:var(--serif);font-
             <option value="custom">직접 입력</option>
           </select>
         </label>
+        <div class="full newsubj" id="newSubjWrap" hidden>
+          <label>새 과목 이름<input id="nsName" maxlength="30" placeholder="예) 한국사"></label>
+          <label>시험일 (선택)<input id="nsExam" type="date"></label>
+          <div class="acts"><button class="btn" id="nsAdd" type="button">과목 추가</button><button class="ghost" id="nsCancel" type="button">취소</button></div>
+        </div>
         <label class="full" id="customWrap" hidden>일수 (쉼표로 구분)
           <input id="fCustom" placeholder="1,3,7" inputmode="numeric">
         </label>
@@ -210,7 +220,6 @@ details.set summary{cursor:pointer;padding:16px 0;font-family:var(--serif);font-
       <div class="cal" id="cal"></div>
       <div class="panel-h"><h2 id="selLabel"></h2></div>
       <ul class="list" id="selList"></ul>
-      <div class="notice"><svg width="44" height="44" viewBox="0 0 64 64" aria-hidden="true"><defs><mask id="cres2"><rect width="64" height="64" fill="#fff"/><circle cx="42" cy="24" r="22" fill="#000"/></mask></defs><circle cx="30" cy="32" r="22" fill="#FFF6D8" mask="url(#cres2)"/><circle cx="54" cy="46" r="1.8" fill="#fff"/><circle cx="48" cy="56" r="1.2" fill="#fff"/></svg><div><b>밤 8시, 달이 뜨면 알려줄게요</b>남은 복습이랑 시험 D-day를 Claude 앱으로 보내요.</div></div>
     </section>
   </div>
 
@@ -220,14 +229,18 @@ details.set summary{cursor:pointer;padding:16px 0;font-family:var(--serif);font-
       <div>
         <h3 style="font-size:14px;margin-bottom:10px">과목</h3>
         <div id="subjList" style="display:flex;flex-direction:column;gap:12px"></div>
-        <div style="margin-top:12px"><button class="ghost" id="addSubj" type="button">+ 과목 추가</button></div>
+        <div class="newsubj" style="margin-top:14px">
+          <label>새 과목 이름<input id="ssName" maxlength="30" placeholder="예) 한국사"></label>
+          <label>시험일 (선택)<input id="ssExam" type="date"></label>
+          <div class="acts"><button class="btn" id="ssAdd" type="button">과목 추가</button></div>
+        </div>
       </div>
       <div>
         <h3 style="font-size:14px;margin-bottom:10px">쉬는 요일</h3>
         <div class="weekdays" id="restDays"></div>
         <p class="note">쉬는 요일에 걸린 복습은 다음 공부하는 날로 미뤄요. 이미 만든 일정은 그대로 두고, 새로 추가하는 내용부터 적용돼요.</p>
       </div>
-      <p class="note">시험일을 넣으면 그 과목의 복습은 <b>시험 전날까지만</b> 잡혀요. 매일 저녁 알림은 이 플래너의 오늘 복습과 시험 D-day를 읽어서 Claude 앱으로 보내요.</p>
+      <p class="note">시험일을 넣으면 그 과목의 복습은 <b>시험 전날까지만</b> 잡혀요. 매일 아침 6시와 저녁 8시에 오늘 복습과 시험 D-day를 Claude 앱으로 알려줘요.</p>
     </div>
   </details>
 </div>
@@ -248,6 +261,7 @@ let today = ymd(new Date());
 let viewMonth = today.slice(0,7);
 let selDay = today;
 let confirmDel = null;
+let pendingSubj = null; // 방금 추가한 과목을 입력칸에서 바로 고르게
 
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
@@ -357,7 +371,8 @@ function renderSel(){
 function renderSubjSelect(){
   const sel=$('#fSubject'),cur=sel.value;
   sel.innerHTML=subjects.length?subjects.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join(''):'<option value="">먼저 과목을 추가하세요</option>';
-  if(subjects.some(s=>s.id===cur))sel.value=cur;
+  if(pendingSubj&&subjects.some(s=>s.id===pendingSubj)){sel.value=pendingSubj;pendingSubj=null;renderPreview()}
+  else if(subjects.some(s=>s.id===cur))sel.value=cur;
 }
 function renderPreview(){
   const days=presetDays(),d=$('#fDate').value||today,sid=$('#fSubject').value;
@@ -434,10 +449,24 @@ $('#restDays').addEventListener('change',async e=>{
   settings.restDays=boxes;renderCal();renderPreview();
   await write(()=>db.doc('settings/main').set({...settings,restDays:boxes}),'쉬는 요일을 저장했어요');
 });
-$('#addSubj').addEventListener('click',async()=>{
-  const n=subjects.length;
-  await write(()=>db.collection('subjects').add({name:'새 과목',color:COLORS[n%COLORS.length],examDate:null,quizUrl:null,order:n}),'과목을 추가했어요');
-});
+async function addSubject(nameEl,examEl,after){
+  const name=nameEl.value.trim();
+  if(!name){setStatus('과목 이름을 적어 주세요.',true);nameEl.focus();return}
+  if(subjects.some(s=>s.name===name)){setStatus('이미 있는 과목이에요.',true);nameEl.focus();return}
+  const n=subjects.length,order=subjects.reduce((m,s)=>Math.max(m,(s.order??0)+1),0);
+  const ref=db?db.collection('subjects').doc():null;
+  const ok=await write(()=>ref.set({name,color:COLORS[n%COLORS.length],examDate:examEl.value||null,quizUrl:null,order}),`'${name}' 과목을 추가했어요`);
+  if(ok){nameEl.value='';examEl.value='';after&&after(ref.id)}
+}
+function toggleNewSubj(open){
+  $('#newSubjWrap').hidden=!open;$('#openNewSubj').setAttribute('aria-expanded',String(open));
+  if(open)$('#nsName').focus();
+}
+$('#openNewSubj').addEventListener('click',()=>toggleNewSubj($('#newSubjWrap').hidden));
+$('#nsCancel').addEventListener('click',()=>toggleNewSubj(false));
+$('#nsAdd').addEventListener('click',()=>addSubject($('#nsName'),$('#nsExam'),id=>{pendingSubj=id;toggleNewSubj(false)}));
+$('#ssAdd').addEventListener('click',()=>addSubject($('#ssName'),$('#ssExam')));
+[['#nsName','#nsAdd'],['#ssName','#ssAdd']].forEach(([i,b])=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$(b).click()}}));
 $('#prevMo').addEventListener('click',()=>{const d=parse(viewMonth+'-01');d.setMonth(d.getMonth()-1);viewMonth=ymd(d).slice(0,7);renderCal()});
 $('#nextMo').addEventListener('click',()=>{const d=parse(viewMonth+'-01');d.setMonth(d.getMonth()+1);viewMonth=ymd(d).slice(0,7);renderCal()});
 $('#addForm').addEventListener('submit',addItem);
