@@ -248,10 +248,10 @@ function renderHome(){
 function show(id){['#home','#quiz','#done'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)}
 
 /* ---------- 시험 ---------- */
-function start(list,label,key){
+function start(list,label,key,days){
   if(!list.length)return;
   const pool=list.length>=12?list:words;   // 보기 뽑을 뜻 모음
-  Q={label,key,items:shuffle(list).map(w=>({w,choices:makeChoices(w,pool)})),i:0,right:0,wrong:[],answers:{}};
+  Q={label,key,days:days||null,items:shuffle(list).map(w=>({w,choices:makeChoices(w,pool)})),i:0,right:0,wrong:[],answers:{}};
   show('#quiz');renderQ();
 }
 function makeChoices(w,pool){
@@ -298,7 +298,7 @@ async function finish(quit){
   if(!db){setStatus('저장소에 연결되지 않아 기록을 남기지 못했어요.',true);return}
   try{
     await db.doc('progress/main').set({stats,best,updatedAt:new Date().toISOString()});
-    await db.collection('sessions').add({at:new Date().toISOString(),date:today(),label:Q.label,right:Q.right,total,quit:!!quit});
+    await db.collection('sessions').add({at:new Date().toISOString(),date:today(),label:Q.label,days:Q.days,right:Q.right,total,quit:!!quit});
     setStatus('기록을 저장했어요');
   }catch(e){setStatus('기록을 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.',true)}
 }
@@ -306,8 +306,8 @@ async function finish(quit){
 /* ---------- 이벤트 ---------- */
 $('#days').addEventListener('click',e=>{const b=e.target.closest('[data-day]');if(!b)return;const d=Number(b.dataset.day);picked.has(d)?picked.delete(d):picked.add(d);renderHome()});
 $('#clearPick').addEventListener('click',()=>{picked.clear();renderHome()});
-$('#startToday').addEventListener('click',()=>{const t=todaySet();const days=t.days||[1,2];start(words.filter(w=>days.includes(w.day)),'Day '+days.join(' · '),setKey(days))});
-$('#startPicked').addEventListener('click',()=>{const days=[...picked].sort((a,b)=>a-b);start(words.filter(w=>picked.has(w.day)),'Day '+days.join(' · '),days.length===2&&days[1]===days[0]+1&&days[0]%2===1?setKey(days):null)});
+$('#startToday').addEventListener('click',()=>{const t=todaySet();const days=t.days||[1,2];start(words.filter(w=>days.includes(w.day)),'Day '+days.join(' · '),setKey(days),days)});
+$('#startPicked').addEventListener('click',()=>{const days=[...picked].sort((a,b)=>a-b);start(words.filter(w=>picked.has(w.day)),'Day '+days.join(' · '),days.length===2&&days[1]===days[0]+1&&days[0]%2===1?setKey(days):null,days)});
 $('#startWrong').addEventListener('click',()=>start(wrongList(),'오답 노트',null));
 $('#choices').addEventListener('click',e=>{const b=e.target.closest('.choice');if(b)answer(Number(b.dataset.j))});
 $('#next').addEventListener('click',next);
