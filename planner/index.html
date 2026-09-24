@@ -328,7 +328,7 @@ function rowHTML({it,i,rv},showLate){
       <div class="ttl">${esc(it.title)}</div>
       <div class="meta">
         <span class="tag"><i style="background:${esc(s.color)}"></i>${esc(s.name)}</span>
-        <span class="pill round">${i+1}회차 · ${rv.day}일째</span>
+        <span class="pill round">${rv.day===0?'첫 학습':(it.reviews[0].day===0?i:i+1)+'회차 · '+rv.day+'일째'}</span>
         ${late?`<span class="pill late">${diff(rv.date,today)}일 밀림</span>`:''}
         <span class="pips" title="복습 진행">${pips}</span>
         <span>공부 ${fmt(it.studiedOn)}</span>

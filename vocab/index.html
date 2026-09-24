@@ -1,0 +1,348 @@
+<title>영단어 시험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Dancing+Script:wght@500&display=swap">
+<style>
+/* 복습 플래너와 같은 노을 밤하늘. 한 가지 풍경으로 고정한 디자인이라 다크 모드를 따로 두지 않는다 */
+:root{
+  color-scheme:light;
+  --ink:#2E2A5A; --text:#332F5C; --muted:#625E8C; --line:#E1DDF6;
+  --glass:rgba(255,255,255,.82); --glass-edge:rgba(255,255,255,.72);
+  --pen:#4A4FB0; --pen-soft:#ECEAFB; --row:#F4F2FD;
+  --ok:#23845A; --ok-soft:#E1F3EA; --bad:#A33A5E; --bad-soft:#FBE1EA; --gold:#F2C35B;
+  --serif:"Gowun Batang","AppleMyungjo",serif;
+  --sans:"Gowun Dodum",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --script:"Dancing Script",cursive;
+  --sky:linear-gradient(180deg,#2C3787 0%,#5566C9 22%,#9C93DE 40%,#E7B6D8 52%,#F4C9DD 55%,#B9AEE6 56%,#A89CE0 75%,#9A8FD8 100%);
+}
+*{box-sizing:border-box}
+html{background:#2C3787}
+body{background:var(--sky);background-attachment:fixed;min-height:100vh;color:var(--text);font:16px/1.55 var(--sans);padding-inline:16px;padding-block:28px 56px;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.sky .sea{position:absolute;left:0;right:0;top:56%;bottom:0;background:repeating-linear-gradient(180deg,transparent 0 9px,rgba(255,255,255,.13) 10px,transparent 12px)}
+.sky .cloud{position:absolute;border-radius:50%;filter:blur(28px)}
+.sky .st{position:absolute;border-radius:50%;background:#fff}
+.sky .moon{position:absolute;right:12%;top:56px;width:56px;height:56px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px;position:relative;z-index:1}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:700;text-wrap:balance}
+h1{font-size:32px;line-height:1.2;color:#fff}
+h2{font-size:20px;color:var(--ink)}
+.script{font-family:var(--script);font-size:26px;line-height:1;color:#FFE9F3}
+.sub{color:#E4E3FF;font-size:14px;margin-top:4px}
+.status{font-size:13px;color:#E4E3FF;min-height:20px}
+.status.err{color:#fff;background:rgba(163,58,94,.8);padding:4px 10px;border-radius:99px;display:inline-block}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+.panel{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--glass-edge);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 16px 40px rgba(44,55,135,.22)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:14px}
+.btn{background:var(--pen);color:#fff;border:0;border-radius:14px;padding:12px 20px;font-weight:700;min-height:48px;font-size:16px}
+.btn:disabled{opacity:.45;cursor:default}
+.ghost{background:#fff;border:1px solid #DAD5F5;border-radius:12px;padding:8px 14px;min-height:44px;color:var(--ink)}
+
+/* 오늘의 세트: 엽서 */
+.today{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:520px){.today{grid-template-columns:minmax(0,1fr)}}
+.card{width:150px;min-height:150px;border-radius:6px;padding:14px;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;background:linear-gradient(180deg,#4F5BC0 0%,#8C8BDD 60%,#F2BCD6 100%);box-shadow:0 10px 24px rgba(30,36,100,.35),inset 0 0 0 4px rgba(255,255,255,.35);transform:rotate(-2deg);position:relative}
+.card::before{content:"";position:absolute;top:14px;right:18px;width:16px;height:16px;border-radius:50%;box-shadow:-4px 3px 0 0 #FFF6D8}
+.card .lab{font-family:var(--script);font-size:17px;opacity:.9}
+.card .big{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.15;text-align:center}
+.card .small{font-size:12px;opacity:.9}
+.bar{height:8px;border-radius:99px;background:#E9E6F8;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8E9BEA,#F0A9CB)}
+
+/* Day 고르기 */
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.days{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.day{border:1.5px solid #DAD5F5;background:#fff;border-radius:14px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:64px}
+.day b{font-family:var(--serif);font-size:18px;color:var(--ink)}
+.day small{font-size:11px;color:var(--muted)}
+.day[aria-pressed="true"]{background:var(--pen);border-color:var(--pen)}
+.day[aria-pressed="true"] b,.day[aria-pressed="true"] small{color:#fff}
+.day.today-set{box-shadow:0 0 0 3px #F4C9DD}
+
+/* 시험 */
+.qtop{display:flex;align-items:center;gap:12px}
+.qtop .bar{flex:1}
+.qcount{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.word{font-family:var(--serif);font-weight:700;font-size:40px;color:var(--ink);text-align:center;padding:18px 8px 6px;overflow-wrap:anywhere}
+.wmeta{text-align:center;font-size:13px;color:var(--muted)}
+.choices{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.choice{width:100%;text-align:left;display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:center;background:var(--row);border:1.5px solid transparent;border-radius:16px;padding:12px 14px;min-height:56px;color:var(--text);font-size:16px}
+.choice .k{width:28px;height:28px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:13px;color:var(--pen);font-weight:700}
+.choice:hover:not(:disabled){border-color:#CFC9EE}
+.choice.right{background:var(--ok-soft);border-color:var(--ok)}
+.choice.right .k{background:var(--ok);color:#fff}
+.choice.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.choice.wrong .k{background:var(--bad);color:#fff}
+.choice:disabled{cursor:default}
+.feedback{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.feedback .msg{font-size:15px}
+.feedback .msg.ok{color:var(--ok)}
+.feedback .msg.bad{color:var(--bad)}
+
+/* 결과 */
+.score{font-family:var(--serif);font-weight:700;font-size:48px;color:var(--ink);text-align:center;line-height:1.1}
+.score small{font-size:20px;color:var(--muted)}
+.wrongs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.wrongs li{display:grid;grid-template-columns:minmax(110px,.8fr) minmax(0,2fr);gap:12px;padding:10px 12px;border-radius:12px;background:var(--row)}
+.wrongs b{font-family:var(--serif);color:var(--ink)}
+.acts{display:flex;gap:10px;flex-wrap:wrap}
+label.inline{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);flex-wrap:wrap}
+input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;border-radius:12px;padding:8px 10px;min-height:44px}
+</style>
+
+<div class="sky" aria-hidden="true">
+  <div class="sea"></div>
+  <div class="cloud" style="left:-6%;top:40%;width:46%;height:150px;background:rgba(255,236,246,.5)"></div>
+  <div class="cloud" style="right:-8%;top:24%;width:40%;height:130px;background:rgba(238,226,255,.45)"></div>
+  <svg class="moon" viewBox="0 0 64 64"><defs><mask id="cres"><rect width="64" height="64" fill="#fff"/><circle cx="42" cy="24" r="22" fill="#000"/></mask></defs><circle cx="30" cy="32" r="22" fill="#FFF6D8" mask="url(#cres)"/></svg>
+  <div id="stars"></div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="script">word master</div>
+    <h1>영단어 시험</h1>
+    <div class="sub">단어를 보고 알맞은 뜻을 골라요 · Day 1–14 · 420단어</div>
+    <div class="status" id="status" role="status">단어를 불러오는 중…</div>
+  </header>
+
+  <!-- 처음 화면 -->
+  <div id="home" class="wrap" style="max-width:none;gap:18px">
+    <section class="panel" aria-labelledby="h-today">
+      <div class="today">
+        <div class="card" aria-hidden="true">
+          <span class="lab">today</span>
+          <span class="big" id="todayDays">Day –</span>
+          <span class="small" id="todayDate"></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+          <h2 id="h-today">오늘의 세트</h2>
+          <div class="muted" id="todayNote"></div>
+          <div class="bar" aria-hidden="true"><i id="todayBar" style="width:0%"></i></div>
+          <div class="muted" id="todayBest"></div>
+          <div class="acts"><button class="btn" id="startToday" type="button" disabled>60문제 시험 보기</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-days">
+      <div class="row"><h2 id="h-days">Day 골라서 보기</h2><span class="muted" id="pickCount">여러 개를 고를 수 있어요</span></div>
+      <div class="days" id="days"></div>
+      <div class="acts"><button class="btn" id="startPicked" type="button" disabled>선택한 Day로 시험</button><button class="ghost" id="clearPick" type="button">선택 해제</button></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-wrong">
+      <div class="row"><h2 id="h-wrong">오답 노트</h2><span class="muted" id="wrongCount"></span></div>
+      <div class="muted">마지막으로 틀린 단어만 모아요. 다시 맞히면 오답 노트에서 빠져요.</div>
+      <div class="acts"><button class="btn" id="startWrong" type="button" disabled>오답만 다시 보기</button></div>
+    </section>
+
+    <section class="panel">
+      <label class="inline" for="startDate">하루 2 Day씩, 시작한 날
+        <input type="date" id="startDate">
+      </label>
+      <div class="muted" id="planLine"></div>
+    </section>
+  </div>
+
+  <!-- 시험 화면 -->
+  <section id="quiz" class="panel" hidden aria-label="시험">
+    <div class="qtop">
+      <button class="ghost" id="quit" type="button">그만하기</button>
+      <div class="bar" aria-hidden="true"><i id="qBar" style="width:0%"></i></div>
+      <span class="qcount" id="qCount"></span>
+    </div>
+    <div>
+      <div class="word" id="qWord" lang="en"></div>
+      <div class="wmeta" id="qMeta"></div>
+    </div>
+    <ol class="choices" id="choices"></ol>
+    <div class="feedback"><span class="msg" id="qMsg" aria-live="polite"></span><button class="btn" id="next" type="button" hidden>다음</button></div>
+  </section>
+
+  <!-- 결과 화면 -->
+  <section id="done" class="panel" hidden aria-labelledby="h-done">
+    <h2 id="h-done">시험 결과</h2>
+    <div class="score" id="dScore"></div>
+    <div class="muted" id="dNote" style="text-align:center"></div>
+    <ul class="wrongs" id="dWrongs"></ul>
+    <div class="acts"><button class="btn" id="retryWrong" type="button">틀린 것만 다시</button><button class="ghost" id="toHome" type="button">처음으로</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const WD=['일','월','화','수','목','금','토'];
+const SETS=7, PER_DAY=2;           // Day 1–14를 하루 2 Day씩
+let db=null;
+let words=[];                      // {n,w,m,day}
+let stats={};                      // n -> {c:맞힌 수, x:틀린 수, last:1|0}
+let best={};                       // 'd1-2' -> 최고 점수(%)
+let settings={startDate:null};
+let picked=new Set();
+let Q=null;                        // 진행 중인 시험
+
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function diff(a,b){return Math.round((parse(b)-parse(a))/864e5)}
+function addDays(s,n){const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)}
+function fmt(s){const d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function setStatus(t,err){const el=$('#status');el.textContent=t;el.className='status'+(err?' err':'')}
+function today(){return ymd(new Date())}
+
+/* 뜻의 첫머리로 품사를 대강 가른다: 오답 보기를 같은 품사에서 뽑아 헷갈리게 */
+function kind(m){
+  const head=m.split(/[;,]/)[0].replace(/\(.*?\)|\[.*?\]/g,'').trim();
+  if(/다$/.test(head))return 'v';
+  if(/(한|인|의|운|은|는|된|적|없는|있는|많은|쉬운|어려운|깊은|높은)$/.test(head))return 'a';
+  return 'n';
+}
+
+function todaySet(){
+  if(!settings.startDate)return null;
+  const k=diff(settings.startDate,today());
+  if(k<0)return {k,before:true};
+  if(k>=SETS)return {k,after:true};
+  return {k,days:[k*PER_DAY+1,k*PER_DAY+2]};
+}
+function setKey(days){return 'd'+days.join('-')}
+function dayAcc(d){
+  const ws=words.filter(w=>w.day===d);let seen=0,ok=0;
+  ws.forEach(w=>{const s=stats[w.n];if(s){seen++;if(s.last)ok++}});
+  return seen?Math.round(ok/ws.length*100):null;
+}
+function wrongList(){return words.filter(w=>stats[w.n]&&stats[w.n].last===0)}
+
+/* ---------- 처음 화면 ---------- */
+function renderHome(){
+  const t=todaySet();
+  if(!t){$('#todayDays').textContent='Day –';$('#todayNote').textContent='아래에서 시작한 날을 정해 주세요.';$('#startToday').disabled=true}
+  else if(t.before){$('#todayDays').textContent='Day 1 · 2';$('#todayNote').textContent=fmt(settings.startDate)+'에 시작해요. 미리 봐도 돼요.';$('#startToday').disabled=!words.length}
+  else if(t.after){$('#todayDays').textContent='전체 복습';$('#todayNote').textContent='Day 1–14를 모두 한 번씩 봤어요. 오답 노트나 Day를 골라 복습해 보세요.';$('#startToday').disabled=true}
+  else{$('#todayDays').textContent='Day '+t.days[0]+' · '+t.days[1];$('#todayNote').textContent=(t.k+1)+'일째 · 30단어 × 2 = 60문제';$('#startToday').disabled=!words.length}
+  $('#todayDate').textContent=fmt(today());
+  const days=t&&t.days?t.days:(t&&t.before?[1,2]:null);
+  const b=days?best[setKey(days)]:null;
+  $('#todayBar').style.width=(b||0)+'%';
+  $('#todayBest').textContent=days?(b!=null?'이 세트 최고 점수 '+b+'점':'아직 안 본 세트예요'):'';
+  const todayDays=new Set(days||[]);
+  $('#days').innerHTML=Array.from({length:14},(_,i)=>{const d=i+1,a=dayAcc(d);
+    return `<button type="button" class="day${todayDays.has(d)?' today-set':''}" data-day="${d}" aria-pressed="${picked.has(d)}"><b>${d}</b><small>${a==null?'Day '+d:a+'%'}</small></button>`}).join('');
+  $('#pickCount').textContent=picked.size?`Day ${[...picked].sort((a,b)=>a-b).join(', ')} · ${picked.size*30}문제`:'여러 개를 고를 수 있어요';
+  $('#startPicked').disabled=!picked.size||!words.length;
+  const wl=wrongList();
+  $('#wrongCount').textContent=wl.length+'단어';
+  $('#startWrong').disabled=!wl.length;
+  $('#startDate').value=settings.startDate||'';
+  if(settings.startDate){
+    const end=addDays(settings.startDate,SETS-1);
+    $('#planLine').textContent=`${fmt(settings.startDate)} Day 1·2부터 ${fmt(end)} Day 13·14까지, 7일 동안 봐요.`;
+  }else $('#planLine').textContent='';
+}
+function show(id){['#home','#quiz','#done'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)}
+
+/* ---------- 시험 ---------- */
+function start(list,label,key){
+  if(!list.length)return;
+  const pool=list.length>=12?list:words;   // 보기 뽑을 뜻 모음
+  Q={label,key,items:shuffle(list).map(w=>({w,choices:makeChoices(w,pool)})),i:0,right:0,wrong:[],answers:{}};
+  show('#quiz');renderQ();
+}
+function makeChoices(w,pool){
+  const k=kind(w.m);
+  const others=shuffle(pool.filter(x=>x.n!==w.n&&x.m!==w.m));
+  const same=others.filter(x=>kind(x.m)===k), rest=others.filter(x=>kind(x.m)!==k);
+  const pick=[];const seen=new Set([w.m]);
+  for(const x of [...same.slice(0,3),...rest,...same.slice(3)]){if(pick.length>=4)break;if(!seen.has(x.m)){seen.add(x.m);pick.push(x.m)}}
+  return shuffle([w.m,...pick]);
+}
+function renderQ(){
+  const it=Q.items[Q.i];
+  $('#qWord').textContent=it.w.w;
+  $('#qMeta').textContent='Day '+it.w.day+' · '+Q.label;
+  $('#qCount').textContent=(Q.i+1)+' / '+Q.items.length;
+  $('#qBar').style.width=(Q.i/Q.items.length*100)+'%';
+  $('#choices').innerHTML=it.choices.map((m,j)=>`<li><button type="button" class="choice" data-j="${j}"><span class="k">${j+1}</span><span>${esc(m)}</span></button></li>`).join('');
+  $('#qMsg').textContent='';$('#qMsg').className='msg';$('#next').hidden=true;
+}
+let advanceTimer=null;
+function answer(j){
+  const it=Q.items[Q.i];if(it.done)return;it.done=true;
+  const ok=it.choices[j]===it.w.m;
+  const btns=[...document.querySelectorAll('.choice')];
+  btns.forEach((b,k)=>{b.disabled=true;if(it.choices[k]===it.w.m)b.classList.add('right')});
+  Q.answers[it.w.n]=ok?1:0;
+  if(ok){Q.right++;$('#qMsg').textContent='정답이에요';$('#qMsg').className='msg ok';advanceTimer=setTimeout(next,650)}
+  else{btns[j].classList.add('wrong');Q.wrong.push(it.w);$('#qMsg').textContent='정답은 '+(it.choices.indexOf(it.w.m)+1)+'번이에요';$('#qMsg').className='msg bad';$('#next').hidden=false;$('#next').focus()}
+}
+function next(){clearTimeout(advanceTimer);Q.i++;if(Q.i>=Q.items.length)finish();else renderQ()}
+async function finish(quit){
+  const answered=Object.keys(Q.answers).length;
+  const total=quit?answered:Q.items.length;
+  show('#done');
+  const pct=total?Math.round(Q.right/total*100):0;
+  $('#dScore').innerHTML=`${Q.right}<small> / ${total}</small>`;
+  $('#dNote').textContent=total?(quit?'중간에 그만둔 시험이에요. 푼 문제만 기록했어요.':`${pct}점 · ${Q.label}`):'푼 문제가 없어요.';
+  $('#dWrongs').innerHTML=Q.wrong.length?Q.wrong.map(w=>`<li><b lang="en">${esc(w.w)}</b><span>${esc(w.m)}</span></li>`).join(''):(total?'<li><b>모두 맞혔어요</b><span>틀린 단어가 없어요.</span></li>':'');
+  $('#retryWrong').hidden=!Q.wrong.length;
+  if(!answered)return;
+  // 기록: 단어별 결과 한 번에, 세트 최고 점수, 시험 기록
+  Object.entries(Q.answers).forEach(([n,ok])=>{const s=stats[n]||{c:0,x:0,last:null};stats[n]={c:s.c+(ok?1:0),x:s.x+(ok?0:1),last:ok}});
+  if(!quit&&Q.key&&(best[Q.key]==null||pct>best[Q.key]))best[Q.key]=pct;
+  if(!db){setStatus('저장소에 연결되지 않아 기록을 남기지 못했어요.',true);return}
+  try{
+    await db.doc('progress/main').set({stats,best,updatedAt:new Date().toISOString()});
+    await db.collection('sessions').add({at:new Date().toISOString(),date:today(),label:Q.label,right:Q.right,total,quit:!!quit});
+    setStatus('기록을 저장했어요');
+  }catch(e){setStatus('기록을 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.',true)}
+}
+
+/* ---------- 이벤트 ---------- */
+$('#days').addEventListener('click',e=>{const b=e.target.closest('[data-day]');if(!b)return;const d=Number(b.dataset.day);picked.has(d)?picked.delete(d):picked.add(d);renderHome()});
+$('#clearPick').addEventListener('click',()=>{picked.clear();renderHome()});
+$('#startToday').addEventListener('click',()=>{const t=todaySet();const days=t.days||[1,2];start(words.filter(w=>days.includes(w.day)),'Day '+days.join(' · '),setKey(days))});
+$('#startPicked').addEventListener('click',()=>{const days=[...picked].sort((a,b)=>a-b);start(words.filter(w=>picked.has(w.day)),'Day '+days.join(' · '),days.length===2&&days[1]===days[0]+1&&days[0]%2===1?setKey(days):null)});
+$('#startWrong').addEventListener('click',()=>start(wrongList(),'오답 노트',null));
+$('#choices').addEventListener('click',e=>{const b=e.target.closest('.choice');if(b)answer(Number(b.dataset.j))});
+$('#next').addEventListener('click',next);
+$('#quit').addEventListener('click',()=>{clearTimeout(advanceTimer);finish(true)});
+$('#retryWrong').addEventListener('click',()=>{const w=Q.wrong.slice();start(w,'틀린 것 다시',null)});
+$('#toHome').addEventListener('click',()=>{show('#home');renderHome()});
+document.addEventListener('keydown',e=>{
+  if($('#quiz').hidden||e.target.closest('input'))return;
+  if(/^[1-5]$/.test(e.key)){const b=document.querySelectorAll('.choice')[Number(e.key)-1];if(b&&!b.disabled)b.click()}
+  else if(e.key==='Enter'&&!$('#next').hidden){e.preventDefault();next()}
+});
+$('#startDate').addEventListener('change',async e=>{
+  const v=e.target.value;if(!v)return;settings.startDate=v;renderHome();
+  if(db){try{await db.doc('settings/main').set({startDate:v});setStatus('시작한 날을 저장했어요')}catch(err){setStatus('시작한 날을 저장하지 못했어요.',true)}}
+});
+
+/* 별 */
+(function(){let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;let h='';
+  for(let i=0;i<50;i++){const x=(r()*100).toFixed(1),y=(r()*42).toFixed(1),z=r()<.15?3:(r()<.5?2:1.4),o=(.45+r()*.55).toFixed(2);
+    h+=`<span class="st" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px;opacity:${o}${z===3?';box-shadow:0 0 6px #fff':''}"></span>`}
+  $('#stars').innerHTML=h;})();
+renderHome();
+
+/* ---------- 데이터 ---------- */
+(async()=>{
+  db=await (window.claude?.use?.('db')??null);
+  if(!db){setStatus('저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);return}
+  try{
+    const [ws,pg,st]=await Promise.all([db.collection('words').get(),db.doc('progress/main').get(),db.doc('settings/main').get()]);
+    words=ws.docs.flatMap(d=>{const x=d.data();return (x.words||[]).map(w=>({...w,day:x.day}))}).sort((a,b)=>a.n-b.n);
+    if(pg.exists){const p=pg.data();stats=p.stats||{};best=p.best||{}}
+    if(st.exists)settings={...settings,...st.data()};
+    setStatus(words.length?`${words.length}단어를 불러왔어요`:'단어가 아직 없어요.',!words.length);
+    renderHome();
+  }catch(e){setStatus('단어를 불러오지 못했어요. 새로고침해 주세요.',true)}
+})();
+})();
+</script>
