@@ -6,6 +6,17 @@
 - 앱: https://claude.ai/artifact/9NWK2wCogbVtCb8M177dYJ (본인만 열 수 있음)
 - Claude 호출은 artifact `sample` 기능을 쓴다. 보는 사람의 Claude 사용량을 쓰고, API 키는 필요 없다.
 
+## 자료 PDF 가져오기
+
+편집 화면 위쪽에 칸 네 개: 교사용 교과서(기본 → 지문 칸), 학원 교재(→ 해석 자료), 문제(→ 예시 문제), OX 문제(→ OX 칸). 넣을 칸은 바꿀 수 있다.
+
+- 쪽 번호(PDF 뷰어 기준, 예: `45-48, 50`)를 적고 가져오기. 한 번에 12쪽까지.
+- pdf.js 3.11.174를 cdnjs에서 필요할 때 불러온다. 워커 스크립트를 먼저 올려 페이지 안에서 돌린다 (별도 워커는 CSP 때문에 못 씀).
+- 한글이 거의 안 나오는 쪽(스캔본, 글자 정보가 깨진 PDF)은 쪽을 그림으로 그려 `sample`로 AI가 옮겨 적는다. 원본 대조가 필요하다고 안내한다.
+- 지문 칸이 아니면 `[교사용 교과서 45–48쪽]` 같은 머리말을 붙인다. 프롬프트는 머리말 없는 부분을 선생님 필기로 보고, 필기 → 교사용 교과서 → 학원 교재 순으로 따른다.
+- 고른 PDF는 이 기기 브라우저의 IndexedDB(`korean-pdfs`)에만 기억한다. 세트에는 가져온 글자만 저장한다.
+- 분량: 지문·해석·OX는 44,000바이트(한글 약 1만 4천 자), 예시까지 합쳐 62,000바이트. 검수·수정은 한 번에 64 KiB를 넘지 않게 문항을 나눠 부른다.
+
 ## 흐름
 
 1. **출제**: 지문을 문장(시는 행)으로 나눠 앱이 직접 번호를 붙인다. 원문을 AI가 다시 쓰지 않아서 원문이 바뀌지 않는다. 선지마다 `fits`(적절/부적절)와 근거 번호를 받는다.
@@ -13,6 +24,7 @@
    - 검토 위원의 답이 출제 답과 다름
    - 다른 선지도 답이 될 여지가 있다고 함
    - 검토 위원 판정이 통과가 아님
+   - OX 정답과 어긋나는 판단 (검토 위원이 확인)
    - 앱 자체 확인: 선지 5개, 발문("적절하지 않은 것" 등)과 `fits` 표시가 맞물려 답이 하나로 정해지는지, 근거 번호가 지문 범위 안인지
 3. **수정**: 걸린 문항만 고치거나(출제자가 반박하면 해명을 남김) 새로 만든다.
 4. **다시 검수**: 고친 문항만 한 번 더. 그래도 걸리면 `직접 확인`으로 표시하고 남은 지적을 보여 준다.
@@ -21,7 +33,7 @@
 
 ## 데이터 (artifact db)
 
-- `sets/<id>`: `{title, kind, passage, byLine, units: [{t, p}], note, examples, cond: {mc, essay, level, must}, tier, stage, questions, attempts, hadImages, createdAt, doneAt}`
+- `sets/<id>`: `{title, kind, passage, byLine, units: [{t, p}], note, ox, examples, cond: {mc, essay, level, must}, tier, stage, questions, attempts, hadImages, createdAt, doneAt}`
   - `stage`: `new` → `generated` → `reviewed` → `revised` → `done`
   - 문항 `st`: `pending`, `pass`(바로 통과), `flag`(수정 대기), `revised`, `fixed`(고쳐서 통과), `check`(직접 확인)
   - `attempts`: 최근 20번의 풀이 `{at, right, total, answers}`

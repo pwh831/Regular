@@ -84,6 +84,18 @@ textarea.passage{font-family:var(--serif);min-height:220px}
 .thumbs img{width:100%;height:100%;object-fit:cover}
 .thumbs button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(46,42,90,.75);color:#fff;font-size:14px;line-height:1}
 .err-box{background:var(--bad-soft);color:var(--bad);border-radius:12px;padding:10px 12px;font-size:14px}
+.pdfbox{background:var(--row);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:620px){.slots{grid-template-columns:minmax(0,1fr)}}
+.slot{background:#fff;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0;box-shadow:inset 0 0 0 1px #E6E2F8}
+.slot-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.slot-h b{font-family:var(--serif);color:var(--ink)}
+.slot-h .fname{flex:1;min-width:0;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot-r{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px}
+.slot-r input,.slot-r select{min-height:40px;padding:6px 10px;font-size:14px}
+.slot .btn{min-height:40px;padding:6px 14px;font-size:14px;border-radius:12px}
+.pdfmsg{font-size:13px;color:var(--text);min-height:18px}
+.pdfmsg.bad{color:var(--bad)}
 .meter{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
 .meter.over{color:var(--bad);font-weight:700}
 
@@ -192,14 +204,22 @@ textarea.passage{font-family:var(--serif);min-height:220px}
       <label class="field" for="fTitle"><span>제목</span><input type="text" id="fTitle" placeholder="예: 3단원 독서 · 인공지능과 저작권" maxlength="80"></label>
       <label class="field" for="fKind"><span>지문 종류</span><select id="fKind"></select></label>
     </div>
+    <section class="pdfbox" aria-labelledby="h-pdf">
+      <div class="row"><h3 id="h-pdf">자료 PDF에서 가져오기</h3><span class="muted">쪽 번호는 PDF 뷰어에 보이는 번호예요 (인쇄된 쪽 번호와 다를 수 있어요)</span></div>
+      <div class="slots" id="slots"></div>
+      <input type="file" id="pdfFile" accept="application/pdf,.pdf" hidden>
+      <div class="pdfmsg" id="pdfMsg" aria-live="polite"></div>
+    </section>
     <label class="field" for="fPassage"><span>지문 원문 <small>교과서·부교재에서 그대로 복사해 붙여 주세요. 문단 사이는 빈 줄로 띄워요.</small></span>
       <textarea id="fPassage" class="passage" rows="10" placeholder="지문을 여기에 붙여 넣어요"></textarea></label>
     <div class="row">
       <label class="check" for="fLines"><input type="checkbox" id="fLines"> 행 단위로 번호 붙이기 (시·시가)</label>
       <span class="muted" id="unitInfo"></span>
     </div>
-    <label class="field" for="fNote"><span>선생님 필기 · 수업 해석 <small>문학은 특히 중요해요. 없으면 비워 두세요.</small></span>
-      <textarea id="fNote" rows="6" placeholder="예: 2연의 '바람'은 시련이 아니라 화자를 깨우는 계기로 해석 (수업 필기)"></textarea></label>
+    <label class="field" for="fNote"><span>해석 자료 <small>선생님 필기는 맨 위에 그냥 적고, PDF에서 가져온 부분은 [출처] 머리말이 붙어요. 해석이 다르면 필기 → 교사용 교과서 → 학원 교재 순으로 따라요.</small></span>
+      <textarea id="fNote" rows="8" placeholder="예: 2연의 '바람'은 시련이 아니라 화자를 깨우는 계기로 해석 (수업 필기)"></textarea></label>
+    <label class="field" for="fOx"><span>OX 문제 <small>정답이 붙은 OX는 확인된 사실로 취급해서 출제와 검수 모두에 기준으로 써요.</small></span>
+      <textarea id="fOx" rows="5" placeholder="예: 화자는 과거를 그리워하고 있다. (O)"></textarea></label>
     <div class="field" id="imgField" hidden>
       <span>필기 사진 <small>사진은 이번에 만들 때만 쓰고 저장하지 않아요. 중요한 해석은 글로도 적어 주세요.</small></span>
       <div class="acts"><button class="ghost" id="pickImg" type="button">사진 고르기</button><input type="file" id="fImages" accept="image/*" multiple hidden><span class="muted" id="imgInfo"></span></div>
@@ -268,7 +288,9 @@ const $$=s=>[...document.querySelectorAll(s)];
 const KINDS=['독서','현대시','고전시가','현대소설','고전소설','수필','극·시나리오'];
 const POEM=new Set(['현대시','고전시가']);
 const CIRC=['①','②','③','④','⑤'];
-const MAX_BYTES=60000;
+const MAX_BYTES=63500;   // 한 번 부를 때 보낼 수 있는 글 (64 KiB 한도)
+const MAT_MAX=44000;     // 지문·해석·OX: 검수 때 문항과 함께 들어가야 해서 넉넉히 남긴다
+const GEN_MAX=62000;
 const TYPES={
   독서:'내용 일치/불일치, 세부 정보 추론, 핵심 개념 비교, 문단 전개 방식, <보기> 사례 적용, 문맥적 의미, 서술형 요약·설명',
   문학:'표현상 특징, 시어·소재의 기능, 화자·인물의 태도와 정서, 서술 방식, <보기> 관점 감상, 구절의 의미, 서술형 해석'
@@ -329,7 +351,9 @@ const RULES=`1. 모든 정답·오답 판단의 근거는 지문과 필기(그�
 7. 틀린 선지가 너무 티 나지 않게 지문의 표현을 일부 가져와 헷갈리게 하되, 말장난은 하지 않는다.
 8. 예시 문제가 있으면 발문 방식, 선지 길이, 난이도를 따라 한다.
 9. 정답 번호가 한쪽에 몰리지 않게 섞는다.
-10. <보기>를 쓸 때는 판단에 필요한 정보를 <보기> 안에 모두 담는다.`;
+10. <보기>를 쓸 때는 판단에 필요한 정보를 <보기> 안에 모두 담는다.
+11. 해석 자료에 출처가 여럿이면 선생님 필기([출처] 머리말이 없는 부분) > 교사용 교과서 > 학원 교재 순으로 따른다.
+12. OX 문제에 정답이 표시돼 있으면 확인된 사실로 취급하고, 그와 어긋나는 판단을 하지 않는다. OX 문장은 선지 재료로 써도 된다.`;
 
 const Q_SHAPE=`{"questions":[
  {"id":1,"format":"객관식","type":"내용 일치","level":"중","stem":"윗글의 내용과 일치하지 않는 것은?","box":"","choices":["선지1","선지2","선지3","선지4","선지5"],"answer":3,
@@ -347,8 +371,11 @@ function materials(set,withImg){
   return `# 지문 (${unitName(set)}마다 번호를 붙였다. 근거를 댈 때 이 번호를 쓴다)
 ${passageBlock(set)}
 
-# 선생님 필기 / 수업 해석
-${set.note?.trim()||'없음'}${imgLine}`;
+# 해석 자료 (머리말 없는 부분은 선생님 필기, [출처] 머리말은 PDF에서 가져온 자료)
+${set.note?.trim()||'없음'}${imgLine}
+
+# OX 문제 (정답이 표시된 것은 확인된 사실)
+${set.ox?.trim()||'없음'}`;
 }
 function genPrompt(set,withImg){
   const c=set.cond;
@@ -391,7 +418,7 @@ ${qs.map(blindText).join('\n')}
 객관식은 문항마다
 1. 지문과 필기만 보고 직접 푼다.
 2. 네 답 말고도 답이라고 변호할 여지가 있는 선지가 있으면 모두 적는다.
-3. 다음을 확인한다. (가) 정답이 하나로 정해지는가 (나) 오답 선지 중 해석에 따라 맞을 수 있는 것이 있는가 (다) 지문·필기·<보기> 밖의 지식이 있어야 풀 수 있는가 (라) 필기의 해석과 어긋나는가 (마) 발문과 선지가 맞물리는가, 맞춤법·용어 오류는 없는가 (바) 표시된 난이도가 실제와 맞는가
+3. 다음을 확인한다. (가) 정답이 하나로 정해지는가 (나) 오답 선지 중 해석에 따라 맞을 수 있는 것이 있는가 (다) 지문·필기·<보기> 밖의 지식이 있어야 풀 수 있는가 (라) 필기의 해석과 어긋나는가 (마) 발문과 선지가 맞물리는가, 맞춤법·용어 오류는 없는가 (바) 표시된 난이도가 실제와 맞는가 (사) OX 문제의 정답과 어긋나는 선지 판단이 있는가
 서술형은 모범 답안이 지문·필기와 맞는지, 채점 요소가 명확한지 확인한다.
 
 # 답 형식
@@ -411,7 +438,7 @@ function revisePrompt(set,flagged,withImg){
 ${materials(set,withImg)}
 
 # 지적받은 문항 (정답·근거와 검토 의견)
-${JSON.stringify(items,null,1)}
+${JSON.stringify(items)}
 
 # 할 일
 - 지적을 반영해 문항을 고친다. 판정이 폐기에 가깝거나 고칠 수 없으면 같은 유형·난이도로 새 문항을 만든다. id는 그대로 둔다.
@@ -550,16 +577,20 @@ async function runPipeline(set){
       if(!flagged.length){set.stage='done';addLog('모든 문항이 검수를 통과했어요')}
       else{
         addLog(`${flagged.length}문항을 고치는 중이에요`);
-        const res=await ask(revisePrompt(set,flagged,imgs.length>0),{tier,imgs,label:flagged.length+'문항 고치는 중'});
-        const back=arr(res&&res.questions),defs=arr(res&&res.defenses);
-        flagged.forEach(q=>{
-          const nq=back.find(x=>Number(x&&x.id)===q.id);
-          const d=defs.find(x=>Number(x&&x.id)===q.id);
-          if(!nq){q.st='check';q.issues=[...q.issues,'수정본이 오지 않았어요.'];return}
-          const n=normQ(nq,q.id);n.id=q.id;
-          Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,n);
-          q.st='revised';q.issues=[];q.defense=d?String(d.reason||''):'';
-        });
+        const chunks=chunkBy(flagged,c=>revisePrompt(set,c,imgs.length>0));
+        for(const [ci,chunk] of chunks.entries()){
+          const res=await ask(revisePrompt(set,chunk,imgs.length>0),{tier,imgs,label:chunk.length+'문항 고치는 중'+(chunks.length>1?` (${ci+1}/${chunks.length})`:'')});
+          const back=arr(res&&res.questions),defs=arr(res&&res.defenses);
+          chunk.forEach(q=>{
+            const nq=back.find(x=>Number(x&&x.id)===q.id);
+            const d=defs.find(x=>Number(x&&x.id)===q.id);
+            if(!nq){q.st='check';q.issues=[...q.issues,'수정본이 오지 않았어요.'];return}
+            const n=normQ(nq,q.id);n.id=q.id;
+            Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,n);
+            q.st='revised';q.issues=[];q.defense=d?String(d.reason||''):'';
+          });
+          await save(set);renderSet();
+        }
         set.stage='revised';await save(set);renderSet();
       }
     }
@@ -580,10 +611,24 @@ async function runPipeline(set){
     running=null;renderSet();renderHome();
   }
 }
+// 한 번에 보낼 수 있는 분량을 넘지 않게 문항을 나눈다
+function chunkBy(items,build){
+  const out=[];let cur=[];
+  for(const it of items){
+    cur.push(it);
+    if(cur.length>1&&bytes(build(cur))>MAX_BYTES){cur.pop();out.push(cur);cur=[it]}
+  }
+  if(cur.length)out.push(cur);
+  return out;
+}
 async function reviewRound(set,targets,round,tier,imgs){
   addLog(round===1?`${targets.length}문항을 검수하는 중이에요`:`고친 ${targets.length}문항을 다시 검수하는 중이에요`);
-  const res=await ask(reviewPrompt(set,targets,imgs.length>0),{tier,imgs,label:round===1?'검수하는 중':'다시 검수하는 중'});
-  const reviews=arr(res&&res.reviews);
+  const chunks=chunkBy(targets,c=>reviewPrompt(set,c,imgs.length>0));
+  const reviews=[];
+  for(const [ci,chunk] of chunks.entries()){
+    const res=await ask(reviewPrompt(set,chunk,imgs.length>0),{tier,imgs,label:(round===1?'검수하는 중':'다시 검수하는 중')+(chunks.length>1?` (${ci+1}/${chunks.length})`:'')});
+    reviews.push(...arr(res&&res.reviews));
+  }
   let bad=0;
   targets.forEach(q=>{
     const r=reviews.find(x=>Number(x&&x.id)===q.id);
@@ -650,6 +695,7 @@ function openEditor(from){
   $('#fPassage').value=d.passage||'';
   $('#fLines').checked=d.byLine!=null?!!d.byLine:isPoem($('#fKind').value);
   $('#fNote').value=d.note||'';
+  $('#fOx').value=d.ox||'';
   $('#fExamples').value=d.examples||'';
   const c=d.cond||{};
   $('#fMc').value=c.mc||6;$('#fEssay').value=c.essay!=null?c.essay:2;
@@ -659,12 +705,13 @@ function openEditor(from){
   images=[];renderThumbs();
   $('#imgField').hidden=!canImages;
   $('#edErr').hidden=true;
+  renderSlotsKeep();restorePdfs();
   $('#h-ed').textContent=from?'같은 지문으로 새로 만들기':'새 지문으로 문제 만들기';
   show('#editor');edUpdate();
 }
 function readEditor(){
   return {title:$('#fTitle').value.trim(),kind:$('#fKind').value,passage:$('#fPassage').value,byLine:$('#fLines').checked,
-    note:$('#fNote').value,examples:$('#fExamples').value,tier:$('#fTier').value,
+    note:$('#fNote').value,ox:$('#fOx').value,examples:$('#fExamples').value,tier:$('#fTier').value,
     cond:{mc:Math.max(1,Math.min(10,Number($('#fMc').value)||6)),essay:Math.max(0,Math.min(4,Number($('#fEssay').value)||0)),level:$('#fLevel').value,must:$('#fMust').value.trim()}};
 }
 let draftTimer=null;
@@ -674,9 +721,10 @@ function edUpdate(){
   $('#unitInfo').textContent=units.length?`${units.length}개 ${d.byLine?'행':'문장'}에 번호를 붙여요`:'';
   const probe={...d,units,id:'x'};
   const b=units.length?bytes(genPrompt(probe,images.length>0)):0;
+  const mb=units.length?bytes(materials(probe,images.length>0)):0;
   const m=$('#meter');
-  m.textContent=b?`자료 분량 ${Math.round(b/MAX_BYTES*100)}%`:'';
-  m.classList.toggle('over',b>MAX_BYTES);
+  m.textContent=b?`지문·해석·OX 분량 ${Math.round(mb/MAT_MAX*100)}% · 예시 포함 전체 ${Math.round(b/GEN_MAX*100)}%`:'';
+  m.classList.toggle('over',mb>MAT_MAX||b>GEN_MAX);
   clearTimeout(draftTimer);draftTimer=setTimeout(()=>store('draft',d),400);
 }
 function renderThumbs(){
@@ -694,7 +742,8 @@ async function submitEditor(e){
   if(units.length<3)return err('지문을 붙여 넣어 주세요. 번호를 붙일 문장이 3개 이상 필요해요.');
   if(!d.title)d.title=units[0].t.slice(0,24)+(units[0].t.length>24?'…':'');
   const probe={...d,units};
-  if(bytes(genPrompt(probe,images.length>0))>MAX_BYTES)return err('자료가 너무 길어요. 예시 문제나 필기를 줄여 주세요.');
+  if(bytes(materials(probe,images.length>0))>MAT_MAX)return err('지문·해석·OX 분량이 100%를 넘었어요. 해석 자료에서 이 지문과 관계없는 부분을 지워 주세요.');
+  if(bytes(genPrompt(probe,images.length>0))>GEN_MAX)return err('전체 분량이 100%를 넘었어요. 예시 문제를 2~3개로 줄여 주세요.');
   const set={...d,units,id:db.collection('sets').doc().id,stage:'new',questions:[],attempts:[],hadImages:images.length>0,createdAt:new Date().toISOString()};
   if(images.length)imagesFor[set.id]=images.slice();
   sets.push(set);await save(set);
@@ -839,6 +888,163 @@ async function aiGrade(id){
   renderQs();
 }
 
+/* ---------- 자료 PDF ---------- */
+// PDF는 이 기기 브라우저(IndexedDB)에만 기억한다. 가져온 글자만 세트에 저장된다.
+const SLOTS=[
+  {key:'teacher',label:'교사용 교과서',target:'passage'},
+  {key:'academy',label:'학원 교재',target:'note'},
+  {key:'questions',label:'문제',target:'examples'},
+  {key:'ox',label:'OX 문제',target:'ox'},
+];
+const TARGETS={passage:['지문','#fPassage'],note:['해석 자료','#fNote'],ox:['OX 문제','#fOx'],examples:['예시 문제','#fExamples']};
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+const pdfFiles={};   // key -> File
+const pdfDocs={};    // key -> PDFDocumentProxy
+let pdfPickFor=null, pdfBusy=false, pdfLib=null;
+function pdfMsg(t,bad){const el=$('#pdfMsg');el.textContent=t;el.className='pdfmsg'+(bad?' bad':'')}
+function idb(){return new Promise((res,rej)=>{const q=indexedDB.open('korean-pdfs',1);q.onupgradeneeded=()=>q.result.createObjectStore('files');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+async function idbPut(key,file){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction('files','readwrite');t.objectStore('files').put({name:file.name,blob:file},key);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){}}
+async function idbAll(){try{const d=await idb();return await new Promise((res,rej)=>{const t=d.transaction('files');const st=t.objectStore('files');const out={};const c=st.openCursor();c.onsuccess=()=>{const cur=c.result;if(cur){out[cur.key]=cur.value;cur.continue()}else res(out)};c.onerror=()=>rej(c.error)})}catch(e){return {}}}
+function loadScript(src){return new Promise((res,rej)=>{const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=()=>rej(new Error('script'));document.head.append(el)})}
+async function getPdfLib(){
+  if(pdfLib)return pdfLib;
+  // 워커 코드를 먼저 올려 두면 pdf.js가 별도 워커 없이 이 페이지 안에서 돈다
+  await loadScript(PDFJS+'pdf.worker.min.js');
+  await loadScript(PDFJS+'pdf.min.js');
+  pdfLib=window.pdfjsLib;pdfLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';
+  return pdfLib;
+}
+async function getDoc(key){
+  if(pdfDocs[key])return pdfDocs[key];
+  const lib=await getPdfLib();
+  const data=new Uint8Array(await pdfFiles[key].arrayBuffer());
+  pdfDocs[key]=await lib.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
+  return pdfDocs[key];
+}
+function renderSlots(){
+  $('#slots').innerHTML=SLOTS.map(sl=>{
+    const f=pdfFiles[sl.key],d=pdfDocs[sl.key];
+    return `<div class="slot">
+      <div class="slot-h"><b>${sl.label}</b><span class="fname">${f?esc(f.name)+(d?' · '+d.numPages+'쪽':''):'파일 없음'}</span><button type="button" class="small-btn" data-pick="${sl.key}">${f?'바꾸기':'PDF 고르기'}</button></div>
+      <div class="slot-r">
+        <input type="text" id="pg-${sl.key}" placeholder="쪽 예: 45-48" aria-label="${sl.label} 가져올 쪽" inputmode="numeric" ${f?'':'disabled'}>
+        <select id="tg-${sl.key}" aria-label="${sl.label} 넣을 칸" ${f?'':'disabled'}>${Object.entries(TARGETS).map(([k,[n]])=>`<option value="${k}"${k===sl.target?' selected':''}>${n} 칸으로</option>`).join('')}</select>
+        <button type="button" class="btn" data-imp="${sl.key}" ${f&&!pdfBusy?'':'disabled'}>가져오기</button>
+      </div></div>`}).join('');
+}
+function parsePages(txt,max){
+  const out=[];
+  for(const part of String(txt).split(/[,\s]+/).filter(Boolean)){
+    const m=part.match(/^(\d+)(?:[-~–](\d+))?$/);if(!m)return null;
+    let a=Number(m[1]),b=Number(m[2]||m[1]);if(a>b)[a,b]=[b,a];
+    for(let i=a;i<=b;i++)if(i>=1&&i<=max&&!out.includes(i))out.push(i);
+  }
+  return out;
+}
+function pageText(items){
+  let t='';
+  for(const it of items){t+=it.str;if(it.hasEOL)t+='\n'}
+  return t.split('\n').map(l=>l.replace(/\s+/g,' ').trim()).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+// 한글이 거의 없으면 스캔본(사진)이거나 글자 정보가 깨진 쪽으로 본다
+function looksScanned(t){const h=(t.match(/[가-힣]/g)||[]).length;const all=t.replace(/\s/g,'').length;return h<15||h<all*0.25}
+async function renderPage(doc,n){
+  const page=await doc.getPage(n);
+  const v0=page.getViewport({scale:1});
+  const vp=page.getViewport({scale:Math.min(2.5,1500/v0.width)});
+  const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+  const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+  await page.render({canvasContext:ctx,viewport:vp}).promise;
+  return await new Promise(res=>c.toBlob(res,'image/jpeg',.88));
+}
+async function ocrPages(doc,pages,label){
+  if(!sample||!canImages)throw {code:'images_unavailable'};
+  const per=Math.max(1,Math.min(4,canImages.maxCount||1));
+  const out=[];
+  for(let i=0;i<pages.length;i+=per){
+    const grp=pages.slice(i,i+per);
+    pdfMsg(`${label} ${grp.join(', ')}쪽은 글자 정보가 없어서 AI가 사진을 읽는 중이에요…`);
+    const imgs=[];for(const n of grp)imgs.push(await renderPage(doc,n));
+    const {text}=await sample(`첨부한 이미지 ${grp.length}장은 고등학교 국어 ${label}의 ${grp.join(', ')}쪽이다. 차례대로 글자를 원문 그대로 옮겨 적는다.
+- 고치거나 요약하거나 설명을 덧붙이지 않는다. 맞춤법이 이상해 보여도 그대로 적는다.
+- 문단 사이는 빈 줄로 띄운다. 시는 행 구분을 지킨다.
+- 쪽 번호, 머리말·꼬리말, 워터마크는 뺀다.
+- 읽을 수 없는 글자는 □로 적는다. 그림·표는 [그림: 한 줄 설명]으로 적는다.
+- 쪽이 바뀔 때마다 "=== N쪽 ===" 한 줄을 넣는다.
+옮겨 적은 글만 출력한다.`,{images:imgs,modelTier:'default',cache:false});
+    out.push(text.trim());
+  }
+  return out.join('\n\n');
+}
+async function importPdf(key){
+  if(pdfBusy)return;
+  const sl=SLOTS.find(x=>x.key===key);
+  const target=$('#tg-'+key).value;
+  pdfBusy=true;renderSlotsKeep();
+  try{
+    pdfMsg(`${sl.label} 여는 중…`);
+    const doc=await getDoc(key);
+    const pages=parsePages($('#pg-'+key).value,doc.numPages);
+    if(!pages||!pages.length){pdfMsg(`가져올 쪽을 적어 주세요. 1~${doc.numPages} 사이, 예: 45-48`,true);return}
+    if(pages.length>12){pdfMsg('한 번에 12쪽까지 가져올 수 있어요. 지문 하나에 필요한 쪽만 골라 주세요.',true);return}
+    const parts=[],scanned=[];
+    for(const n of pages){
+      pdfMsg(`${sl.label} ${n}쪽 읽는 중…`);
+      let t='';
+      try{const pg=await doc.getPage(n);t=pageText((await pg.getTextContent()).items)}catch(e){t=''}
+      if(looksScanned(t)){scanned.push(n);parts.push({n,t:null})}else parts.push({n,t})
+    }
+    let ocrText='';
+    if(scanned.length){
+      try{ocrText=await ocrPages(doc,scanned,sl.label)}
+      catch(e){pdfMsg(`${scanned.join(', ')}쪽은 글자 정보가 없는 스캔본인데, 사진을 읽지 못했어요. ${e&&e.code?errCopy(e):'직접 입력해 주세요.'}`,true);if(scanned.length===pages.length)return}
+    }
+    // 글자가 있는 쪽은 쪽 순서대로, 스캔본은 AI가 읽은 글을 뒤에 붙인다
+    let body=parts.filter(p=>p.t).map(p=>p.t).join('\n\n');
+    if(ocrText)body+=(body?'\n\n':'')+ocrText;
+    if(target==='passage')body=body.replace(/^=== \d+쪽 ===\s*$/gm,'').replace(/\n{3,}/g,'\n\n').trim();
+    const range=pages.length>1?`${pages[0]}–${pages[pages.length-1]}쪽`:`${pages[0]}쪽`;
+    const [tname,sel]=TARGETS[target];
+    const el=$(sel);
+    const chunk=target==='passage'?body:`[${sl.label} ${range}${scanned.length?' · 일부 AI가 사진에서 읽음':''}]\n${body}`;
+    el.value=el.value.trim()?el.value.replace(/\s+$/,'')+'\n\n'+chunk:chunk;
+    edUpdate();
+    const tips=[];
+    if(target==='passage')tips.push('지문이 아닌 글(쪽 번호, 학습 활동, 날개 설명)은 지워 주세요');
+    if(scanned.length)tips.push(`${scanned.join(', ')}쪽은 AI가 사진에서 읽었으니 원본과 꼭 대조해 주세요`);
+    pdfMsg(`${range}를 ${tname} 칸에 넣었어요.`+(tips.length?' '+tips.join('. ')+'.':''));
+    el.focus();
+  }catch(e){
+    pdfMsg(e&&e.message==='script'?'PDF 도구를 불러오지 못했어요. 새로고침한 뒤 다시 시도해 주세요.':(e&&e.name==='PasswordException'?'암호가 걸린 PDF라 열 수 없어요.':'PDF를 읽지 못했어요. 다른 파일인지 확인해 주세요.'),true);
+  }finally{pdfBusy=false;renderSlotsKeep()}
+}
+// 다시 그릴 때 입력해 둔 쪽 번호와 대상 칸을 지킨다
+function renderSlotsKeep(){
+  const keep={};SLOTS.forEach(sl=>{const p=$('#pg-'+sl.key),t=$('#tg-'+sl.key);if(p)keep[sl.key]=[p.value,t.value]});
+  renderSlots();
+  Object.entries(keep).forEach(([k,[p,t]])=>{$('#pg-'+k).value=p;$('#tg-'+k).value=t});
+}
+async function restorePdfs(){
+  const saved=await idbAll();
+  let n=0;
+  for(const sl of SLOTS){const v=saved[sl.key];if(v&&v.blob&&!pdfFiles[sl.key]){pdfFiles[sl.key]=new File([v.blob],v.name||sl.label+'.pdf',{type:'application/pdf'});n++}}
+  if(n){renderSlotsKeep();pdfMsg(`지난번에 고른 PDF ${n}개를 다시 불러왔어요.`)}
+}
+$('#slots').addEventListener('click',e=>{
+  const p=e.target.closest('[data-pick]');if(p){pdfPickFor=p.dataset.pick;$('#pdfFile').click();return}
+  const i=e.target.closest('[data-imp]');if(i)importPdf(i.dataset.imp);
+});
+$('#pdfFile').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';
+  if(!f||!pdfPickFor)return;
+  if(!/pdf$/i.test(f.type)&&!/\.pdf$/i.test(f.name)){pdfMsg('PDF 파일만 고를 수 있어요.',true);return}
+  const key=pdfPickFor;pdfFiles[key]=f;delete pdfDocs[key];
+  renderSlotsKeep();
+  idbPut(key,f);
+  try{pdfMsg('PDF 여는 중…');const d=await getDoc(key);renderSlotsKeep();pdfMsg(`${f.name} · ${d.numPages}쪽을 열었어요. 가져올 쪽을 적어 주세요.`)}
+  catch(err){pdfMsg('PDF를 열지 못했어요. 파일이 손상됐거나 암호가 걸려 있는지 확인해 주세요.',true)}
+});
+
 /* ---------- 이벤트 ---------- */
 $('#newSet').addEventListener('click',()=>openEditor());
 $('#edBack').addEventListener('click',()=>{show('#home');renderHome()});
@@ -856,7 +1062,7 @@ $('#thumbs').addEventListener('click',e=>{const b=e.target.closest('button[data-
 $('#sets').addEventListener('click',e=>{const b=e.target.closest('.set');if(b)openSet(b.dataset.id)});
 $('#resumeBtn').addEventListener('click',()=>{if(cur){$('#log').innerHTML='';runPipeline(cur)}});
 $('#stop').addEventListener('click',()=>{if(running&&running.ctl)running.ctl.abort()});
-$('#vAgain').addEventListener('click',()=>{if(cur)openEditor({title:cur.title+' (2)',kind:cur.kind,passage:cur.passage,byLine:cur.byLine,note:cur.note,examples:cur.examples,cond:cur.cond,tier:cur.tier})});
+$('#vAgain').addEventListener('click',()=>{if(cur)openEditor({title:cur.title+' (2)',kind:cur.kind,passage:cur.passage,byLine:cur.byLine,note:cur.note,ox:cur.ox,examples:cur.examples,cond:cur.cond,tier:cur.tier})});
 let delArmed=null;
 $('#vDel').addEventListener('click',async()=>{
   const b=$('#vDel');
