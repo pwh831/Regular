@@ -278,15 +278,15 @@ textarea.passage{font-family:var(--serif);font-size:15.5px;min-height:220px}
     <label class="field" for="fExamples"><span>예시 변형 문제 <small>학교 기출이나 학원 문제 2~3개. 발문·선지 스타일을 따라 해요.</small></span>
       <textarea id="fExamples" rows="5" placeholder="없으면 비워 두세요"></textarea></label>
     <div class="grid4">
-      <label class="field" for="fMc"><span>객관식</span><input type="number" id="fMc" min="1" max="10" value="6"></label>
-      <label class="field" for="fEssay"><span>서술형</span><input type="number" id="fEssay" min="0" max="4" value="2"></label>
+      <label class="field" for="fMc"><span>객관식</span><input type="number" id="fMc" min="1" max="40" value="6"></label>
+      <label class="field" for="fEssay"><span>서술형</span><input type="number" id="fEssay" min="0" max="10" value="2"></label>
       <label class="field" for="fLevel"><span>난이도</span><select id="fLevel"><option value="중과 상을 반씩">중·상 반반</option><option value="대부분 상, 최고난도 1문항 포함">상 위주</option><option value="대부분 중">중 위주</option></select></label>
       <label class="field" for="fTier"><span>검토 깊이</span><select id="fTier"><option value="complex">꼼꼼하게 (느림)</option><option value="default">보통</option></select></label>
     </div>
     <label class="field" for="fMust"><span>꼭 넣을 유형 <small>예: &lt;보기&gt; 적용 1개, 문맥적 의미 1개</small></span><input type="text" id="fMust" placeholder="비워 두면 골고루"></label>
     <div class="meter" id="meter"></div>
     <div class="err-box" id="edErr" hidden></div>
-    <div class="acts"><button class="btn" id="edGo" type="submit">문제 만들기</button><span class="muted">출제와 검수까지 보통 3~8분 걸려요.</span></div>
+    <div class="acts"><button class="btn" id="edGo" type="submit">문제 만들기</button><span class="muted" id="etaInfo">출제와 검수까지 보통 3~8분 걸려요.</span></div>
   </form>
 
   <!-- 문제 세트 -->
@@ -437,8 +437,34 @@ ${set.note?.trim()||'없음'}${imgLine}
 # OX 문제 (정답이 표시된 것은 확인된 사실)
 ${set.ox?.trim()||'없음'}`;
 }
-function genPrompt(set,withImg){
+// 한 번에 많이 만들면 답이 길어져 끊기므로 GEN_BATCH문항씩 나눠 만든다.
+// 뒤 묶음에는 앞에서 만든 문항 목록을 보여 줘서 겹치지 않게 한다.
+const GEN_BATCH=8;
+function nextBatch(set){
+  const qs=set.questions||[],c=set.cond;
+  const remMc=Math.max(0,c.mc-qs.filter(q=>q.format==='객관식').length);
+  const remEs=Math.max(0,c.essay-qs.filter(q=>q.format==='서술형').length);
+  if(!remMc&&!remEs)return null;
+  const mc=Math.min(GEN_BATCH,remMc),essay=Math.min(GEN_BATCH-mc,remEs);
+  if(!mc&&!essay)return null;
+  return {from:qs.length+1,mc,essay};
+}
+function priorList(qs,len){
+  return qs.map(q=>{
+    const ans=q.format==='객관식'&&q.choices[q.answer-1]?' / 정답 선지: '+q.choices[q.answer-1]:'';
+    return `${q.id}. [${q.type}·${q.level}] ${(q.stem+ans).slice(0,len)}`;
+  }).join('\n');
+}
+function genPrompt(set,withImg,batch){
   const c=set.cond;
+  const b=batch||{from:1,mc:c.mc,essay:c.essay};
+  const prior=(set.questions||[]);
+  let priorText='';
+  if(prior.length){
+    // 분량 한도를 넘지 않게 앞 문항 요약을 줄인다
+    for(const len of [140,70,35]){priorText=priorList(prior,len);if(bytes(priorText)<9000)break}
+  }
+  const total=c.mc+c.essay;
   return `너는 고등학교 국어 내신 시험 출제 위원이다. 아래 자료만을 근거로 ${set.kind} 지문의 변형 문제를 만든다.
 
 ${materials(set,withImg)}
@@ -447,11 +473,14 @@ ${materials(set,withImg)}
 ${set.examples?.trim()||'없음'}
 
 # 출제 조건
-- 객관식 ${c.mc}개, 서술형 ${c.essay}개 (id는 1부터 차례로)
+- 이번에 만들 문항: 객관식 ${b.mc}개, 서술형 ${b.essay}개 (id는 ${b.from}부터 차례로)${total>b.mc+b.essay?`\n- 이 지문으로 모두 ${total}문항(객관식 ${c.mc}, 서술형 ${c.essay})을 여러 번에 나눠 만드는 중이다.`:''}
 - 난이도: ${c.level}
-- 꼭 넣을 유형: ${c.must?.trim()||'자유. 아래 유형을 골고루'}
+- 꼭 넣을 유형: ${c.must?.trim()||'자유. 아래 유형을 골고루'}${prior.length?' (이미 만든 문항에 들어 있으면 다시 넣지 않아도 된다)':''}
 - 참고 유형: ${TYPES[family(set.kind)]}
-
+${prior.length?`
+# 이미 만든 문항 (이것들과 묻는 내용·정답 근거·발문이 겹치지 않게 한다. 아직 다루지 않은 문장과 유형을 우선한다)
+${priorText}
+`:''}
 # 출제 규칙 (반드시 지킬 것)
 ${RULES}
 
@@ -556,7 +585,7 @@ function normQ(raw,fallbackId){
   }
   return q;
 }
-const NEG=/(않은|아닌|틀린|잘못된|거리가\s*먼|어긋나는|없는)\s*것/;
+const NEG=/(않은|않는|아닌|틀린|잘못된|거리가\s*먼|어긋나는|없는)\s*것/;
 function localCheck(q,unitCount){
   const p=[];
   if(!q.stem.trim())p.push('발문이 비어 있어요.');
@@ -620,13 +649,23 @@ async function runPipeline(set){
   renderProgress();
   try{
     if(set.stage==='new'){
-      addLog('출제를 시작했어요');
-      const res=await ask(genPrompt(set,imgs.length>0),{tier,imgs,label:'문제 만드는 중'});
-      const qs=arr(res&&res.questions).map((q,i)=>normQ(q,i+1));
-      if(!qs.length)throw {code:'invalid_json'};
-      qs.forEach((q,i)=>{q.id=i+1;q.st='pending';q.issues=[]});
-      set.questions=qs;set.stage='generated';
-      await save(set);addLog(`${qs.length}문항을 만들었어요`);renderSet();
+      const total=set.cond.mc+set.cond.essay;
+      if(!set.questions.length)addLog(total>GEN_BATCH?`출제를 시작했어요. ${total}문항을 ${GEN_BATCH}문항씩 나눠 만들어요`:'출제를 시작했어요');
+      let b;
+      while((b=nextBatch(set))){
+        const n=b.mc+b.essay,to=b.from+n-1;
+        const res=await ask(genPrompt(set,imgs.length>0,b),{tier,imgs,label:`문제 만드는 중 (${b.from}~${to}번 / ${total})`});
+        const got=arr(res&&res.questions).map((q,i)=>normQ(q,b.from+i));
+        if(!got.length)throw {code:'invalid_json'};
+        // 요청보다 많이 오면 자르고, 형식별 남은 수를 넘지 않게 한다
+        let mcLeft=b.mc,esLeft=b.essay;
+        const keep=got.filter(q=>q.format==='객관식'?mcLeft-->0:esLeft-->0);
+        if(!keep.length)throw {code:'invalid_json'};
+        keep.forEach(q=>{q.id=set.questions.length+1;q.st='pending';q.issues=[];set.questions.push(q)});
+        await save(set);addLog(`${set.questions.length}/${total}문항을 만들었어요`);renderSet();
+      }
+      set.stage='generated';
+      await save(set);renderSet();
     }
     if(set.stage==='generated'){
       await reviewRound(set,set.questions,1,tier,imgs);
@@ -637,7 +676,7 @@ async function runPipeline(set){
       if(!flagged.length){set.stage='done';addLog('모든 문항이 검수를 통과했어요')}
       else{
         addLog(`${flagged.length}문항을 고치는 중이에요`);
-        const chunks=chunkBy(flagged,c=>revisePrompt(set,c,imgs.length>0));
+        const chunks=chunkBy(flagged,c=>revisePrompt(set,c,imgs.length>0),5);
         for(const [ci,chunk] of chunks.entries()){
           const res=await ask(revisePrompt(set,chunk,imgs.length>0),{tier,imgs,label:chunk.length+'문항 고치는 중'+(chunks.length>1?` (${ci+1}/${chunks.length})`:'')});
           const back=arr(res&&res.questions),defs=arr(res&&res.defenses);
@@ -672,18 +711,18 @@ async function runPipeline(set){
   }
 }
 // 한 번에 보낼 수 있는 분량을 넘지 않게 문항을 나눈다
-function chunkBy(items,build){
+function chunkBy(items,build,maxN=99){
   const out=[];let cur=[];
   for(const it of items){
     cur.push(it);
-    if(cur.length>1&&bytes(build(cur))>MAX_BYTES){cur.pop();out.push(cur);cur=[it]}
+    if(cur.length>1&&(cur.length>maxN||bytes(build(cur))>MAX_BYTES)){cur.pop();out.push(cur);cur=[it]}
   }
   if(cur.length)out.push(cur);
   return out;
 }
 async function reviewRound(set,targets,round,tier,imgs){
   addLog(round===1?`${targets.length}문항을 검수하는 중이에요`:`고친 ${targets.length}문항을 다시 검수하는 중이에요`);
-  const chunks=chunkBy(targets,c=>reviewPrompt(set,c,imgs.length>0));
+  const chunks=chunkBy(targets,c=>reviewPrompt(set,c,imgs.length>0),10);
   const reviews=[];
   for(const [ci,chunk] of chunks.entries()){
     const res=await ask(reviewPrompt(set,chunk,imgs.length>0),{tier,imgs,label:(round===1?'검수하는 중':'다시 검수하는 중')+(chunks.length>1?` (${ci+1}/${chunks.length})`:'')});
@@ -772,7 +811,7 @@ function openEditor(from){
 function readEditor(){
   return {title:$('#fTitle').value.trim(),kind:$('#fKind').value,passage:$('#fPassage').value,byLine:$('#fLines').checked,
     note:$('#fNote').value,ox:$('#fOx').value,examples:$('#fExamples').value,tier:$('#fTier').value,
-    cond:{mc:Math.max(1,Math.min(10,Number($('#fMc').value)||6)),essay:Math.max(0,Math.min(4,Number($('#fEssay').value)||0)),level:$('#fLevel').value,must:$('#fMust').value.trim()}};
+    cond:{mc:Math.max(1,Math.min(40,Number($('#fMc').value)||6)),essay:Math.max(0,Math.min(10,Number($('#fEssay').value)||0)),level:$('#fLevel').value,must:$('#fMust').value.trim()}};
 }
 let draftTimer=null;
 function edUpdate(){
@@ -785,6 +824,8 @@ function edUpdate(){
   const m=$('#meter');
   m.textContent=b?`지문·해석·OX 분량 ${Math.round(mb/MAT_MAX*100)}% · 예시 포함 전체 ${Math.round(b/GEN_MAX*100)}%`:'';
   m.classList.toggle('over',mb>MAT_MAX||b>GEN_MAX);
+  const total=d.cond.mc+d.cond.essay;
+  $('#etaInfo').textContent=total<=GEN_BATCH?'출제와 검수까지 보통 3~8분 걸려요.':`${total}문항은 ${GEN_BATCH}문항씩 ${Math.ceil(total/GEN_BATCH)}번에 나눠 만들어요. 검수까지 ${Math.round(total*.4)}~${Math.round(total*.8)}분쯤 걸려요.`;
   clearTimeout(draftTimer);draftTimer=setTimeout(()=>store('draft',d),400);
 }
 function renderThumbs(){
@@ -839,7 +880,7 @@ function renderProgress(){
   const stalled=!running&&s.stage!=='done';
   $('#resume').hidden=!stalled;
   if(stalled){
-    const where={new:'아직 문제를 만들지 못했어요.',generated:'문제는 만들었고 검수가 남았어요.',reviewed:'검수에서 걸린 문항을 고치는 단계가 남았어요.',revised:'고친 문항의 재검수가 남았어요.'}[s.stage];
+    const where={new:s.questions.length?`${s.questions.length}/${s.cond.mc+s.cond.essay}문항까지 만들었어요. 나머지 출제와 검수가 남았어요.`:'아직 문제를 만들지 못했어요.',generated:'문제는 만들었고 검수가 남았어요.',reviewed:'검수에서 걸린 문항을 고치는 단계가 남았어요.',revised:'고친 문항의 재검수가 남았어요.'}[s.stage];
     $('#resumeMsg').textContent=where+(s.hadImages&&!imagesFor[s.id]?' 필기 사진은 저장되지 않아서 글로 적은 필기만 써요.':'');
     $('#resumeBtn').disabled=!!running||!sample;
   }
