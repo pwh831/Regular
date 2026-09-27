@@ -17,6 +17,7 @@
   --sky:linear-gradient(180deg,#2C3787 0%,#5566C9 22%,#9C93DE 40%,#E7B6D8 52%,#F4C9DD 55%,#B9AEE6 56%,#A89CE0 75%,#9A8FD8 100%);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{background:#2C3787}
 body{background:var(--sky);background-attachment:fixed;min-height:100vh;color:var(--text);font:16px/1.6 var(--sans);padding-inline:16px;padding-block:28px 56px;overflow-x:hidden}
 .sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
@@ -85,15 +86,25 @@ textarea.passage{font-family:var(--serif);min-height:220px}
 .thumbs button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(46,42,90,.75);color:#fff;font-size:14px;line-height:1}
 .err-box{background:var(--bad-soft);color:var(--bad);border-radius:12px;padding:10px 12px;font-size:14px}
 .pdfbox{background:var(--row);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px}
-.slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media (max-width:620px){.slots{grid-template-columns:minmax(0,1fr)}}
-.slot{background:#fff;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0;box-shadow:inset 0 0 0 1px #E6E2F8}
-.slot-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.slot-h b{font-family:var(--serif);color:var(--ink)}
-.slot-h .fname{flex:1;min-width:0;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.slot-r{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px}
+.drop{border:2px dashed #CFC9EE;border-radius:18px;padding:18px;background:#fff;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+.drop.over{border-color:var(--pen);background:var(--pen-soft)}
+.drop b{font-family:var(--serif);color:var(--ink)}
+.libs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.lib{background:#fff;border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px 8px;align-items:center;box-shadow:inset 0 0 0 1px #E6E2F8}
+.lib .nm{display:flex;flex-direction:column;min-width:0}
+.lib .nm b{font-size:14px;color:var(--ink);overflow-wrap:anywhere;font-weight:700}
+.lib .nm small{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lib select{width:auto;min-height:36px;padding:4px 8px;font-size:13px}
+.lib .scan{grid-column:1 / -1;display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--warn)}
+.lib .scan input{width:120px;min-height:36px;padding:4px 8px;font-size:13px}
+@media (max-width:520px){.lib{grid-template-columns:minmax(0,1fr) auto}.lib .nm{grid-column:1 / -1}}
+.auto{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+@media (max-width:520px){.auto{grid-template-columns:minmax(0,1fr)}}
+.manual summary{cursor:pointer;font-size:14px;color:var(--ink);min-height:32px;display:flex;align-items:center}
+.slot-r{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto;gap:6px;margin-top:6px}
+@media (max-width:620px){.slot-r{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .slot-r input,.slot-r select{min-height:40px;padding:6px 10px;font-size:14px}
-.slot .btn{min-height:40px;padding:6px 14px;font-size:14px;border-radius:12px}
+.slot-r .btn{min-height:40px;padding:6px 14px;font-size:14px;border-radius:12px}
 .pdfmsg{font-size:13px;color:var(--text);min-height:18px}
 .pdfmsg.bad{color:var(--bad)}
 .meter{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
@@ -191,6 +202,17 @@ textarea.passage{font-family:var(--serif);min-height:220px}
       </ol>
       <p class="muted">필기가 있으면 필기 해석을 따라요. 필기에 없는 해석이 필요한 문항에는 <span class="chip warn">필기 확인</span>이 붙어요.</p>
     </section>
+    <section class="panel" aria-labelledby="h-lib">
+      <div class="row"><h2 id="h-lib">자료함</h2><span class="muted" id="libCount"></span></div>
+      <div class="drop" id="drop">
+        <b>PDF를 한꺼번에 여기로 끌어다 놓아요</b>
+        <button class="btn" id="libPick" type="button">PDF 여러 개 고르기</button>
+        <span class="muted">교사용 교과서, 학원 교재, 문제, OX 파일을 모두 넣어 두세요. 종류는 앱이 나누고, 틀리면 고칠 수 있어요. 파일은 이 기기 브라우저에만 보관해요.</span>
+      </div>
+      <input type="file" id="libFile" accept="application/pdf,.pdf" multiple hidden>
+      <ul class="libs" id="libs"></ul>
+      <div class="pdfmsg" id="libMsg" aria-live="polite"></div>
+    </section>
     <section class="panel" aria-labelledby="h-sets">
       <div class="row"><h2 id="h-sets">만든 문제</h2><span class="muted" id="setCount"></span></div>
       <ul class="sets" id="sets"></ul>
@@ -200,16 +222,25 @@ textarea.passage{font-family:var(--serif);min-height:220px}
   <!-- 만들기 -->
   <form id="editor" class="panel" hidden novalidate aria-labelledby="h-ed">
     <div class="row"><h2 id="h-ed">새 지문으로 문제 만들기</h2><button class="ghost" id="edBack" type="button">목록으로</button></div>
+    <section class="pdfbox" aria-labelledby="h-auto">
+      <div class="row"><h3 id="h-auto">자료함에서 알아서 채우기</h3><span class="muted" id="autoInfo"></span></div>
+      <div class="auto"><input type="text" id="fQuery" placeholder="지문 이름이나 첫 구절 (예: 서시, 인공지능과 저작권)" aria-label="찾을 지문"><button class="btn" id="autoGo" type="button">찾아서 채우기</button></div>
+      <p class="muted">지문 칸에 글을 이미 붙여 두었으면 그 글로 찾아요. 제목·종류·지문·해석·OX·예시 문제를 채우고, 지문은 PDF 원문과 한 문장씩 대조해요.</p>
+      <details class="manual"><summary>직접 쪽 골라 넣기</summary>
+        <div class="slot-r">
+          <select id="mFile" aria-label="파일"></select>
+          <input type="text" id="mPages" placeholder="쪽 예: 45-48" inputmode="numeric" aria-label="쪽">
+          <select id="mTarget" aria-label="넣을 칸"></select>
+          <button type="button" class="btn" id="mGo">가져오기</button>
+        </div>
+        <p class="muted" style="margin-top:6px">쪽 번호는 PDF 뷰어에 보이는 번호예요. 인쇄된 쪽 번호와 다를 수 있어요.</p>
+      </details>
+      <div class="pdfmsg" id="pdfMsg" aria-live="polite"></div>
+    </section>
     <div class="grid2">
       <label class="field" for="fTitle"><span>제목</span><input type="text" id="fTitle" placeholder="예: 3단원 독서 · 인공지능과 저작권" maxlength="80"></label>
       <label class="field" for="fKind"><span>지문 종류</span><select id="fKind"></select></label>
     </div>
-    <section class="pdfbox" aria-labelledby="h-pdf">
-      <div class="row"><h3 id="h-pdf">자료 PDF에서 가져오기</h3><span class="muted">쪽 번호는 PDF 뷰어에 보이는 번호예요 (인쇄된 쪽 번호와 다를 수 있어요)</span></div>
-      <div class="slots" id="slots"></div>
-      <input type="file" id="pdfFile" accept="application/pdf,.pdf" hidden>
-      <div class="pdfmsg" id="pdfMsg" aria-live="polite"></div>
-    </section>
     <label class="field" for="fPassage"><span>지문 원문 <small>교과서·부교재에서 그대로 복사해 붙여 주세요. 문단 사이는 빈 줄로 띄워요.</small></span>
       <textarea id="fPassage" class="passage" rows="10" placeholder="지문을 여기에 붙여 넣어요"></textarea></label>
     <div class="row">
@@ -705,7 +736,7 @@ function openEditor(from){
   images=[];renderThumbs();
   $('#imgField').hidden=!canImages;
   $('#edErr').hidden=true;
-  renderSlotsKeep();restorePdfs();
+  renderManual();$('#fQuery').value='';pdfMsg('');
   $('#h-ed').textContent=from?'같은 지문으로 새로 만들기':'새 지문으로 문제 만들기';
   show('#editor');edUpdate();
 }
@@ -888,49 +919,183 @@ async function aiGrade(id){
   renderQs();
 }
 
-/* ---------- 자료 PDF ---------- */
-// PDF는 이 기기 브라우저(IndexedDB)에만 기억한다. 가져온 글자만 세트에 저장된다.
-const SLOTS=[
-  {key:'teacher',label:'교사용 교과서',target:'passage'},
-  {key:'academy',label:'학원 교재',target:'note'},
-  {key:'questions',label:'문제',target:'examples'},
-  {key:'ox',label:'OX 문제',target:'ox'},
-];
+/* ---------- 자료함 ---------- */
+// PDF와 쪽별 글자는 이 기기 브라우저(IndexedDB)에만 둔다. 세트에는 골라 넣은 글자만 저장된다.
+const ROLES={teacher:'교사용 교과서',academy:'학원 교재',questions:'문제',ox:'OX 문제'};
 const TARGETS={passage:['지문','#fPassage'],note:['해석 자료','#fNote'],ox:['OX 문제','#fOx'],examples:['예시 문제','#fExamples']};
 const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
-const pdfFiles={};   // key -> File
-const pdfDocs={};    // key -> PDFDocumentProxy
-let pdfPickFor=null, pdfBusy=false, pdfLib=null;
+const AUTO_MARK='──── 자료함에서 가져옴 ────';
+let lib=[];          // {id,name,role,roleGuessed,numPages,pages:[글자],scanned:[bool],blob,status,progress}
+const pdfDocs={};
+let pdfLib=null,libQueue=Promise.resolve(),pdfBusy=false;
+function libMsg(t,bad){const el=$('#libMsg');el.textContent=t;el.className='pdfmsg'+(bad?' bad':'')}
 function pdfMsg(t,bad){const el=$('#pdfMsg');el.textContent=t;el.className='pdfmsg'+(bad?' bad':'')}
-function idb(){return new Promise((res,rej)=>{const q=indexedDB.open('korean-pdfs',1);q.onupgradeneeded=()=>q.result.createObjectStore('files');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
-async function idbPut(key,file){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction('files','readwrite');t.objectStore('files').put({name:file.name,blob:file},key);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){}}
-async function idbAll(){try{const d=await idb();return await new Promise((res,rej)=>{const t=d.transaction('files');const st=t.objectStore('files');const out={};const c=st.openCursor();c.onsuccess=()=>{const cur=c.result;if(cur){out[cur.key]=cur.value;cur.continue()}else res(out)};c.onerror=()=>rej(c.error)})}catch(e){return {}}}
+const norm=s=>String(s||'').replace(/\s+/g,'');
+const tick0=()=>new Promise(r=>setTimeout(r,0));
+
+// IndexedDB
+function openLib(){return new Promise((res,rej)=>{const q=indexedDB.open('korean-library',1);q.onupgradeneeded=()=>q.result.createObjectStore('files',{keyPath:'id'});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+async function idbDo(mode,fn){const d=await openLib();return new Promise((res,rej)=>{const t=d.transaction('files',mode);const r=fn(t.objectStore('files'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+function recBody(rec){const {status,progress,...b}=rec;return b}
+async function libPut(rec){try{await idbDo('readwrite',st=>st.put(recBody(rec)))}catch(e){libMsg('이 브라우저에 자료를 보관하지 못했어요. 저장 공간이 부족하거나 비공개 창일 수 있어요. 이번 방문 동안은 쓸 수 있어요.',true)}}
+async function libDel(id){try{await idbDo('readwrite',st=>st.delete(id))}catch(e){}}
+
+// pdf.js: 워커 코드를 먼저 올려 두면 별도 워커 없이 이 페이지 안에서 돈다
 function loadScript(src){return new Promise((res,rej)=>{const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=()=>rej(new Error('script'));document.head.append(el)})}
 async function getPdfLib(){
   if(pdfLib)return pdfLib;
-  // 워커 코드를 먼저 올려 두면 pdf.js가 별도 워커 없이 이 페이지 안에서 돈다
   await loadScript(PDFJS+'pdf.worker.min.js');
   await loadScript(PDFJS+'pdf.min.js');
   pdfLib=window.pdfjsLib;pdfLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';
   return pdfLib;
 }
-async function getDoc(key){
-  if(pdfDocs[key])return pdfDocs[key];
-  const lib=await getPdfLib();
-  const data=new Uint8Array(await pdfFiles[key].arrayBuffer());
-  pdfDocs[key]=await lib.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
-  return pdfDocs[key];
+async function getDoc(rec){
+  if(pdfDocs[rec.id])return pdfDocs[rec.id];
+  const pl=await getPdfLib();
+  const data=new Uint8Array(await rec.blob.arrayBuffer());
+  pdfDocs[rec.id]=await pl.getDocument({data,isEvalSupported:false}).promise;
+  return pdfDocs[rec.id];
 }
-function renderSlots(){
-  $('#slots').innerHTML=SLOTS.map(sl=>{
-    const f=pdfFiles[sl.key],d=pdfDocs[sl.key];
-    return `<div class="slot">
-      <div class="slot-h"><b>${sl.label}</b><span class="fname">${f?esc(f.name)+(d?' · '+d.numPages+'쪽':''):'파일 없음'}</span><button type="button" class="small-btn" data-pick="${sl.key}">${f?'바꾸기':'PDF 고르기'}</button></div>
-      <div class="slot-r">
-        <input type="text" id="pg-${sl.key}" placeholder="쪽 예: 45-48" aria-label="${sl.label} 가져올 쪽" inputmode="numeric" ${f?'':'disabled'}>
-        <select id="tg-${sl.key}" aria-label="${sl.label} 넣을 칸" ${f?'':'disabled'}>${Object.entries(TARGETS).map(([k,[n]])=>`<option value="${k}"${k===sl.target?' selected':''}>${n} 칸으로</option>`).join('')}</select>
-        <button type="button" class="btn" data-imp="${sl.key}" ${f&&!pdfBusy?'':'disabled'}>가져오기</button>
-      </div></div>`}).join('');
+function pageText(items){
+  let t='';
+  for(const it of items){t+=it.str;if(it.hasEOL)t+='\n'}
+  return t.split('\n').map(l=>l.replace(/\s+/g,' ').trim()).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+// 한글이 거의 없으면 스캔본(사진)이거나 글자 정보가 깨진 쪽으로 본다
+function looksScanned(t){const h=(t.match(/[가-힣]/g)||[]).length;const all=t.replace(/\s/g,'').length;return h<15||h<all*0.25}
+
+// 종류 나누기: 파일 이름을 먼저 보고, 모르면 내용으로 짐작한다
+function guessByName(name){
+  const n=name.normalize('NFC');
+  if(/교사용|지도서|교사/.test(n))return 'teacher';
+  if(/(^|[^a-z])ox([^a-z]|$)|오엑스|O\s*X/i.test(n))return 'ox';
+  if(/문제|기출|모의|변형|평가|문항|시험|테스트|test|quiz/i.test(n))return 'questions';
+  if(/학원|강의|교재|프린트|자습서|해설|필기|노트/.test(n))return 'academy';
+  return null;
+}
+function guessByContent(rec){
+  const all=rec.pages.join('\n');
+  const ox=(all.match(/[(（]\s*[OX○×]?\s*[)）]/g)||[]).length;
+  const choice=(all.match(/①/g)||[]).length;
+  const teach=(all.match(/지도|교수|성취기준|학습 목표|평가 방법|수업/g)||[]).length;
+  if(ox>20&&ox>choice)return 'ox';
+  if(choice>30)return 'questions';
+  if(teach>15)return 'teacher';
+  return 'academy';
+}
+
+async function addFiles(files){
+  const pdfs=[...files].filter(f=>/pdf$/i.test(f.type)||/\.pdf$/i.test(f.name));
+  if(!pdfs.length){libMsg('PDF 파일만 넣을 수 있어요.',true);return}
+  for(const f of pdfs){
+    if(lib.some(r=>r.name===f.name&&r.blob&&r.blob.size===f.size)){libMsg(`${f.name}은 이미 자료함에 있어요.`);continue}
+    const role=guessByName(f.name);
+    const rec={id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),name:f.name,role:role||'academy',roleGuessed:!role,numPages:0,pages:[],scanned:[],blob:f,addedAt:new Date().toISOString(),status:'waiting',progress:0};
+    lib.push(rec);
+    libQueue=libQueue.then(()=>indexFile(rec)).catch(()=>{});
+  }
+  renderLib();
+}
+async function indexFile(rec){
+  if(!lib.includes(rec))return;
+  rec.status='reading';renderLib();
+  try{
+    const doc=await getDoc(rec);
+    rec.numPages=doc.numPages;rec.pages=[];rec.scanned=[];
+    for(let n=1;n<=doc.numPages;n++){
+      let t='';
+      try{const pg=await doc.getPage(n);t=pageText((await pg.getTextContent()).items);pg.cleanup()}catch(e){t=''}
+      rec.pages.push(t);rec.scanned.push(looksScanned(t));
+      rec.progress=n;
+      if(n%8===0||n===doc.numPages){renderLib();await tick0()}
+    }
+    if(rec.roleGuessed)rec.role=guessByContent(rec);
+    rec.status='ready';
+    await libPut(rec);
+    const sc=rec.scanned.filter(Boolean).length;
+    libMsg(`${rec.name}: ${rec.numPages}쪽을 읽었어요 · ${ROLES[rec.role]}${rec.roleGuessed?'(추정)':''}`+(sc>rec.numPages*0.5?' · 스캔본이라 AI로 읽어 둬야 찾을 수 있어요':''));
+  }catch(e){
+    rec.status='error';
+    libMsg(e&&e.message==='script'?'PDF 도구를 불러오지 못했어요. 새로고침한 뒤 다시 넣어 주세요.':(e&&e.name==='PasswordException'?`${rec.name}은 암호가 걸려 있어 열 수 없어요.`:`${rec.name}을 읽지 못했어요.`),true);
+  }
+  renderLib();renderManual();
+}
+function renderLib(){
+  const el=$('#libs');if(!el)return;
+  $('#libCount').textContent=lib.length?lib.length+'개 파일':'';
+  el.innerHTML=lib.map(r=>{
+    const sc=r.scanned.filter(Boolean).length;
+    const info=r.status==='reading'?`읽는 중 ${r.progress}/${r.numPages||'?'}쪽`:r.status==='waiting'?'차례 기다리는 중':r.status==='error'?'읽지 못했어요':`${r.numPages}쪽${sc?` · 글자 없는 쪽 ${sc}`:''}`;
+    const scanRow=r.status==='ready'&&sc>0&&sc>=r.numPages*0.3?`<div class="scan">스캔본 쪽은 AI가 읽어 둬야 찾을 수 있어요 (한 번에 40쪽까지, 사용량이 들어요)<input type="text" id="ocr-${r.id}" placeholder="쪽 예: 1-40" aria-label="${esc(r.name)} 읽어 둘 쪽"><button type="button" class="small-btn" data-ocr="${r.id}" ${pdfBusy?'disabled':''}>AI로 읽어 두기</button></div>`:'';
+    return `<li class="lib"><div class="nm"><b>${esc(r.name)}</b><small>${info}</small></div>
+      <select data-role="${r.id}" aria-label="${esc(r.name)} 종류">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r.role?' selected':''}>${v}${k===r.role&&r.roleGuessed?' (추정)':''}</option>`).join('')}</select>
+      <button type="button" class="small-btn" data-libdel="${r.id}">빼기</button>${scanRow}</li>`}).join('');
+}
+async function loadLibrary(){
+  // 불러오는 사이에 새로 넣은 파일은 그대로 둔다
+  let stored=[];
+  try{stored=(await idbDo('readonly',st=>st.getAll())||[]).map(r=>({...r,status:'ready',progress:r.numPages}))}catch(e){}
+  lib=[...stored,...lib.filter(r=>!stored.some(x=>x.id===r.id))];
+  // 지난 버전의 칸별 PDF가 있으면 자료함으로 옮긴다
+  try{
+    const old=await new Promise((res)=>{const q=indexedDB.open('korean-pdfs',1);q.onupgradeneeded=()=>q.result.createObjectStore('files');q.onsuccess=()=>{const d=q.result;const t=d.transaction('files');const out=[];const c=t.objectStore('files').openCursor();c.onsuccess=()=>{const cur=c.result;if(cur){out.push([cur.key,cur.value]);cur.continue()}else{d.close();res(out)}};c.onerror=()=>{d.close();res([])}};q.onerror=()=>res([])});
+    const map={teacher:'teacher',academy:'academy',questions:'questions',ox:'ox'};
+    const files=old.filter(([,v])=>v&&v.blob).map(([k,v])=>{const f=new File([v.blob],v.name||'자료.pdf',{type:'application/pdf'});f._role=map[k];return f});
+    if(files.length){
+      for(const f of files){if(!lib.some(r=>r.name===f.name)){await addFiles([f]);const rec=lib[lib.length-1];if(rec&&f._role){rec.role=f._role;rec.roleGuessed=false}}}
+      indexedDB.deleteDatabase('korean-pdfs');
+    }
+  }catch(e){}
+  renderLib();renderManual();
+}
+
+// 스캔본 쪽을 그림으로 그려 AI가 옮겨 적게 한다
+async function renderPage(doc,n){
+  const page=await doc.getPage(n);
+  const v0=page.getViewport({scale:1});
+  const vp=page.getViewport({scale:Math.min(2.5,1500/v0.width)});
+  const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+  const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+  await page.render({canvasContext:ctx,viewport:vp}).promise;
+  return await new Promise(res=>c.toBlob(res,'image/jpeg',.88));
+}
+async function ocrPages(rec,pages,say){
+  if(!sample||!canImages)throw {code:'images_unavailable'};
+  const doc=await getDoc(rec);
+  const per=Math.max(1,Math.min(4,canImages.maxCount||1));
+  const got={};
+  for(let i=0;i<pages.length;i+=per){
+    const grp=pages.slice(i,i+per);
+    say(`${rec.name} ${grp.join(', ')}쪽을 AI가 읽는 중이에요 (${Math.min(i+per,pages.length)}/${pages.length})`);
+    const imgs=[];for(const n of grp)imgs.push(await renderPage(doc,n));
+    const {text}=await sample(`첨부한 이미지 ${grp.length}장은 고등학교 국어 자료(${ROLES[rec.role]})의 ${grp.join(', ')}쪽이다. 차례대로 글자를 원문 그대로 옮겨 적는다.
+- 고치거나 요약하거나 설명을 덧붙이지 않는다. 맞춤법이 이상해 보여도 그대로 적는다.
+- 문단 사이는 빈 줄로 띄운다. 시는 행 구분을 지킨다.
+- 쪽 번호, 머리말·꼬리말, 워터마크는 뺀다.
+- 읽을 수 없는 글자는 □로 적는다. 그림·표는 [그림: 한 줄 설명]으로 적는다.
+- 각 쪽을 시작할 때 "=== N쪽 ===" 한 줄을 넣는다 (N은 위에 적은 쪽 번호).
+옮겨 적은 글만 출력한다.`,{images:imgs,modelTier:'default',cache:false});
+    const parts=text.split(/^===\s*(\d+)\s*쪽\s*===\s*$/m);
+    if(parts.length>1){for(let k=1;k<parts.length;k+=2)got[Number(parts[k])]=parts[k+1].trim()}
+    else got[grp[0]]=text.trim();
+  }
+  return got;
+}
+async function ocrIndex(id){
+  const rec=lib.find(r=>r.id===id);if(!rec||pdfBusy)return;
+  const pages=parsePages($('#ocr-'+id).value,rec.numPages);
+  if(!pages||!pages.length){libMsg(`읽어 둘 쪽을 적어 주세요. 1~${rec.numPages} 사이, 예: 1-40`,true);return}
+  const todo=pages.filter(n=>rec.scanned[n-1]);
+  if(!todo.length){libMsg('그 쪽들은 이미 글자가 있어요.');return}
+  if(todo.length>40){libMsg('한 번에 40쪽까지 읽어 둘 수 있어요. 공부할 단원만 골라 주세요.',true);return}
+  pdfBusy=true;renderLib();
+  try{
+    const got=await ocrPages(rec,todo,t=>libMsg(t));
+    let n=0;Object.entries(got).forEach(([k,t])=>{const i=Number(k)-1;if(i>=0&&i<rec.numPages&&t){rec.pages[i]=t;rec.scanned[i]=false;n++}});
+    await libPut(rec);
+    libMsg(`${rec.name} ${n}쪽을 읽어 뒀어요. AI가 읽은 글이라 지문은 원본과 대조해 주세요.`);
+  }catch(e){libMsg(errCopy(e).replace(' 이어서 하기를 눌러',' 다시 눌러'),true)}
+  finally{pdfBusy=false;renderLib()}
 }
 function parsePages(txt,max){
   const out=[];
@@ -941,109 +1106,190 @@ function parsePages(txt,max){
   }
   return out;
 }
-function pageText(items){
-  let t='';
-  for(const it of items){t+=it.str;if(it.hasEOL)t+='\n'}
-  return t.split('\n').map(l=>l.replace(/\s+/g,' ').trim()).join('\n').replace(/\n{3,}/g,'\n\n').trim();
-}
-// 한글이 거의 없으면 스캔본(사진)이거나 글자 정보가 깨진 쪽으로 본다
-function looksScanned(t){const h=(t.match(/[가-힣]/g)||[]).length;const all=t.replace(/\s/g,'').length;return h<15||h<all*0.25}
-async function renderPage(doc,n){
-  const page=await doc.getPage(n);
-  const v0=page.getViewport({scale:1});
-  const vp=page.getViewport({scale:Math.min(2.5,1500/v0.width)});
-  const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
-  const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
-  await page.render({canvasContext:ctx,viewport:vp}).promise;
-  return await new Promise(res=>c.toBlob(res,'image/jpeg',.88));
-}
-async function ocrPages(doc,pages,label){
-  if(!sample||!canImages)throw {code:'images_unavailable'};
-  const per=Math.max(1,Math.min(4,canImages.maxCount||1));
+
+/* ---------- 자료함에서 알아서 채우기 ---------- */
+// 1) 지문(또는 제목)으로 자료함의 모든 쪽에 점수를 매긴다
+// 2) 종류마다 점수 높은 쪽을 분량 안에서 골라 AI에게 보낸다
+// 3) AI가 지문·해석·OX·예시를 원문 그대로 골라 오면, 지문은 PDF 글자와 한 문장씩 대조한다
+function scorePages(query,passage){
+  const np=norm(passage);
+  let shingles=null,words=null;
+  if(np.length>=40){shingles=[];for(let i=0;i+12<=np.length;i+=6)shingles.push(np.slice(i,i+12))}
+  else{words=String(query).split(/\s+/).map(norm).filter(w=>w.length>=2);const whole=norm(query);if(whole.length>=3&&!words.includes(whole))words.push(whole)}
   const out=[];
-  for(let i=0;i<pages.length;i+=per){
-    const grp=pages.slice(i,i+per);
-    pdfMsg(`${label} ${grp.join(', ')}쪽은 글자 정보가 없어서 AI가 사진을 읽는 중이에요…`);
-    const imgs=[];for(const n of grp)imgs.push(await renderPage(doc,n));
-    const {text}=await sample(`첨부한 이미지 ${grp.length}장은 고등학교 국어 ${label}의 ${grp.join(', ')}쪽이다. 차례대로 글자를 원문 그대로 옮겨 적는다.
-- 고치거나 요약하거나 설명을 덧붙이지 않는다. 맞춤법이 이상해 보여도 그대로 적는다.
-- 문단 사이는 빈 줄로 띄운다. 시는 행 구분을 지킨다.
-- 쪽 번호, 머리말·꼬리말, 워터마크는 뺀다.
-- 읽을 수 없는 글자는 □로 적는다. 그림·표는 [그림: 한 줄 설명]으로 적는다.
-- 쪽이 바뀔 때마다 "=== N쪽 ===" 한 줄을 넣는다.
-옮겨 적은 글만 출력한다.`,{images:imgs,modelTier:'default',cache:false});
-    out.push(text.trim());
+  for(const rec of lib){
+    if(rec.status!=='ready')continue;
+    rec.pages.forEach((t,i)=>{
+      if(!t||rec.scanned[i])return;
+      const nt=norm(t);let sc=0;
+      if(shingles){for(const s of shingles)if(nt.includes(s))sc++;sc=sc/shingles.length*100;if(sc<4)sc=0}
+      else for(const w of words){let k=0,pos=0;while(k<10&&(pos=nt.indexOf(w,pos))!==-1){k++;pos+=w.length}sc+=k*(w.length>=4?3:1)}
+      if(sc>0)out.push({rec,n:i+1,score:sc});
+    });
   }
-  return out.join('\n\n');
+  return out;
 }
-async function importPdf(key){
+const BUDGET={teacher:9000,academy:5000,questions:3500,ox:2500};   // 종류별 글자 수
+function pickPages(scored){
+  const picked=[];
+  for(const role of Object.keys(BUDGET)){
+    const mine=scored.filter(x=>x.rec.role===role).sort((a,b)=>b.score-a.score);
+    if(!mine.length)continue;
+    const want=[];
+    const addP=(rec,n,score)=>{if(n>=1&&n<=rec.numPages&&!want.some(w=>w.rec===rec&&w.n===n)&&rec.pages[n-1]&&!rec.scanned[n-1])want.push({rec,n,score})};
+    mine.slice(0,4).forEach(x=>{
+      addP(x.rec,x.n,x.score);
+      // 교사용 교과서는 지문 바로 뒤에 해설이 이어지는 경우가 많다
+      if(role==='teacher'){addP(x.rec,x.n+1,x.score*.6);addP(x.rec,x.n-1,x.score*.4);addP(x.rec,x.n+2,x.score*.3)}
+    });
+    mine.slice(4,10).forEach(x=>addP(x.rec,x.n,x.score));
+    want.sort((a,b)=>b.score-a.score);
+    let used=0;
+    for(const w of want){const len=w.rec.pages[w.n-1].length;if(used+len>BUDGET[role]&&used>0)continue;used+=len;picked.push({...w,role})}
+  }
+  // 파일·쪽 순서로 되돌려 읽기 쉽게
+  return picked.sort((a,b)=>a.rec.name.localeCompare(b.rec.name)||a.n-b.n);
+}
+function pageBlock(p){return `<<${ROLES[p.role]} · ${p.rec.name} · ${p.n}쪽>>\n${p.rec.pages[p.n-1]}`}
+function autoPrompt(query,hasPassage,pages){
+  return `너는 고등학교 국어 내신 자료를 정리하는 조교다. 학생이 공부하려는 지문: "${query}".
+아래는 학생의 PDF 자료에서 찾은 관련 쪽들이다. 각 쪽 앞에 <<자료 종류 · 파일 이름 · 쪽>> 표시가 있다. PDF에서 뽑은 글이라 줄바꿈이 어긋나거나 날개 설명이 본문 사이에 끼어 있을 수 있다.
+
+${pages.map(pageBlock).join('\n\n')}
+
+# 할 일
+${hasPassage?'1. passage: 학생이 지문을 이미 갖고 있으니 빈 문자열로 둔다. passageFound는 자료에 이 지문이 있으면 true.':`1. passage: 교사용 교과서(없으면 다른 자료)에서 이 지문의 본문을 찾아 원문 그대로 옮긴다.
+   - 날개 설명, 학습 활동, 쪽 번호, 머리말, 각주, 어휘 풀이는 뺀다.
+   - 본문 글자는 하나도 고치거나 빼거나 바꾸지 않는다. PDF 때문에 끊긴 줄은 이어 붙인다.
+   - 문단 사이는 빈 줄로 띄운다. 시는 행 구분과 연 구분(빈 줄)을 지킨다.
+   - 본문이 여러 쪽에 걸치면 이어 붙인다. 자료에 본문이 없으면 지어내지 말고 빈 문자열로 두고 passageFound를 false로 한다.`}
+2. title: 짧은 제목 (작품명이나 글의 화제).
+3. kind: "독서", "현대시", "고전시가", "현대소설", "고전소설", "수필", "극·시나리오" 중 하나.
+4. notes: 이 지문의 해석·해설을 원문 그대로 발췌한다. 이 지문과 관계없는 내용은 넣지 않는다. 교사용 교과서에서 합쳐 4000자, 학원 교재에서 합쳐 3000자 이내로 중요한 것부터.
+5. ox: 이 지문에 대한 OX 문항을 원문 그대로. 정답이 따로 모여 있으면 문항 끝에 (O) 또는 (X)로 붙인다. 정답을 모르면 붙이지 않는다.
+6. examples: 이 지문으로 만든 문제 2~3개를 발문·<보기>·선지까지 원문 그대로. 정답을 알면 끝에 "정답: ③"처럼 붙인다.
+7. missing: 찾지 못한 자료가 있으면 한 문장으로. 없으면 빈 문자열.
+
+# 답 형식
+JSON 하나만 출력한다.
+{"title":"","kind":"","passageFound":true,"passage":"","notes":[{"source":"교사용 교과서","page":45,"text":""}],"ox":[{"page":12,"text":""}],"examples":[{"page":30,"text":""}],"missing":""}`;
+}
+function replaceAuto(sel,chunk){
+  const el=$(sel);const cur=el.value;const i=cur.indexOf(AUTO_MARK);
+  const mine=(i>=0?cur.slice(0,i):cur).replace(/\s+$/,'');
+  el.value=chunk?(mine?mine+'\n\n':'')+AUTO_MARK+'\n'+chunk:mine;
+}
+async function autoFill(){
   if(pdfBusy)return;
-  const sl=SLOTS.find(x=>x.key===key);
-  const target=$('#tg-'+key).value;
-  pdfBusy=true;renderSlotsKeep();
+  const query=$('#fQuery').value.trim();
+  const passage=$('#fPassage').value.trim();
+  if(!lib.some(r=>r.status==='ready')){pdfMsg('자료함이 비어 있어요. 목록 화면의 자료함에 PDF를 먼저 넣어 주세요.',true);return}
+  if(!query&&passage.length<40){pdfMsg('지문 이름이나 첫 구절을 적어 주세요.',true);return}
+  if(!sample){pdfMsg('claude.ai에서 열어야 자료를 골라 올 수 있어요.',true);return}
+  const scored=scorePages(query,passage);
+  if(!scored.length){pdfMsg(passage.length>=40?'자료함에서 이 지문이 나오는 쪽을 찾지 못했어요. 스캔본이면 자료함에서 AI로 읽어 두기를 먼저 해 주세요.':'자료함에서 찾지 못했어요. 지문의 첫 구절을 그대로 적어 보세요.',true);return}
+  let pages=pickPages(scored);
+  const label=query||$('#fTitle').value.trim()||'붙여 넣은 지문';
+  let prompt=autoPrompt(label,passage.length>=40,pages);
+  while(bytes(prompt)>MAX_BYTES&&pages.length>1){
+    // 가장 점수가 낮은 쪽부터 뺀다
+    let lo=0;pages.forEach((p,i)=>{if(p.score<pages[lo].score)lo=i});pages.splice(lo,1);
+    prompt=autoPrompt(label,passage.length>=40,pages);
+  }
+  const roleCount=r=>pages.filter(p=>p.role===r).length;
+  const found=Object.entries(ROLES).filter(([k])=>roleCount(k)).map(([k,v])=>`${v} ${roleCount(k)}쪽`).join(', ');
+  pdfBusy=true;$('#autoGo').disabled=true;
+  pdfMsg(`${found}을 찾았어요. AI가 필요한 부분을 골라 오는 중이에요… (보통 1분 안팎)`);
   try{
-    pdfMsg(`${sl.label} 여는 중…`);
-    const doc=await getDoc(key);
-    const pages=parsePages($('#pg-'+key).value,doc.numPages);
-    if(!pages||!pages.length){pdfMsg(`가져올 쪽을 적어 주세요. 1~${doc.numPages} 사이, 예: 45-48`,true);return}
-    if(pages.length>12){pdfMsg('한 번에 12쪽까지 가져올 수 있어요. 지문 하나에 필요한 쪽만 골라 주세요.',true);return}
-    const parts=[],scanned=[];
-    for(const n of pages){
-      pdfMsg(`${sl.label} ${n}쪽 읽는 중…`);
-      let t='';
-      try{const pg=await doc.getPage(n);t=pageText((await pg.getTextContent()).items)}catch(e){t=''}
-      if(looksScanned(t)){scanned.push(n);parts.push({n,t:null})}else parts.push({n,t})
+    const res=await sample.json(prompt,{modelTier:'default',cache:false,onText:({text})=>pdfMsg(`${found}을 찾았어요. 골라 오는 중 · ${text.length.toLocaleString()}자`)});
+    const notes=arr(res&&res.notes).filter(x=>x&&x.text);
+    const ox=arr(res&&res.ox).filter(x=>x&&x.text);
+    const ex=arr(res&&res.examples).filter(x=>x&&x.text);
+    if(!$('#fTitle').value.trim()&&res&&res.title)$('#fTitle').value=String(res.title).slice(0,80);
+    if(res&&KINDS.includes(res.kind)&&!passage){$('#fKind').value=res.kind;$('#fLines').checked=isPoem(res.kind)}
+    const tips=[];
+    if(!passage){
+      if(res&&res.passageFound&&String(res.passage||'').trim()){
+        const txt=String(res.passage).trim();
+        $('#fPassage').value=txt;
+        // 지문 대조: AI가 옮긴 문장이 PDF 글자에 그대로 있는지 (띄어쓰기 무시)
+        const src=norm(pages.map(p=>p.rec.pages[p.n-1]).join(''));
+        const units=splitUnits(txt,$('#fLines').checked);
+        const miss=units.filter(u=>!src.includes(norm(u.t)));
+        tips.push(miss.length?`지문 ${units.length}${$('#fLines').checked?'행':'문장'} 중 ${miss.length}개는 PDF 글자와 똑같지 않아요. 원본과 확인해 주세요: “${miss.slice(0,2).map(u=>u.t.slice(0,24)).join('…”, “')}…”`:`지문 ${units.length}${$('#fLines').checked?'행':'문장'}이 모두 PDF 글자와 똑같아요`);
+      }else tips.push('자료에서 지문 본문을 찾지 못했어요. 지문은 직접 붙여 넣어 주세요');
     }
-    let ocrText='';
-    if(scanned.length){
-      try{ocrText=await ocrPages(doc,scanned,sl.label)}
-      catch(e){pdfMsg(`${scanned.join(', ')}쪽은 글자 정보가 없는 스캔본인데, 사진을 읽지 못했어요. ${e&&e.code?errCopy(e):'직접 입력해 주세요.'}`,true);if(scanned.length===pages.length)return}
-    }
-    // 글자가 있는 쪽은 쪽 순서대로, 스캔본은 AI가 읽은 글을 뒤에 붙인다
-    let body=parts.filter(p=>p.t).map(p=>p.t).join('\n\n');
-    if(ocrText)body+=(body?'\n\n':'')+ocrText;
+    replaceAuto('#fNote',notes.map(n=>`[${String(n.source||'자료')} ${Number(n.page)||''}쪽]\n${String(n.text).trim()}`).join('\n\n'));
+    replaceAuto('#fOx',ox.map(o=>String(o.text).trim()).join('\n'));
+    replaceAuto('#fExamples',ex.map(e=>String(e.text).trim()).join('\n\n'));
+    const filled=[notes.length&&`해석 ${notes.length}곳`,ox.length&&`OX ${ox.length}개`,ex.length&&`예시 ${ex.length}문제`].filter(Boolean).join(', ');
+    if(res&&res.missing)tips.push(String(res.missing));
+    edUpdate();
+    pdfMsg(`채웠어요${filled?' · '+filled:''}. `+tips.join('. ')+'. 내용을 훑어본 뒤 문제 만들기를 눌러 주세요.');
+  }catch(e){pdfMsg(errCopy(e).replace(' 이어서 하기를 눌러',' 다시 눌러'),true)}
+  finally{pdfBusy=false;$('#autoGo').disabled=false}
+}
+
+/* 직접 쪽 골라 넣기 */
+function renderManual(){
+  const sel=$('#mFile');if(!sel)return;
+  const keep=sel.value;
+  const ready=lib.filter(r=>r.status==='ready');
+  sel.innerHTML=ready.length?ready.map(r=>`<option value="${r.id}">${esc(ROLES[r.role])} · ${esc(r.name)} (${r.numPages}쪽)</option>`).join(''):'<option value="">자료함이 비어 있어요</option>';
+  if(ready.some(r=>r.id===keep))sel.value=keep;
+  $('#mTarget').innerHTML=Object.entries(TARGETS).map(([k,[n]])=>`<option value="${k}">${n} 칸으로</option>`).join('');
+  const r=ready.find(x=>x.id===sel.value);
+  if(r)$('#mTarget').value={teacher:'passage',academy:'note',questions:'examples',ox:'ox'}[r.role];
+  $('#mGo').disabled=!ready.length;
+  $('#autoInfo').textContent=ready.length?`자료함 ${ready.length}개 파일`:'';
+}
+async function manualImport(){
+  if(pdfBusy)return;
+  const rec=lib.find(r=>r.id===$('#mFile').value);if(!rec)return;
+  const target=$('#mTarget').value;
+  const pages=parsePages($('#mPages').value,rec.numPages);
+  if(!pages||!pages.length){pdfMsg(`가져올 쪽을 적어 주세요. 1~${rec.numPages} 사이, 예: 45-48`,true);return}
+  const scanned=pages.filter(n=>rec.scanned[n-1]);
+  if(pages.length>60){pdfMsg('한 번에 60쪽까지 가져올 수 있어요.',true);return}
+  if(scanned.length>12){pdfMsg(`글자 없는 쪽이 ${scanned.length}개예요. AI가 읽어야 해서 한 번에 12쪽까지만 돼요.`,true);return}
+  pdfBusy=true;$('#mGo').disabled=true;
+  try{
+    let got={};
+    if(scanned.length){try{got=await ocrPages(rec,scanned,pdfMsg)}catch(e){pdfMsg(`${scanned.join(', ')}쪽은 스캔본인데 읽지 못했어요. ${errCopy(e)}`,true);if(scanned.length===pages.length)return}}
+    let body=pages.map(n=>rec.scanned[n-1]?(got[n]||''):rec.pages[n-1]).filter(Boolean).join('\n\n');
     if(target==='passage')body=body.replace(/^=== \d+쪽 ===\s*$/gm,'').replace(/\n{3,}/g,'\n\n').trim();
     const range=pages.length>1?`${pages[0]}–${pages[pages.length-1]}쪽`:`${pages[0]}쪽`;
-    const [tname,sel]=TARGETS[target];
-    const el=$(sel);
-    const chunk=target==='passage'?body:`[${sl.label} ${range}${scanned.length?' · 일부 AI가 사진에서 읽음':''}]\n${body}`;
+    const [tname,sel]=TARGETS[target];const el=$(sel);
+    const chunk=target==='passage'?body:`[${ROLES[rec.role]} ${range}${scanned.length?' · 일부 AI가 사진에서 읽음':''}]\n${body}`;
     el.value=el.value.trim()?el.value.replace(/\s+$/,'')+'\n\n'+chunk:chunk;
     edUpdate();
     const tips=[];
     if(target==='passage')tips.push('지문이 아닌 글(쪽 번호, 학습 활동, 날개 설명)은 지워 주세요');
-    if(scanned.length)tips.push(`${scanned.join(', ')}쪽은 AI가 사진에서 읽었으니 원본과 꼭 대조해 주세요`);
-    pdfMsg(`${range}를 ${tname} 칸에 넣었어요.`+(tips.length?' '+tips.join('. ')+'.':''));
-    el.focus();
-  }catch(e){
-    pdfMsg(e&&e.message==='script'?'PDF 도구를 불러오지 못했어요. 새로고침한 뒤 다시 시도해 주세요.':(e&&e.name==='PasswordException'?'암호가 걸린 PDF라 열 수 없어요.':'PDF를 읽지 못했어요. 다른 파일인지 확인해 주세요.'),true);
-  }finally{pdfBusy=false;renderSlotsKeep()}
+    if(scanned.length)tips.push(`${scanned.join(', ')}쪽은 AI가 사진에서 읽었으니 원본과 대조해 주세요`);
+    pdfMsg(`${range}을 ${tname} 칸에 넣었어요.`+(tips.length?' '+tips.join('. ')+'.':''));
+  }finally{pdfBusy=false;$('#mGo').disabled=false}
 }
-// 다시 그릴 때 입력해 둔 쪽 번호와 대상 칸을 지킨다
-function renderSlotsKeep(){
-  const keep={};SLOTS.forEach(sl=>{const p=$('#pg-'+sl.key),t=$('#tg-'+sl.key);if(p)keep[sl.key]=[p.value,t.value]});
-  renderSlots();
-  Object.entries(keep).forEach(([k,[p,t]])=>{$('#pg-'+k).value=p;$('#tg-'+k).value=t});
-}
-async function restorePdfs(){
-  const saved=await idbAll();
-  let n=0;
-  for(const sl of SLOTS){const v=saved[sl.key];if(v&&v.blob&&!pdfFiles[sl.key]){pdfFiles[sl.key]=new File([v.blob],v.name||sl.label+'.pdf',{type:'application/pdf'});n++}}
-  if(n){renderSlotsKeep();pdfMsg(`지난번에 고른 PDF ${n}개를 다시 불러왔어요.`)}
-}
-$('#slots').addEventListener('click',e=>{
-  const p=e.target.closest('[data-pick]');if(p){pdfPickFor=p.dataset.pick;$('#pdfFile').click();return}
-  const i=e.target.closest('[data-imp]');if(i)importPdf(i.dataset.imp);
+$('#libPick').addEventListener('click',()=>$('#libFile').click());
+$('#libFile').addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});
+const drop=$('#drop');
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)addFiles(e.dataTransfer.files)});
+$('#libs').addEventListener('change',async e=>{
+  const s=e.target.closest('[data-role]');if(!s)return;
+  const rec=lib.find(r=>r.id===s.dataset.role);if(!rec)return;
+  rec.role=s.value;rec.roleGuessed=false;renderLib();renderManual();
+  if(rec.status==='ready')await libPut(rec);
 });
-$('#pdfFile').addEventListener('change',async e=>{
-  const f=e.target.files[0];e.target.value='';
-  if(!f||!pdfPickFor)return;
-  if(!/pdf$/i.test(f.type)&&!/\.pdf$/i.test(f.name)){pdfMsg('PDF 파일만 고를 수 있어요.',true);return}
-  const key=pdfPickFor;pdfFiles[key]=f;delete pdfDocs[key];
-  renderSlotsKeep();
-  idbPut(key,f);
-  try{pdfMsg('PDF 여는 중…');const d=await getDoc(key);renderSlotsKeep();pdfMsg(`${f.name} · ${d.numPages}쪽을 열었어요. 가져올 쪽을 적어 주세요.`)}
-  catch(err){pdfMsg('PDF를 열지 못했어요. 파일이 손상됐거나 암호가 걸려 있는지 확인해 주세요.',true)}
+$('#libs').addEventListener('click',async e=>{
+  const d=e.target.closest('[data-libdel]');
+  if(d){const id=d.dataset.libdel;lib=lib.filter(r=>r.id!==id);delete pdfDocs[id];await libDel(id);renderLib();renderManual();libMsg('자료함에서 뺐어요.');return}
+  const o=e.target.closest('[data-ocr]');if(o)ocrIndex(o.dataset.ocr);
 });
+$('#autoGo').addEventListener('click',autoFill);
+$('#fQuery').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();autoFill()}});
+$('#mGo').addEventListener('click',manualImport);
+$('#mFile').addEventListener('change',renderManual);
 
 /* ---------- 이벤트 ---------- */
 $('#newSet').addEventListener('click',()=>openEditor());
@@ -1095,6 +1341,7 @@ $('#qs').addEventListener('input',e=>{const t=e.target.closest('[data-ess]');if(
     h+=`<span class="st" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px;opacity:${o}${z===3?';box-shadow:0 0 6px #fff':''}"></span>`}
   $('#stars').innerHTML=h;})();
 renderHome();
+loadLibrary();
 
 /* ---------- 연결 ---------- */
 (async()=>{
