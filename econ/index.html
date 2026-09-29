@@ -1,0 +1,322 @@
+<title>경제 튜터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Dancing+Script:wght@500&display=swap">
+<style>
+/* 복습 플래너·영단어 시험과 같은 노을 밤하늘. 한 가지 풍경으로 고정한 디자인이라 다크 모드를 따로 두지 않는다 */
+:root{
+  color-scheme:light;
+  --ink:#2E2A5A; --text:#332F5C; --muted:#625E8C; --line:#E1DDF6;
+  --glass:rgba(255,255,255,.84); --glass-edge:rgba(255,255,255,.72);
+  --pen:#4A4FB0; --pen-soft:#ECEAFB; --row:#F4F2FD;
+  --bad:#A33A5E; --bad-soft:#FBE1EA;
+  --serif:"Gowun Batang","AppleMyungjo",serif;
+  --sans:"Gowun Dodum",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --script:"Dancing Script",cursive;
+  --sky:linear-gradient(180deg,#2C3787 0%,#5566C9 22%,#9C93DE 40%,#E7B6D8 52%,#F4C9DD 55%,#B9AEE6 56%,#A89CE0 75%,#9A8FD8 100%);
+}
+*{box-sizing:border-box}
+html{background:#2C3787}
+body{background:var(--sky);background-attachment:fixed;min-height:100vh;color:var(--text);font:16px/1.6 var(--sans);padding-inline:16px;padding-block:28px 56px;overflow-x:hidden;margin:0}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.sky .sea{position:absolute;left:0;right:0;top:56%;bottom:0;background:repeating-linear-gradient(180deg,transparent 0 9px,rgba(255,255,255,.13) 10px,transparent 12px)}
+.sky .cloud{position:absolute;border-radius:50%;filter:blur(28px)}
+.sky .st{position:absolute;border-radius:50%;background:#fff}
+.sky .moon{position:absolute;right:12%;top:56px;width:56px;height:56px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px;position:relative;z-index:1}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:700;text-wrap:balance}
+h1{font-size:32px;line-height:1.2;color:#fff}
+.script{font-family:var(--script);font-size:26px;line-height:1;color:#FFE9F3}
+.sub{color:#E4E3FF;font-size:14px;margin-top:4px}
+.status{font-size:13px;color:#E4E3FF;min-height:20px;margin-top:6px}
+.status.err{color:#fff;background:rgba(163,58,94,.8);padding:4px 10px;border-radius:99px;display:inline-block}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+.panel{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--glass-edge);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 16px 40px rgba(44,55,135,.22)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:14px}
+.btn{background:var(--pen);color:#fff;border:0;border-radius:14px;padding:12px 20px;font-weight:700;min-height:48px;font-size:16px}
+.btn:disabled{opacity:.45;cursor:default}
+.ghost{background:#fff;border:1px solid #DAD5F5;border-radius:12px;padding:8px 14px;min-height:44px;color:var(--ink)}
+
+/* 모드·수준 */
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.seg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mode{border:1.5px solid #DAD5F5;background:#fff;border-radius:14px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:64px;text-align:center}
+.mode b{font-family:var(--serif);font-size:16px;color:var(--ink)}
+.mode small{font-size:11px;color:var(--muted);line-height:1.3}
+.mode[aria-pressed="true"]{background:var(--pen);border-color:var(--pen)}
+.mode[aria-pressed="true"] b,.mode[aria-pressed="true"] small{color:#fff}
+.opts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px;color:var(--muted)}
+.opts select{background:#fff;border:1px solid #DAD5F5;border-radius:10px;padding:6px 10px;min-height:40px;color:var(--ink)}
+
+/* 대화 */
+.chat{display:flex;flex-direction:column;gap:14px;min-height:120px}
+.msg{max-width:100%;border-radius:18px;padding:12px 16px;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--pen);color:#fff;border-bottom-right-radius:6px;max-width:85%;white-space:pre-wrap}
+.msg.ai{align-self:stretch;background:#fff;border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg.ai.err{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.msg .who{font-family:var(--script);font-size:16px;color:var(--pen);display:block;margin-bottom:2px}
+.msg.thinking .body{color:var(--muted)}
+.body h3{font-size:17px;color:var(--ink);margin:12px 0 4px}
+.body h4{font-size:15px;color:var(--ink);margin:10px 0 2px;font-family:var(--serif)}
+.body p{margin:6px 0}
+.body ul,.body ol{margin:6px 0;padding-left:22px}
+.body li{margin:2px 0}
+.body code{background:var(--pen-soft);border-radius:6px;padding:1px 6px;font-size:14px}
+.body pre{background:var(--row);border-radius:12px;padding:10px 12px;overflow-x:auto;font-size:14px;line-height:1.45;margin:8px 0}
+.body pre code{background:none;padding:0}
+.body .tbl{overflow-x:auto;margin:8px 0}
+.body table{border-collapse:collapse;font-size:14px;min-width:100%}
+.body th,.body td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+.body th{background:var(--row);color:var(--ink)}
+.body blockquote{margin:8px 0;padding:6px 12px;border-left:3px solid #CFC9EE;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin-top:6px}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--row);border:1px solid #E4E0F8;border-radius:99px;padding:8px 14px;min-height:40px;font-size:14px;color:var(--ink);text-align:left}
+.chip:hover{border-color:#CFC9EE}
+
+.composer{display:flex;gap:10px;align-items:flex-end}
+.composer textarea{flex:1;min-width:0;resize:none;border:1.5px solid #DAD5F5;border-radius:16px;padding:12px 14px;min-height:52px;max-height:200px;background:#fff;line-height:1.5}
+.empty{text-align:center;padding:10px 0 4px}
+.empty .big{font-family:var(--serif);font-size:20px;color:var(--ink)}
+.hidden{display:none!important}
+</style>
+
+<div class="sky" aria-hidden="true">
+  <div class="sea"></div>
+  <div class="cloud" style="left:-6%;top:40%;width:46%;height:150px;background:rgba(255,236,246,.5)"></div>
+  <div class="cloud" style="right:-8%;top:24%;width:40%;height:130px;background:rgba(238,226,255,.45)"></div>
+  <svg class="moon" viewBox="0 0 64 64"><defs><mask id="cres"><rect width="64" height="64" fill="#fff"/><circle cx="42" cy="24" r="22" fill="#000"/></mask></defs><circle cx="30" cy="32" r="22" fill="#FFF6D8" mask="url(#cres)"/></svg>
+  <div id="stars"></div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="script">economics tutor</div>
+    <h1>경제 튜터</h1>
+    <div class="sub">개념 설명 · 문제 풀이 · 시사 해설 · 퀴즈를 Claude가 도와줘요</div>
+    <div class="status" id="status" role="status">Claude에 연결하는 중…</div>
+  </header>
+
+  <section class="panel" aria-label="모드">
+    <div class="seg" id="modes"></div>
+    <div class="opts">
+      <label>수준 <select id="level">
+        <option value="hs">고등학교 경제</option>
+        <option value="intro" selected>대학 경제원론</option>
+        <option value="adv">중급·심화</option>
+      </select></label>
+      <label>답변 <select id="tier">
+        <option value="default" selected>보통</option>
+        <option value="quick">빠르게</option>
+        <option value="complex">깊게 생각</option>
+      </select></label>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="대화">
+    <div class="row">
+      <h2 style="font-size:20px;color:var(--ink)" id="modeTitle">개념 설명</h2>
+      <button class="ghost" id="clear" type="button">새 대화</button>
+    </div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="composer" id="form">
+      <textarea id="box" rows="1" placeholder="궁금한 경제 개념이나 문제를 적어 주세요" aria-label="질문"></textarea>
+      <button class="btn" id="send" type="submit">보내기</button>
+      <button class="btn hidden" id="stop" type="button" style="background:var(--bad)">멈춤</button>
+    </form>
+    <div class="note">Claude는 인터넷을 검색하지 않아요. 최신 지표·뉴스는 내용을 붙여 넣으면 그걸 바탕으로 해설해요.</div>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const MODES={
+  concept:{name:'개념 설명',hint:'원리부터 차근차근',ph:'궁금한 경제 개념을 적어 주세요',
+    rule:'학생이 묻는 경제 개념을 설명한다. 순서: ① 한 문장 직관 ② 정확한 정의 ③ 작동 원리(필요하면 그래프를 말로 묘사: 축, 곡선, 이동 방향) ④ 한국 또는 실생활 예시 ⑤ 자주 헷갈리는 점 ⑥ 3줄 요약.',
+    chips:['기회비용과 매몰비용 차이','수요의 가격탄력성','통화승수는 어떻게 작동해?','환율이 오르면 수출입은?','IS-LM 모형 쉽게','외부효과와 피구세']},
+  solve:{name:'문제 풀이',hint:'단계별 풀이',ph:'문제를 그대로 붙여 넣어 주세요',
+    rule:'학생이 준 경제 문제를 푼다. 먼저 주어진 조건과 구하는 것을 정리하고, 사용하는 개념·공식을 밝힌 뒤 계산을 한 단계씩 보여 준다. 수식은 `P = 100 - 2Q`처럼 인라인 코드로 쓴다. 마지막에 정답을 굵게 쓰고, 비슷한 유형에서 실수하기 쉬운 점을 한 줄 덧붙인다. 문제 조건이 모자라면 가정을 밝히고 푼다.',
+    chips:['수요 Qd=100-2P, 공급 Qs=20+2P일 때 균형과 소비자잉여','GDP 디플레이터 계산 방법','독점기업 이윤극대화: MR=MC 문제','본원통화 100, 지급준비율 10%일 때 통화량']},
+  news:{name:'시사 해설',hint:'뉴스를 원리로',ph:'기사 내용이나 궁금한 경제 이슈를 적어 주세요',
+    rule:'학생이 준 경제 뉴스나 이슈를 경제 원리로 해설한다. 순서: ① 무슨 일인지 한 줄 ② 관련 개념 ③ 인과 사슬(A → B → C) ④ 가계·기업·정부 입장에서 영향 ⑤ 반대 시각이나 불확실성. 학생이 붙여 넣은 자료가 없으면 네 지식이 최신이 아닐 수 있다고 짧게 밝히고, 구체적인 최신 수치는 지어내지 않는다.',
+    chips:['기준금리를 올리면 집값은 왜 영향을 받아?','원달러 환율 급등이 물가에 미치는 영향','스태그플레이션이란? 왜 무서워?','반도체 수출이 경상수지에 주는 영향']},
+  quiz:{name:'퀴즈',hint:'풀면서 익히기',ph:'주제를 적거나 답을 적어 주세요',
+    rule:'퀴즈 출제자 역할을 한다. 학생이 주제를 주면 그 주제로 문제를 딱 하나 낸다(객관식 5지선다 또는 짧은 계산). 정답은 아직 알려 주지 않는다. 학생이 답하면 채점(정답/오답)하고, 왜 그런지 해설한 다음, 조금 더 어려운 다음 문제를 하나 낸다.',
+    chips:['수요와 공급 퀴즈 내줘','국민소득(GDP) 퀴즈','통화정책 퀴즈','시장실패 퀴즈']}
+};
+const LEVELS={hs:'고등학교 경제 과목 수준(용어는 쉽게 풀어서)',intro:'대학 경제원론 수준',adv:'중급 미시·거시경제학 수준(수식과 모형을 적극 사용)'};
+const KEY='econ-tutor-v1';
+let state={mode:'concept',level:'intro',tier:'default',chats:{}};
+try{Object.assign(state,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
+const turns=()=>state.chats[state.mode]||(state.chats[state.mode]=[]);
+
+let sample=null,ctl=null,busy=false;
+function setStatus(t,err){const s=$('#status');s.textContent=t;s.classList.toggle('err',!!err)}
+
+function rules(){
+  const m=MODES[state.mode];
+  return `너는 한국어로 가르치는 친절하고 정확한 경제학 튜터다. 대상은 ${LEVELS[state.level]}의 학생이다.
+${m.rule}
+공통 규칙: 한국어로 답한다. 경제 용어는 처음 나올 때 괄호로 영어를 붙인다(예: 기회비용(opportunity cost)). Markdown(### 소제목, **굵게**, 목록, 표)을 쓴다. 확실하지 않은 것은 확실하지 않다고 말한다. 경제와 무관한 질문이면 짧게 답하고 경제 공부로 돌아오게 한다.
+아래는 학생과의 대화다.`;
+}
+
+/* ---------- 화면 ---------- */
+function renderModes(){
+  $('#modes').innerHTML=Object.entries(MODES).map(([k,m])=>
+    `<button class="mode" type="button" data-k="${k}" aria-pressed="${k===state.mode}"><b>${m.name}</b><small>${m.hint}</small></button>`).join('');
+  $('#modeTitle').textContent=MODES[state.mode].name;
+  $('#box').placeholder=MODES[state.mode].ph;
+}
+function renderChips(){
+  const c=$('#chips');
+  if(turns().length){c.innerHTML='';return}
+  c.innerHTML=MODES[state.mode].chips.map(t=>`<button class="chip" type="button">${esc(t)}</button>`).join('');
+}
+function renderChat(){
+  const ch=$('#chat');
+  const t=turns();
+  if(!t.length){
+    ch.innerHTML=`<div class="empty"><div class="big">무엇이든 물어보세요</div><div class="muted">아래 예시를 눌러도 돼요</div></div>`;
+  }else{
+    ch.innerHTML='';
+    for(const x of t)ch.append(bubble(x.role,x.content,x.err));
+  }
+  renderChips();
+}
+function bubble(role,text,err){
+  const d=document.createElement('div');
+  d.className='msg '+(role==='user'?'me':'ai')+(err?' err':'');
+  if(role==='user'){d.textContent=text;return d}
+  d.innerHTML='<span class="who">tutor</span><div class="body"></div>';
+  d.querySelector('.body').innerHTML=err?esc(text):md(text);
+  return d;
+}
+function scrollEnd(){const l=$('#chat').lastElementChild;l&&l.scrollIntoView({block:'end',behavior:'smooth'})}
+
+/* ---------- 간단한 Markdown ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function inline(s){
+  return esc(s)
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<i>$2</i>');
+}
+function md(src){
+  const lines=src.replace(/\r/g,'').split('\n');let out='',i=0;
+  while(i<lines.length){
+    const l=lines[i];
+    if(/^```/.test(l)){let b=[];i++;while(i<lines.length&&!/^```/.test(lines[i]))b.push(lines[i++]);i++;out+=`<pre><code>${esc(b.join('\n'))}</code></pre>`;continue}
+    if(/^\s*\|.*\|\s*$/.test(l)&&i+1<lines.length&&/^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i+1])&&lines[i+1].includes('-')){
+      const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>inline(c.trim()));
+      let h=cells(l);i+=2;let rows=[];
+      while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i]))rows.push(cells(lines[i++]));
+      out+=`<div class="tbl"><table><thead><tr>${h.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;continue}
+    let m;
+    if(m=l.match(/^(#{1,6})\s+(.*)/)){const tag=m[1].length<=3?'h3':'h4';out+=`<${tag}>${inline(m[2])}</${tag}>`;i++;continue}
+    if(/^\s*[-*]\s+/.test(l)){let it=[];while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i]))it.push(lines[i++].replace(/^\s*[-*]\s+/,''));out+=`<ul>${it.map(x=>`<li>${inline(x)}</li>`).join('')}</ul>`;continue}
+    if(/^\s*\d+[.)]\s+/.test(l)){let it=[];while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i]))it.push(lines[i++].replace(/^\s*\d+[.)]\s+/,''));out+=`<ol>${it.map(x=>`<li>${inline(x)}</li>`).join('')}</ol>`;continue}
+    if(/^>\s?/.test(l)){let b=[];while(i<lines.length&&/^>\s?/.test(lines[i]))b.push(lines[i++].replace(/^>\s?/,''));out+=`<blockquote>${inline(b.join(' '))}</blockquote>`;continue}
+    if(/^\s*(---|\*\*\*)\s*$/.test(l)){i++;continue}
+    if(!l.trim()){i++;continue}
+    let p=[];while(i<lines.length&&lines[i].trim()&&!/^(#{1,6}\s|```|\s*[-*]\s+|\s*\d+[.)]\s+|>|\s*\|)/.test(lines[i]))p.push(lines[i++]);
+    if(!p.length)p.push(lines[i++]);
+    out+=`<p>${p.map(inline).join('<br>')}</p>`;
+  }
+  return out;
+}
+
+/* ---------- 질문 보내기 ---------- */
+const COPY={
+  not_granted:'이 앱이 Claude를 쓰도록 허용하지 않았어요. 페이지를 새로고침하면 다시 물어봐요.',
+  sampling_disabled:'이 계정에서는 Claude를 쓸 수 없어요.',
+  rate_limited:'요청이 많아요. 잠시 뒤에 다시 보내 주세요.',
+  session_expired:'claude.ai에 다시 로그인해 주세요.',
+  refused:'이 질문에는 답할 수 없어요. 표현을 바꿔 물어봐 주세요.',
+  prompt_too_large:'대화가 너무 길어요. "새 대화"를 눌러 주세요.',
+  empty_completion:'답변이 비어 있어요. 질문을 조금 바꿔 보세요.'
+};
+async function ask(text){
+  text=text.trim();
+  if(!text||busy)return;
+  if(!sample){setStatus('Claude에 연결되지 않았어요. claude.ai에서 열어 주세요.',true);return}
+  const t=turns();
+  // 앞선 실패 답변은 대화 맥락에서 뺀다
+  while(t.length&&t[t.length-1].err)t.pop();
+  t.push({role:'user',content:text});save();
+  if(t.length===1)$('#chat').innerHTML='';
+  $('#chips').innerHTML='';
+  $('#chat').append(bubble('user',text));
+  const b=bubble('assistant','');b.classList.add('thinking');
+  const body=b.querySelector('.body');body.textContent='생각하는 중…';
+  $('#chat').append(b);scrollEnd();
+  busy=true;$('#send').classList.add('hidden');$('#stop').classList.remove('hidden');
+  ctl=new AbortController();
+  // 오래된 대화는 앞에서부터 덜어 낸다(규칙 턴은 항상 유지)
+  const hist=t.filter(x=>!x.err).slice(-20);
+  if(hist[0].role!=='user')hist.shift();
+  try{
+    const r=await sample([{role:'user',content:rules()},...hist],{
+      cache:false,signal:ctl.signal,modelTier:state.tier,
+      onText:({text})=>{b.classList.remove('thinking');body.innerHTML=md(text)}
+    });
+    body.innerHTML=md(r.text);
+    t.push({role:'assistant',content:r.text});
+    if(r.truncated)b.insertAdjacentHTML('beforeend','<div class="note">답변이 길어서 중간에 끊겼어요. "이어서 설명해 줘"라고 보내 보세요.</div>');
+    setStatus('');
+  }catch(e){
+    b.classList.remove('thinking');
+    if(e.code==='cancelled'){
+      if(e.text){body.innerHTML=md(e.text);t.push({role:'assistant',content:e.text})}else b.remove();
+    }else if(e.text&&e.code!=='refused'){
+      body.innerHTML=md(e.text);t.push({role:'assistant',content:e.text});
+      b.insertAdjacentHTML('beforeend',`<div class="note">중간에 끊겼어요. ${esc(COPY[e.code]||'다시 보내 주세요.')}</div>`);
+    }else{
+      const msg=COPY[e.code]||'연결에 문제가 있었어요. 다시 보내 주세요.';
+      b.classList.add('err');body.textContent=msg;
+      t.push({role:'assistant',content:msg,err:true});
+      if(e.code==='not_granted'||e.code==='sampling_disabled')setStatus(msg,true);
+    }
+  }finally{
+    save();busy=false;ctl=null;
+    $('#send').classList.remove('hidden');$('#stop').classList.add('hidden');
+    scrollEnd();
+  }
+}
+
+/* ---------- 이벤트 ---------- */
+$('#modes').addEventListener('click',e=>{
+  const k=e.target.closest('.mode')?.dataset.k;if(!k||busy)return;
+  state.mode=k;save();renderModes();renderChat();
+});
+$('#chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c)ask(c.textContent)});
+$('#level').value=state.level;$('#tier').value=state.tier;
+$('#level').onchange=e=>{state.level=e.target.value;save()};
+$('#tier').onchange=e=>{state.tier=e.target.value;save()};
+$('#clear').onclick=()=>{if(busy)return;state.chats[state.mode]=[];save();renderChat()};
+$('#stop').onclick=()=>ctl?.abort();
+const box=$('#box');
+const grow=()=>{box.style.height='auto';box.style.height=Math.min(box.scrollHeight,200)+'px'};
+box.addEventListener('input',grow);
+box.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#form').requestSubmit()}});
+$('#form').addEventListener('submit',e=>{e.preventDefault();const v=box.value;if(!v.trim()||busy)return;box.value='';grow();ask(v)});
+
+/* 별 */
+(function(){let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;let h='';
+  for(let i=0;i<50;i++){const x=(r()*100).toFixed(1),y=(r()*42).toFixed(1),z=r()<.15?3:(r()<.5?2:1.4),o=(.45+r()*.55).toFixed(2);
+    h+=`<span class="st" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px;opacity:${o}${z===3?';box-shadow:0 0 6px #fff':''}"></span>`}
+  $('#stars').innerHTML=h;})();
+
+renderModes();renderChat();
+(async()=>{
+  sample=await (window.claude?.use?.('sample')??null);
+  if(sample)setStatus('');
+  else setStatus('Claude에 연결할 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);
+})();
+</script>
