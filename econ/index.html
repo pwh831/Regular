@@ -50,8 +50,9 @@ textarea{resize:vertical;line-height:1.5;width:100%}
 @media (max-width:520px){.grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 
 /* 탭 */
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;background:rgba(255,255,255,.18);border-radius:18px;padding:6px}
-.tab{border:0;background:transparent;color:#fff;border-radius:13px;padding:10px 4px;min-height:48px;font-weight:700;font-size:15px}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;background:rgba(255,255,255,.18);border-radius:18px;padding:6px}
+.tab{border:0;background:transparent;color:#fff;border-radius:13px;padding:10px 2px;min-height:48px;font-weight:700;font-size:15px;word-break:keep-all}
+@media (max-width:420px){.tab{font-size:13px}}
 .tab[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(30,36,100,.2)}
 .tab .n{display:inline-block;min-width:20px;padding:0 6px;border-radius:99px;background:var(--bad);color:#fff;font-size:12px;margin-left:4px}
 
@@ -180,12 +181,14 @@ details.slide.hot>summary .t{color:var(--bad)}
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="sd">서답형</button>
     <button class="tab" role="tab" data-tab="mc">객관식</button>
+    <button class="tab" role="tab" data-tab="mq">암기</button>
     <button class="tab" role="tab" data-tab="sl">슬라이드</button>
     <button class="tab" role="tab" data-tab="wr">오답노트</button>
   </nav>
 
   <section id="v-sd" class="panel"></section>
   <section id="v-mc" class="panel hidden"></section>
+  <section id="v-mq" class="panel hidden"></section>
   <section id="v-sl" class="panel hidden"></section>
   <section id="v-wr" class="panel hidden"></section>
 </div>
@@ -518,10 +521,11 @@ function renderSetup(kind){
 }
 function renderTab(){
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
-  for(const k of ['sd','mc','sl','wr'])$('#v-'+k).classList.toggle('hidden',k!==tab);
+  for(const k of ['sd','mc','mq','sl','wr'])$('#v-'+k).classList.toggle('hidden',k!==tab);
   if(tab==='sd'||tab==='mc'){if(view[tab]==='busy')return;if(view[tab]==='paper'&&cur[tab])renderPaper(tab);else renderSetup(tab)}
   if(tab==='sl')renderSlides();
   if(tab==='wr')renderWrong();
+  if(tab==='mq')renderMemo();
 }
 for(const kind of ['sd','mc']){
   const v=$('#v-'+kind);
@@ -606,6 +610,143 @@ ${x.text}
 });
 function gotoSlide(p){tab='sl';renderTab();const d=document.getElementById('sl-'+p);if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}}
 
+/* ---------- 암기 퀴즈 ---------- */
+// memo/all.items: [{id,u(단원),c(분류),q,a,acc[],s(슬라이드),p(중요도 0~2)}], progress/memo.stats: {id:{c,x,last}}
+let memo=[],mstats={},MQ=null; // MQ: 진행 중인 퀴즈
+S.mq=Object.assign({unit:'',cat:'',imp:1,n:10,mode:'mix',weak:false},S.mq||{});
+const LONG=new Set(['목록','비교']);
+const nrm=s=>String(s||'').toLowerCase().replace(/[\s·.,()\[\]「」『』"'“”‘’~\-:;!?/→①②③④⑤|]/g,'');
+function autoCheck(it,ans){
+  const u=nrm(ans);if(!u)return false;
+  const cands=[it.a,...(it.acc||[]),it.a.split(/[(:,/]/)[0]].map(nrm).filter(Boolean);
+  return cands.some(c=>u===c||(c.length>=2&&u.includes(c))||(u.length>=2&&c.includes(u)&&u.length/c.length>=0.8));
+}
+function memoPool(){
+  const m=S.mq;return memo.filter(x=>(!m.unit||x.u===m.unit)&&(!m.cat||x.c===m.cat)&&x.p>=m.imp);
+}
+function weakScore(x){const s=mstats[x.id];if(!s)return 0.5;return (s.x+1)/(s.c+s.x+2)} // 틀린 비율이 높을수록 큼, 처음 보는 건 중간
+function buildQuiz(items){
+  return items.map(it=>{
+    const type=S.mq.mode==='mc'?'mc':S.mq.mode==='sa'?'sa':(LONG.has(it.c)||it.a.length>40?'mc':(Math.random()<.5?'sa':'mc'));
+    const q={id:it.id,type};
+    if(type==='mc'){
+      const same=memo.filter(y=>y.id!==it.id&&y.c===it.c&&y.a!==it.a);
+      const near=shuffle(same.filter(y=>y.u===it.u)),far=shuffle(same.filter(y=>y.u!==it.u));
+      const ds=[];for(const y of [...near,...far]){if(ds.length>=4)break;if(!ds.includes(y.a))ds.push(y.a)}
+      const ch=shuffle([it.a,...ds]);q.choices=ch;q.answer=ch.indexOf(it.a);
+    }
+    return q;
+  });
+}
+function startMemo(items){
+  if(!items.length){setStatus('조건에 맞는 항목이 없어요. 범위를 넓혀 주세요.',true);return}
+  MQ={qs:buildQuiz(items),i:0,res:{}};setStatus('');renderMemo();window.scrollTo({top:0,behavior:'smooth'});
+}
+function pickItems(){
+  let pool=memoPool();
+  pool=S.mq.weak?[...pool].sort((a,b)=>weakScore(b)-weakScore(a)||Math.random()-.5):shuffle(pool);
+  return pool.slice(0,S.mq.n);
+}
+let mSaveT=null;
+function saveMStats(){clearTimeout(mSaveT);mSaveT=setTimeout(async()=>{if(!db)return;try{await db.doc('progress/memo').set({stats:mstats,updatedAt:new Date().toISOString()})}catch(e){setStatus('암기 기록을 저장하지 못했어요.',true)}},800)}
+function record(id,ok){const s=mstats[id]||(mstats[id]={c:0,x:0});ok?s.c++:s.x++;s.last=ok?1:0;saveMStats()}
+const itemOf=id=>memo.find(x=>x.id===id);
+const starOf=p=>p===2?'<span style="color:var(--bad)">★★</span> ':p===1?'<span style="color:var(--gold)">★</span> ':'';
+
+function renderMemo(){
+  const v=$('#v-mq');
+  if(!memo.length){v.innerHTML='<h2>암기 퀴즈</h2><p class="muted" style="margin:0">암기 항목을 불러오지 못했어요.</p>';return}
+  if(MQ&&MQ.i<MQ.qs.length)return renderMemoQ();
+  if(MQ)return renderMemoEnd();
+  const m=S.mq,units=[...new Set(memo.map(x=>x.u))],cats=[...new Set(memo.map(x=>x.c))];
+  const seen=memo.filter(x=>mstats[x.id]).length,ok=memo.filter(x=>mstats[x.id]?.last===1).length;
+  const weak=memo.filter(x=>(mstats[x.id]?.x||0)>0).sort((a,b)=>weakScore(b)-weakScore(a)).slice(0,6);
+  v.innerHTML=`<h2>암기 퀴즈</h2>
+    <p class="muted" style="margin:-6px 0 0">암기 노트 PDF의 ${memo.length}개 항목으로 바로 문제를 내요. 객관식은 보기를 고르고, 주관식은 직접 써요. 단답형은 부분 점수가 없으니 정확한 명칭으로 쓰는 연습을 하세요.</p>
+    <div class="row"><span class="muted">풀어 본 항목 ${seen} / ${memo.length} · 최근에 맞힌 항목 ${ok}</span></div>
+    <div class="bar"><i style="width:${ok/memo.length*100}%"></i></div>
+    <div class="grid3">
+      <label class="f">단원<select data-mq="unit"><option value="">전체</option>${units.map(u=>`<option ${m.unit===u?'selected':''}>${esc(u)}</option>`).join('')}</select></label>
+      <label class="f">분류<select data-mq="cat"><option value="">전체</option>${cats.map(c=>`<option ${m.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      <label class="f">중요도<select data-mq="imp"><option value="2" ${m.imp==2?'selected':''}>★★만</option><option value="1" ${m.imp==1?'selected':''}>★ 이상</option><option value="0" ${m.imp==0?'selected':''}>전부(사소한 것 포함)</option></select></label>
+      <label class="f">방식<select data-mq="mode"><option value="mix" ${m.mode==='mix'?'selected':''}>섞기</option><option value="mc" ${m.mode==='mc'?'selected':''}>객관식만</option><option value="sa" ${m.mode==='sa'?'selected':''}>주관식만</option></select></label>
+      <label class="f">문항 수<select data-mq="n">${[10,20,30,50].map(n=>`<option value="${n}" ${m.n==n?'selected':''}>${n}문항</option>`).join('')}</select></label>
+      <label class="f">순서<select data-mq="weak"><option value="0" ${!m.weak?'selected':''}>무작위</option><option value="1" ${m.weak?'selected':''}>틀린 것 위주</option></select></label>
+    </div>
+    <div class="row"><span class="muted">해당 항목 ${memoPool().length}개</span><button class="btn" type="button" data-mact="start">시작</button></div>
+    ${weak.length?`<h2 style="font-size:17px">자주 틀린 항목</h2><ul class="list">${weak.map(x=>`<li class="item" style="display:block"><div>${starOf(x.p)}${esc(x.q)}</div><div style="font-weight:700;margin-top:2px">${esc(x.a)}</div><div class="muted" style="font-size:12px">맞힘 ${mstats[x.id].c} · 틀림 ${mstats[x.id].x} · ${pg(x.s)}</div></li>`).join('')}</ul>
+      <div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-mact="weak">자주 틀린 것만 풀기</button></div>`:''}`;
+}
+function renderMemoQ(){
+  const v=$('#v-mq'),q=MQ.qs[MQ.i],it=itemOf(q.id),r=MQ.res[MQ.i];
+  const done=r!=null;
+  let body='';
+  if(q.type==='mc'){
+    body=`<ul class="choices">${q.choices.map((c,k)=>{let cls='';if(done){if(k===q.answer)cls='right';else if(k===r.pick)cls='wrong'}
+      return `<li><button class="choice ${cls}" type="button" data-mk="${k}" ${done?'disabled':''}><span class="k">${k+1}</span><span>${esc(c)}</span></button></li>`}).join('')}</ul>`;
+  }else{
+    body=`<form id="mq-form" class="composer"><textarea id="mq-ans" rows="${LONG.has(it.c)?4:1}" placeholder="${LONG.has(it.c)?'빠짐없이 써 보세요':'정확한 명칭으로'}" ${done?'disabled':''}>${esc(r?.text||'')}</textarea>${done?'':'<button class="btn" type="submit">확인</button>'}</form>
+      ${done?'':'<div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-mact="giveup">모르겠어요</button></div>'}`;
+  }
+  let fb='';
+  if(done){
+    const cls=r.ok?'ok':'bad';
+    fb=`<div class="explain ${cls}"><span class="mark ${cls}">${r.ok?'정답':'오답'}</span>${r.note?` · ${esc(r.note)}`:''}
+      <div style="margin-top:4px"><b>정답</b> ${esc(it.a)}</div>${r.fb?`<div class="md">${md(r.fb)}</div>`:''}
+      <div style="margin-top:6px"><button class="src" type="button" data-goto="${it.s}">PPT ${pg(it.s)} 보기</button></div></div>
+      ${q.type==='sa'&&!r.ok&&!r.gaveUp?`<div class="row" style="justify-content:flex-end">${sample&&LONG.has(it.c)?'<button class="ghost" type="button" data-mact="claude">Claude에게 채점받기</button>':''}<button class="ghost" type="button" data-mact="override">맞았어요 (표기만 달라요)</button></div>`:''}
+      <div class="row" style="justify-content:flex-end"><button class="btn" type="button" data-mact="next">${MQ.i+1<MQ.qs.length?'다음':'결과 보기'}</button></div>`;
+  }
+  const nOk=Object.values(MQ.res).filter(x=>x.ok).length;
+  v.innerHTML=`<div class="row"><button class="ghost" type="button" data-mact="quit">← 그만하기</button><span class="muted">${MQ.i+1} / ${MQ.qs.length} · 맞힘 ${nOk}</span></div>
+    <div class="bar"><i style="width:${(MQ.i+(done?1:0))/MQ.qs.length*100}%"></i></div>
+    <div class="muted" style="font-size:13px">${esc(it.u)} · ${esc(it.c)} · ${q.type==='mc'?'객관식':'주관식'}</div>
+    <div style="font-family:var(--serif);font-weight:700;font-size:20px;color:var(--ink);line-height:1.4">${starOf(it.p)}${esc(it.q)}</div>
+    ${body}${fb}`;
+  if(!done&&q.type==='sa')setTimeout(()=>$('#mq-ans')?.focus(),0);
+}
+function renderMemoEnd(){
+  const v=$('#v-mq'),n=MQ.qs.length,res=MQ.qs.map((q,i)=>({q,r:MQ.res[i]}));
+  const ok=res.filter(x=>x.r?.ok).length,wrong=res.filter(x=>!x.r?.ok);
+  v.innerHTML=`<h2>결과</h2><div class="score"><b>${ok}</b><span>/ ${n} 정답</span></div>
+    ${wrong.length?`<h2 style="font-size:17px">틀린 항목</h2><ul class="list">${wrong.map(({q})=>{const it=itemOf(q.id);return `<li class="item" style="display:block"><div>${starOf(it.p)}${esc(it.q)}</div><div style="font-weight:700;margin-top:2px">${esc(it.a)}</div><div class="muted" style="font-size:12px">${pg(it.s)}</div></li>`}).join('')}</ul>`:'<p class="muted" style="margin:0">모두 맞혔어요!</p>'}
+    <div class="row" style="justify-content:flex-end">${wrong.length?'<button class="ghost" type="button" data-mact="retrywrong">틀린 것만 다시</button>':''}<button class="ghost" type="button" data-mact="quit">설정으로</button><button class="btn" type="button" data-mact="again">새로 풀기</button></div>`;
+}
+function answerMemo(res){MQ.res[MQ.i]=res;record(MQ.qs[MQ.i].id,res.ok);renderMemoQ()}
+async function claudeGrade(){
+  const q=MQ.qs[MQ.i],it=itemOf(q.id),r=MQ.res[MQ.i];if(!needClaude()||!r)return;
+  r.note='Claude가 채점하는 중…';renderMemoQ();
+  try{
+    const j=await sample.json(`고등학교 「경제」 암기 확인 문제 채점. 학생 답이 정답의 핵심 요소를 모두 담았는지 본다. 표현이 달라도 뜻이 같으면 인정, 빠진 요소가 있으면 오답.
+문제: ${it.q}
+정답: ${it.a}
+학생 답: ${r.text}
+JSON만: {"ok":true/false,"got":"맞힌 요소","missing":"빠진 요소","feedback":"한두 문장"}`,{cache:false,modelTier:'quick'});
+    const was=r.ok;r.ok=!!j?.ok;r.note=r.ok?'Claude 채점: 인정':'Claude 채점';r.fb=[j?.feedback,j?.missing?`**빠진 것:** ${j.missing}`:''].filter(Boolean).join('\n');
+    if(r.ok!==was){const s=mstats[it.id];if(s){if(r.ok){s.x=Math.max(0,s.x-1);s.c++}else{s.c=Math.max(0,s.c-1);s.x++}s.last=r.ok?1:0;saveMStats()}}
+  }catch(e){r.note='';if(e?.code!=='cancelled')setStatus(errMsg(e),true)}
+  renderMemoQ();
+}
+$('#v-mq').addEventListener('change',e=>{const k=e.target.dataset.mq;if(!k)return;const v=e.target.value;S.mq[k]=k==='n'||k==='imp'?+v:k==='weak'?v==='1':v;saveLocal();renderMemo()});
+$('#v-mq').addEventListener('submit',e=>{e.preventDefault();const t=$('#mq-ans')?.value||'';if(!t.trim())return;const it=itemOf(MQ.qs[MQ.i].id);
+  const ok=!LONG.has(it.c)&&autoCheck(it,t);answerMemo({text:t,ok,note:LONG.has(it.c)&&!ok?'목록형은 직접 비교하거나 Claude에게 채점받으세요':''})});
+$('#v-mq').addEventListener('keydown',e=>{if(e.target.id==='mq-ans'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!LONG.has(itemOf(MQ.qs[MQ.i].id)?.c)){e.preventDefault();$('#mq-form').requestSubmit()}});
+$('#v-mq').addEventListener('click',e=>{
+  const k=e.target.closest('[data-mk]');
+  if(k&&MQ&&MQ.res[MQ.i]==null){const q=MQ.qs[MQ.i],pick=+k.dataset.mk;answerMemo({pick,ok:pick===q.answer});return}
+  const g=e.target.closest('[data-goto]');if(g)return gotoSlide(+g.dataset.goto);
+  const a=e.target.closest('[data-mact]')?.dataset.mact;if(!a)return;
+  if(a==='start')return startMemo(pickItems());
+  if(a==='weak')return startMemo(memo.filter(x=>(mstats[x.id]?.x||0)>0).sort((a,b)=>weakScore(b)-weakScore(a)).slice(0,S.mq.n));
+  if(a==='quit'){MQ=null;return renderMemo()}
+  if(a==='next'){MQ.i++;renderMemo();return window.scrollTo({top:0})}
+  if(a==='giveup')return answerMemo({text:$('#mq-ans')?.value||'',ok:false,gaveUp:true});
+  if(a==='override'){const r=MQ.res[MQ.i],s=mstats[MQ.qs[MQ.i].id];if(r&&!r.ok){r.ok=true;r.note='직접 인정';if(s){s.x=Math.max(0,s.x-1);s.c++;s.last=1;saveMStats()}renderMemoQ()}return}
+  if(a==='claude')return claudeGrade();
+  if(a==='retrywrong')return startMemo(MQ.qs.filter((q,i)=>!MQ.res[i]?.ok).map(q=>itemOf(q.id)));
+  if(a==='again')return startMemo(pickItems());
+});
+
 /* ---------- 오답노트 ---------- */
 function wrongList(){
   const out=[];
@@ -648,12 +789,14 @@ renderTab();
   if(sample)imgCaps=(await sample.limits().catch(()=>null))?.images||null;
   if(!db){setStatus('저장소에 연결할 수 없어요. claude.ai에서 열어 주세요.',true);return}
   try{
-    const [m,r,x,p]=await Promise.all([db.collection('materials').get(),db.collection('reference').get(),db.collection('exams').orderBy('createdAt','desc').limit(200).get(),db.doc('progress/main').get()]);
+    const [m,r,x,p,mm,mp]=await Promise.all([db.collection('materials').get(),db.collection('reference').get(),db.collection('exams').orderBy('createdAt','desc').limit(200).get(),db.doc('progress/main').get(),db.doc('memo/all').get(),db.doc('progress/memo').get()]);
     // 정리본 전체는 materials/all 한 문서에 slides 배열로 들어 있다
     slides=m.docs.flatMap(y=>{const d=y.data();return Array.isArray(d?.slides)?d.slides:[d]}).filter(y=>y&&y.page).sort((a,b)=>a.page-b.page);
     for(const y of r.docs){if(y.id==='style')ref.style=y.data().text||'';if(y.id==='past-2025-1')ref.past=y.data()}
     exams=x.docs.map(y=>({...y.data(),id:y.id})).filter(y=>Array.isArray(y.questions)&&(y.kind==='sd'||y.kind==='mc'));
     if(p.exists)studied=new Set(p.data().studied||[]);
+    if(mm.exists)memo=mm.data().items||[];
+    if(mp.exists)mstats=mp.data().stats||{};
     S.sel=S.sel.filter(n=>slides.some(y=>y.page===n));
     setStatus(sample?'':'Claude에 연결할 수 없는 화면이에요. 문제 만들기와 채점은 claude.ai에서 돼요.',!sample);
   }catch(e){setStatus('자료를 불러오지 못했어요. 새로고침해 주세요.',true)}
