@@ -156,6 +156,8 @@ details.slide>summary .ok{color:var(--ok);font-size:13px;white-space:nowrap}
 details.slide .notes{margin:0 0 10px;padding-left:18px;font-size:15px}
 details.slide .notes li{margin:3px 0}
 details.slide[open]{padding-bottom:14px}
+details.slide.hot{border:2px solid var(--bad);background:var(--bad-soft)}
+details.slide.hot>summary .t{color:var(--bad)}
 .qq{display:flex;flex-direction:column;gap:8px;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
 </style>
 
@@ -208,7 +210,7 @@ function setStatus(t,err){const s=$('#status');s.textContent=t;s.classList.toggl
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const CIRC=['①','②','③','④','⑤'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const pg=n=>'p'+String(n).padStart(2,'0');
+const pg=n=>'#'+String(n).padStart(3,'0');
 const fmt=n=>String(Math.round(n*10)/10);
 
 /* ---------- 간단한 Markdown ---------- */
@@ -253,21 +255,38 @@ const errMsg=e=>COPY[e?.code]||'연결에 문제가 있었어요. 다시 해 주
 function needClaude(){if(!sample){setStatus('Claude에 연결되지 않았어요. claude.ai에서 열어 주세요.',true);return false}return true}
 
 /* ---------- 슬라이드 자료 ---------- */
-function selSlides(){const s=new Set(S.sel);return S.sel.length?slides.filter(x=>s.has(x.page)):slides}
-function slideText(list){return list.map(x=>`[${pg(x.page)} · ${x.unit} · ${x.title}${x.prio?' · 선생님 강조 후보':''}]\n${x.text}`).join('\n\n')}
+// 고른 슬라이드(없으면 전부)를 보낸다. 전체 정리본은 약 5만 자라 한도 안에 들어가고, 한도는 나중에 자료가 늘 때를 위한 안전장치
+const POOL_CHARS=80000;
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function selSlides(avoid){
+  const s=new Set(S.sel),skip=new Set(avoid||[]);
+  let base=S.sel.length?slides.filter(x=>s.has(x.page)):slides;
+  const fresh=base.filter(x=>!skip.has(x.page));if(fresh.length>=4)base=fresh;
+  const order=[...shuffle(base.filter(x=>x.hot)),...shuffle(base.filter(x=>x.prio&&!x.hot)),...shuffle(base.filter(x=>!x.prio))];
+  const out=[];let n=0;
+  for(const x of order){const c=x.text.length+x.title.length+30;if(out.length&&n+c>POOL_CHARS)continue;out.push(x);n+=c}
+  return out.sort((a,b)=>a.page-b.page);
+}
+function slideText(list){return list.map(x=>`[${pg(x.page)} · ${x.unit}${x.tb?` · 교과서 ${x.tb}쪽`:''} · ${x.title}${x.hot?' · 선생님이 "시험에 낼거야"라고 적은 슬라이드':x.prio?' · 직접 추린 출제 후보':''}]\n${x.text}`).join('\n\n')}
 function recentPages(kind,n){const out=new Set();exams.filter(e=>e.kind===kind).slice(0,n).forEach(e=>e.questions.forEach(q=>(q.slides||[]).forEach(p=>out.add(p))));return[...out]}
+const openU=new Set(); // 펼쳐 둔 단원 (다시 그려도 유지)
 function pickerHtml(){
   const sel=new Set(S.sel.length?S.sel:[]);const units=[...new Set(slides.map(x=>x.unit))];
   if(!slides.length)return `<p class="muted" style="margin:0">슬라이드 자료가 아직 없어요.</p>`;
-  return `<div class="row"><span class="muted">출제 범위 슬라이드 · ${S.sel.length?S.sel.length+'장 고름':'전체 '+slides.length+'장'}</span>
+  return `<div class="row"><span class="muted">출제 범위 · ${S.sel.length?S.sel.length+'장 고름':'전체 '+slides.length+'장'}</span>
     <span><button class="ghost" type="button" data-pick="all">전체</button> <button class="ghost" type="button" data-pick="prio">★만</button></span></div>
-    <div class="slides-pick">${units.map(u=>`<div class="unit"><div class="unit-h">${esc(u)}</div><div class="chips">${slides.filter(x=>x.unit===u).map(x=>
-      `<button class="chip ${x.prio?'prio':''}" type="button" data-pg="${x.page}" aria-pressed="${sel.has(x.page)}"><span class="pg">${pg(x.page)}</span>${esc(x.title)}</button>`).join('')}</div></div>`).join('')}</div>
-    <div class="note">아무것도 안 고르면 전체에서 내요. ★는 직접 추린 슬라이드예요.</div>`;
+    <div class="slides-pick">${units.map(u=>{const us=slides.filter(x=>x.unit===u),k=us.filter(x=>sel.has(x.page)).length;
+      return `<details class="unit" data-u="${esc(u)}" ${openU.has(u)?'open':''}><summary class="unit-h">${esc(u)} <span class="muted">(${k?k+' / ':''}${us.length}장)</span></summary>
+      <div class="row" style="justify-content:flex-start;margin:4px 0"><button class="chip" type="button" data-unit="${esc(u)}">${k===us.length?'이 단원 빼기':'이 단원 전부'}</button></div>
+      <div class="chips">${us.map(x=>`<button class="chip ${x.prio?'prio':''}" type="button" data-pg="${x.page}" aria-pressed="${sel.has(x.page)}"><span class="pg">${pg(x.page)}</span>${esc(x.title)}</button>`).join('')}</div></details>`}).join('')}</div>
+    <div class="note">아무것도 안 고르면 PPT 전체에서 내요(최근에 쓴 슬라이드는 피해요). ★는 직접 추린 슬라이드, 빨간 테두리는 선생님이 "시험에 낼거야"라고 한 슬라이드예요.</div>`;
 }
 function onPick(e){
   const c=e.target.closest('.chip[data-pg]');
   if(c){const p=+c.dataset.pg;S.sel=S.sel.includes(p)?S.sel.filter(x=>x!==p):[...S.sel,p];saveLocal();renderTab();return true}
+  const un=e.target.closest('[data-unit]');
+  if(un){const us=slides.filter(x=>x.unit===un.dataset.unit).map(x=>x.page),all=us.every(p=>S.sel.includes(p));
+    S.sel=all?S.sel.filter(p=>!us.includes(p)):[...new Set([...S.sel,...us])];saveLocal();renderTab();return true}
   const b=e.target.closest('[data-pick]');
   if(b){S.sel=b.dataset.pick==='prio'?slides.filter(x=>x.prio).map(x=>x.page):[];saveLocal();renderTab();return true}
   return false;
@@ -286,7 +305,7 @@ function answered(ex,i){const q=ex.questions[i],a=ex.answers?.[i];return q.type=
 function pastSeodap(){const t=ref.past?.text||'';const k=t.indexOf('[ 서답형 1]');return k>=0?t.slice(k):''}
 function pastPptMc(){const t=ref.past?.text||'';const a=t.indexOf('14. '),b=t.indexOf('□ 서답형');return a>=0&&b>a?t.slice(a,b):''}
 function sdPrompt(){
-  const list=selSlides(),avoid=recentPages('sd',2);
+  const avoid=recentPages('sd',2),list=selSlides(avoid);
   return `너는 한국 고등학교 2학년 「경제」 지필고사 서답형 문항을 내는 교사다. 아래 선생님의 출제 방식을 그대로 따라, 수업 PPT 슬라이드 내용으로 서답형 4문항을 만든다.
 
 ${ref.style}
@@ -316,7 +335,7 @@ ${avoid.length?`- 최근 서답형에 이미 쓴 슬라이드(${avoid.map(pg).jo
 ]}`;
 }
 function mcPrompt(n){
-  const list=selSlides(),avoid=recentPages('mc',2);
+  const avoid=recentPages('mc',2),list=selSlides(avoid);
   return `너는 한국 고등학교 2학년 「경제」 지필고사 객관식을 내는 교사다. 이 선생님은 객관식 대부분을 학평·모평 기출로 내고, 2~3문항만 수업 PPT의 사소한 슬라이드(뉴스 캡처, AI 답변 스크린샷, 통계 그래프, 곁가지 교양)에서 그대로 낸다. 그 PPT 출제 문항을 연습용으로 ${n}문항 만든다.
 
 [작년 실제 PPT 출제 문항 예시]
@@ -523,24 +542,39 @@ for(const kind of ['sd','mc']){
   });
   v.addEventListener('input',e=>{const ta=e.target.closest('textarea[data-es]'),ex=cur[kind];if(!ta||!ex)return;const i=+ta.dataset.es;ex.answers[i]=ta.value;v.querySelector(`[data-jump="${i}"]`)?.classList.toggle('done',!!ta.value.trim());updateLeft(kind);saveSoon(ex)});
   v.addEventListener('change',e=>{const s=e.target.dataset.set;if(s){S[s]=s==='nMc'?+e.target.value:e.target.value;saveLocal()}});
+  v.addEventListener('toggle',e=>{const d=e.target;if(d.matches?.('details.unit[data-u]')){d.open?openU.add(d.dataset.u):openU.delete(d.dataset.u)}},true);
 }
 
 /* ---------- 슬라이드 ---------- */
 const quick={}; // page -> {loading} | {qs:[], picks:{}}
+const SF={unit:'',only:'all',q:''}; // 슬라이드 탭 거르기
 function renderSlides(){
   const v=$('#v-sl'),n=slides.filter(x=>studied.has(x.page)).length;
-  const units=[...new Set(slides.map(x=>x.unit))];
+  const q=SF.q.trim().toLowerCase();
+  const shown=slides.filter(x=>(!SF.unit||x.unit===SF.unit)&&(SF.only==='all'||(SF.only==='prio'&&x.prio)||(SF.only==='todo'&&!studied.has(x.page)))&&(!q||(x.title+' '+x.text).toLowerCase().includes(q)));
+  const units=[...new Set(shown.map(x=>x.unit))];
+  const had=document.activeElement?.id==='sl-q';
   v.innerHTML=`<div class="row"><h2>슬라이드 ${slides.length}장</h2><span class="muted">외운 슬라이드 ${n} / ${slides.length}</span></div>
     <div class="bar"><i style="width:${slides.length?n/slides.length*100:0}%"></i></div>
     <p class="muted" style="margin:0">선생님은 사소한 슬라이드에서도 내요. 슬라이드를 열어 읽고 "확인 문제"로 세부까지 외웠는지 확인하세요.</p>
-    ${units.map(u=>`<h2 style="font-size:17px;margin-top:6px">${esc(u)}</h2>${slides.filter(x=>x.unit===u).map(x=>{
+    <div class="opts"><select id="sl-unit" aria-label="단원"><option value="">모든 단원</option>${[...new Set(slides.map(x=>x.unit))].map(u=>`<option ${SF.unit===u?'selected':''}>${esc(u)}</option>`).join('')}</select>
+      <select id="sl-only" aria-label="보기"><option value="all">전부</option><option value="prio" ${SF.only==='prio'?'selected':''}>★만</option><option value="todo" ${SF.only==='todo'?'selected':''}>아직 안 외운 것</option></select>
+      <input id="sl-q" type="search" placeholder="검색 (예: 탄력성)" value="${esc(SF.q)}" style="flex:1;min-width:140px;background:#fff;border:1.5px solid #DAD5F5;border-radius:10px;padding:6px 10px;min-height:40px"></div>
+    <div class="muted">${shown.length}장</div>
+    ${units.map(u=>`<h2 style="font-size:17px;margin-top:6px">${esc(u)}</h2>${shown.filter(x=>x.unit===u).map(x=>{
       const q=quick[x.page];
-      return `<details class="slide" id="sl-${x.page}" ${q?'open':''}><summary><span class="pg">${pg(x.page)}</span><span class="t">${esc(x.title)}${x.prio?' <span style="color:var(--gold)">★</span>':''}</span>${studied.has(x.page)?'<span class="ok">✓ 외움</span>':''}</summary>
+      return `<details class="slide${x.hot?' hot':''}" id="sl-${x.page}" data-p="${x.page}" ${q||openS.has(x.page)?'open':''}><summary><span class="pg">${pg(x.page)}</span><span class="t">${esc(x.title)}${x.prio?' <span style="color:var(--gold)">★</span>':''}${x.tb?` <span class="muted" style="font-weight:400;font-size:12px">교과서 ${x.tb}쪽</span>`:''}</span>${studied.has(x.page)?'<span class="ok">✓ 외움</span>':''}</summary>
         <ul class="notes">${x.text.split('\n').map(l=>`<li>${inline(l.replace(/^[-·]\s*/,''))}</li>`).join('')}</ul>
         <div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-quiz="${x.page}" ${q?.loading?'disabled':''}>${q?.loading?'만드는 중…':q?.qs?'새 확인 문제':'확인 문제 3개'}</button>
           <button class="ghost" type="button" data-study="${x.page}">${studied.has(x.page)?'외움 취소':'외웠어요 ✓'}</button></div>
         ${q?.qs?`<div class="qq">${q.qs.map((qq,k)=>quickHtml(x.page,qq,k,q.picks[k])).join('')}</div>`:''}</details>`}).join('')}`).join('')}`;
+  if(had){const i=$('#sl-q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}
 }
+const openS=new Set(); // 펼쳐 둔 슬라이드
+let slT=null;
+$('#v-sl').addEventListener('toggle',e=>{const d=e.target;if(d.matches?.('details.slide[data-p]')){d.open?openS.add(+d.dataset.p):openS.delete(+d.dataset.p)}},true);
+$('#v-sl').addEventListener('input',e=>{if(e.target.id==='sl-q'){SF.q=e.target.value;clearTimeout(slT);slT=setTimeout(renderSlides,250)}});
+$('#v-sl').addEventListener('change',e=>{if(e.target.id==='sl-unit'){SF.unit=e.target.value;renderSlides()}if(e.target.id==='sl-only'){SF.only=e.target.value;renderSlides()}});
 function quickHtml(p,q,k,a){
   return `<div><div class="md"><b>${k+1}.</b> ${inline(q.stem)}</div>${q.data?`<div class="box plain md">${md(q.data)}</div>`:''}
     <ul class="choices" style="margin-top:6px">${q.choices.map((c,n)=>{let cls='';if(a!=null){if(n===q.answer)cls='right';else if(n===a)cls='wrong'}
@@ -615,7 +649,8 @@ renderTab();
   if(!db){setStatus('저장소에 연결할 수 없어요. claude.ai에서 열어 주세요.',true);return}
   try{
     const [m,r,x,p]=await Promise.all([db.collection('materials').get(),db.collection('reference').get(),db.collection('exams').orderBy('createdAt','desc').limit(200).get(),db.doc('progress/main').get()]);
-    slides=m.docs.map(y=>y.data()).filter(y=>y&&y.page).sort((a,b)=>a.page-b.page);
+    // 정리본 전체는 materials/all 한 문서에 slides 배열로 들어 있다
+    slides=m.docs.flatMap(y=>{const d=y.data();return Array.isArray(d?.slides)?d.slides:[d]}).filter(y=>y&&y.page).sort((a,b)=>a.page-b.page);
     for(const y of r.docs){if(y.id==='style')ref.style=y.data().text||'';if(y.id==='past-2025-1')ref.past=y.data()}
     exams=x.docs.map(y=>({...y.data(),id:y.id})).filter(y=>Array.isArray(y.questions)&&(y.kind==='sd'||y.kind==='mc'));
     if(p.exists)studied=new Set(p.data().studied||[]);

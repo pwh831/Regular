@@ -16,9 +16,9 @@
 
 수업 자료와 기출은 저작물이라 **이 공개 저장소에 넣지 않고** 앱의 비공개 db에만 둔다.
 
-- `materials/pNN`: `{page, unit, title, text, prio}` 수업 PPT 슬라이드 정리. `prio`는 직접 추린 슬라이드
+- `materials/all`: `{slides: [{page, unit, tb(교과서 쪽), title, text, prio, hot}], count}` 수업 PPT 전체(1~6.pdf 325장, 중복 합쳐 292장, 교과서 8~81쪽) 정리. `prio`는 직접 추린 30장, `hot`은 선생님이 "시험에 낼거야"라고 적은 슬라이드. 약 5만 자라 출제 때 전부 Claude에 보낸다
 - `reference/style`: 선생님 출제 방식 분석, `reference/past-2025-1`: 작년 1회 고사 원문과 정답
 - `exams/<id>`: `{kind: sd|mc, title, createdAt, sel, status, questions, answers, graded, mastered}`
 - `progress/main`: `{studied: [쪽]}`
 
-슬라이드를 더 받으면 `materials`에 문서만 추가한다(앱을 다시 발행할 필요 없음). `index.html`을 고친 뒤에는 같은 주소로 다시 발행한다.
+슬라이드를 더 받으면 `materials/all`의 `slides`에 추가하거나 `materials`에 문서를 더 넣는다(앱을 다시 발행할 필요 없음). `index.html`을 고친 뒤에는 같은 주소로 다시 발행한다.
