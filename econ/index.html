@@ -662,11 +662,11 @@ function renderMemo(){
   const seen=memo.filter(x=>mstats[x.id]).length,ok=memo.filter(x=>mstats[x.id]?.last===1).length;
   const weak=memo.filter(x=>(mstats[x.id]?.x||0)>0).sort((a,b)=>weakScore(b)-weakScore(a)).slice(0,6);
   v.innerHTML=`<h2>암기 퀴즈</h2>
-    <p class="muted" style="margin:-6px 0 0">암기 노트 PDF의 ${memo.length}개 항목으로 바로 문제를 내요. 객관식은 보기를 고르고, 주관식은 직접 써요. 단답형은 부분 점수가 없으니 정확한 명칭으로 쓰는 연습을 하세요.</p>
+    <p class="muted" style="margin:-6px 0 0">암기 노트 PDF의 ${memo.length}개 항목(A 서술형 카드 · B 용어·인물·계산 · C 숫자)으로 바로 문제를 내요. 객관식은 보기를 고르고, 주관식은 직접 써요. 단답형은 부분 점수가 없으니 정확한 명칭으로 쓰는 연습을 하세요.</p>
     <div class="row"><span class="muted">풀어 본 항목 ${seen} / ${memo.length} · 최근에 맞힌 항목 ${ok}</span></div>
     <div class="bar"><i style="width:${ok/memo.length*100}%"></i></div>
     <div class="grid3">
-      <label class="f">단원<select data-mq="unit"><option value="">전체</option>${units.map(u=>`<option ${m.unit===u?'selected':''}>${esc(u)}</option>`).join('')}</select></label>
+      <label class="f">구역<select data-mq="unit"><option value="">전체</option>${units.map(u=>`<option ${m.unit===u?'selected':''}>${esc(u)}</option>`).join('')}</select></label>
       <label class="f">분류<select data-mq="cat"><option value="">전체</option>${cats.map(c=>`<option ${m.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
       <label class="f">중요도<select data-mq="imp"><option value="2" ${m.imp==2?'selected':''}>★★만</option><option value="1" ${m.imp==1?'selected':''}>★ 이상</option><option value="0" ${m.imp==0?'selected':''}>전부(사소한 것 포함)</option></select></label>
       <label class="f">방식<select data-mq="mode"><option value="mix" ${m.mode==='mix'?'selected':''}>섞기</option><option value="mc" ${m.mode==='mc'?'selected':''}>객관식만</option><option value="sa" ${m.mode==='sa'?'selected':''}>주관식만</option></select></label>
@@ -674,7 +674,7 @@ function renderMemo(){
       <label class="f">순서<select data-mq="weak"><option value="0" ${!m.weak?'selected':''}>무작위</option><option value="1" ${m.weak?'selected':''}>틀린 것 위주</option></select></label>
     </div>
     <div class="row"><span class="muted">해당 항목 ${memoPool().length}개</span><button class="btn" type="button" data-mact="start">시작</button></div>
-    ${weak.length?`<h2 style="font-size:17px">자주 틀린 항목</h2><ul class="list">${weak.map(x=>`<li class="item" style="display:block"><div>${starOf(x.p)}${esc(x.q)}</div><div style="font-weight:700;margin-top:2px">${esc(x.a)}</div><div class="muted" style="font-size:12px">맞힘 ${mstats[x.id].c} · 틀림 ${mstats[x.id].x} · ${pg(x.s)}</div></li>`).join('')}</ul>
+    ${weak.length?`<h2 style="font-size:17px">자주 틀린 항목</h2><ul class="list">${weak.map(x=>`<li class="item" style="display:block"><div>${starOf(x.p)}${esc(x.q)}</div><div style="font-weight:700;margin-top:2px">${esc(x.a)}</div><div class="muted" style="font-size:12px">맞힘 ${mstats[x.id].c} · 틀림 ${mstats[x.id].x}${x.s?' · '+pg(x.s):''}</div></li>`).join('')}</ul>
       <div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-mact="weak">자주 틀린 것만 풀기</button></div>`:''}`;
 }
 function renderMemoQ(){
@@ -692,8 +692,8 @@ function renderMemoQ(){
   if(done){
     const cls=r.ok?'ok':'bad';
     fb=`<div class="explain ${cls}"><span class="mark ${cls}">${r.ok?'정답':'오답'}</span>${r.note?` · ${esc(r.note)}`:''}
-      <div style="margin-top:4px"><b>정답</b> ${esc(it.a)}</div>${r.fb?`<div class="md">${md(r.fb)}</div>`:''}
-      <div style="margin-top:6px"><button class="src" type="button" data-goto="${it.s}">PPT ${pg(it.s)} 보기</button></div></div>
+      <div style="margin-top:4px"><b>정답</b> ${esc(it.a)}</div>${it.h?`<div style="margin-top:2px;color:var(--bad);font-weight:700">암기 코드 · ${esc(it.h)}</div>`:''}${r.fb?`<div class="md">${md(r.fb)}</div>`:''}
+      ${it.s?`<div style="margin-top:6px"><button class="src" type="button" data-goto="${it.s}">PPT ${pg(it.s)} 보기</button></div>`:''}</div>
       ${q.type==='sa'&&!r.ok&&!r.gaveUp?`<div class="row" style="justify-content:flex-end">${sample&&LONG.has(it.c)?'<button class="ghost" type="button" data-mact="claude">Claude에게 채점받기</button>':''}<button class="ghost" type="button" data-mact="override">맞았어요 (표기만 달라요)</button></div>`:''}
       <div class="row" style="justify-content:flex-end"><button class="btn" type="button" data-mact="next">${MQ.i+1<MQ.qs.length?'다음':'결과 보기'}</button></div>`;
   }
