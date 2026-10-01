@@ -321,10 +321,8 @@ ${pastSeodap()}
 ${slideText(list)}
 
 [만들 것]
-- 서답형 1: 단답형 5점, 부분 점수 없음. 슬라이드의 수치로 계산하는 문제나, 지문 설명을 보고 용어·제도·정책 이름 하나를 쓰는 문제.
-- 서답형 2: 단답형 5점. 지문을 보고 인물(경제학자 등) 이름이나 용어 하나(부분 점수 없음), 또는 지문 속 (A), (B) 빈칸 두 용어(각 2.5점).
-- 서답형 3: 서술형 10점, 부분 점수 있음. 슬라이드의 개념 + 원인·이유·효과·부작용 N가지 형식. 핵심 부분은 5개(개념 설명 1 + 항목 4, 또는 항목 5)로 잡고, 채점 기준표는 "핵심 내용 중 네 부분만 올바르게 서술한 경우 8점 / 세 부분 6점 / 두 부분 4점 / 한 부분 2점" (다섯 부분 모두 10점).
-- 서답형 4: 서술형 10점, 부분 점수 있음. 슬라이드의 목록·유형·단계·비교에서 "용어와 내용(또는 예시)을 각각" 쓰게 한다. 핵심 부분 4개면 "세 부분 7.5점 / 두 부분 5점 / 한 부분 2.5점"(네 부분 10점), 단계·순서형이면 "용어 각 1점, 내용 각 1점, 순서가 맞는 경우 2점"처럼 선생님 방식으로.
+- 서답형 1, 2: 각 5점. 둘 중 하나는 답 하나(5점, 부분 점수 없음: 지문 보고 용어·제도·인물 이름, 또는 슬라이드 수치로 계산), 다른 하나는 지문 속 (A), (B) 두 칸(각 2.5점, 서로 짝을 이루는 개념). 어느 쪽을 어떤 형식으로 할지는 섞어서 정한다.
+- 서답형 3, 4: 각 10점, 부분 점수 있음. 슬라이드의 개념·목록에서 핵심 부분이 4개 또는 5개가 되도록 낸다("개념 + 원인 N가지", "용어와 예를 각각" 등). 채점 기준표: 핵심 5부분이면 "네 부분 8점 / 세 부분 6점 / 두 부분 4점 / 한 부분 2점", 4부분이면 "세 부분 7.5점 / 두 부분 5점 / 한 부분 2.5점"(전부 맞으면 10점). keyPoints에 핵심 부분을 정확히 4~5개 적는다.
 - 네 문항은 서로 다른 슬라이드에서 낸다. 슬라이드에 없는 내용을 정답으로 요구하지 않는다(지문을 꾸밀 때는 슬라이드 내용을 바꿔 써도 된다).
 ${avoid.length?`- 최근 서답형에 이미 쓴 슬라이드(${avoid.map(pg).join(', ')})는 되도록 피한다.`:''}
 - 정답과 채점 기준을 스스로 다시 확인한다.
@@ -616,8 +614,11 @@ let memo=[],mstats={},MQ=null; // MQ: 진행 중인 퀴즈
 S.mq=Object.assign({unit:'',cat:'',imp:1,n:10,mode:'mix',weak:false},S.mq||{});
 const LONG=new Set(['목록','비교']);
 const nrm=s=>String(s||'').toLowerCase().replace(/[\s·.,()\[\]「」『』"'“”‘’~\-:;!?/→①②③④⑤|]/g,'');
+function matchOne(u,cands){return cands.map(nrm).filter(Boolean).some(c=>u===c||(c.length>=2&&u.includes(c))||(u.length>=2&&c.includes(u)&&u.length/c.length>=0.8))}
 function autoCheck(it,ans){
   const u=nrm(ans);if(!u)return false;
+  // (A)(B) 짝: 두 칸 모두 맞아야 정답 (칸당 2.5점)
+  if(it.pair)return it.pair.every(c=>c.map(nrm).filter(Boolean).some(x=>u.includes(x)));
   const cands=[it.a,...(it.acc||[]),it.a.split(/[(:,/]/)[0]].map(nrm).filter(Boolean);
   return cands.some(c=>u===c||(c.length>=2&&u.includes(c))||(u.length>=2&&c.includes(u)&&u.length/c.length>=0.8));
 }
@@ -662,7 +663,7 @@ function renderMemo(){
   const seen=memo.filter(x=>mstats[x.id]).length,ok=memo.filter(x=>mstats[x.id]?.last===1).length;
   const weak=memo.filter(x=>(mstats[x.id]?.x||0)>0).sort((a,b)=>weakScore(b)-weakScore(a)).slice(0,6);
   v.innerHTML=`<h2>암기 퀴즈</h2>
-    <p class="muted" style="margin:-6px 0 0">암기 노트 PDF의 ${memo.length}개 항목(A 서술형 카드 · B 용어·인물·계산 · C 숫자)으로 바로 문제를 내요. 객관식은 보기를 고르고, 주관식은 직접 써요. 단답형은 부분 점수가 없으니 정확한 명칭으로 쓰는 연습을 하세요.</p>
+    <p class="muted" style="margin:-6px 0 0">암기 노트 PDF의 ${memo.length}개 항목(A 10점 서술형 · B-1 5점 (A)(B) 짝 · B-2 5점 답 하나 · C 숫자)으로 바로 문제를 내요. 객관식은 보기를 고르고, 주관식은 직접 써요. 단답형은 부분 점수가 없으니 정확한 명칭으로 쓰는 연습을 하세요.</p>
     <div class="row"><span class="muted">풀어 본 항목 ${seen} / ${memo.length} · 최근에 맞힌 항목 ${ok}</span></div>
     <div class="bar"><i style="width:${ok/memo.length*100}%"></i></div>
     <div class="grid3">
@@ -685,7 +686,7 @@ function renderMemoQ(){
     body=`<ul class="choices">${q.choices.map((c,k)=>{let cls='';if(done){if(k===q.answer)cls='right';else if(k===r.pick)cls='wrong'}
       return `<li><button class="choice ${cls}" type="button" data-mk="${k}" ${done?'disabled':''}><span class="k">${k+1}</span><span>${esc(c)}</span></button></li>`}).join('')}</ul>`;
   }else{
-    body=`<form id="mq-form" class="composer"><textarea id="mq-ans" rows="${LONG.has(it.c)?4:1}" placeholder="${LONG.has(it.c)?'빠짐없이 써 보세요':'정확한 명칭으로'}" ${done?'disabled':''}>${esc(r?.text||'')}</textarea>${done?'':'<button class="btn" type="submit">확인</button>'}</form>
+    body=`<form id="mq-form" class="composer"><textarea id="mq-ans" rows="${LONG.has(it.c)?4:1}" placeholder="${LONG.has(it.c)?'빠짐없이 써 보세요':it.pair?'(A) ○○ (B) ○○':'정확한 명칭으로'}" ${done?'disabled':''}>${esc(r?.text||'')}</textarea>${done?'':'<button class="btn" type="submit">확인</button>'}</form>
       ${done?'':'<div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-mact="giveup">모르겠어요</button></div>'}`;
   }
   let fb='';
@@ -729,7 +730,9 @@ JSON만: {"ok":true/false,"got":"맞힌 요소","missing":"빠진 요소","feedb
 }
 $('#v-mq').addEventListener('change',e=>{const k=e.target.dataset.mq;if(!k)return;const v=e.target.value;S.mq[k]=k==='n'||k==='imp'?+v:k==='weak'?v==='1':v;saveLocal();renderMemo()});
 $('#v-mq').addEventListener('submit',e=>{e.preventDefault();const t=$('#mq-ans')?.value||'';if(!t.trim())return;const it=itemOf(MQ.qs[MQ.i].id);
-  const ok=!LONG.has(it.c)&&autoCheck(it,t);answerMemo({text:t,ok,note:LONG.has(it.c)&&!ok?'목록형은 직접 비교하거나 Claude에게 채점받으세요':''})});
+  const ok=!LONG.has(it.c)&&autoCheck(it,t);
+  const half=it.pair&&!ok?it.pair.filter(c=>c.map(nrm).filter(Boolean).some(x=>nrm(t).includes(x))).length:0;
+  answerMemo({text:t,ok,note:LONG.has(it.c)&&!ok?'목록형은 직접 비교하거나 Claude에게 채점받으세요':half?'한 칸만 맞음 (2.5점)':''})});
 $('#v-mq').addEventListener('keydown',e=>{if(e.target.id==='mq-ans'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!LONG.has(itemOf(MQ.qs[MQ.i].id)?.c)){e.preventDefault();$('#mq-form').requestSubmit()}});
 $('#v-mq').addEventListener('click',e=>{
   const k=e.target.closest('[data-mk]');
