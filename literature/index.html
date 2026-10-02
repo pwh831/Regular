@@ -209,6 +209,8 @@ textarea{resize:vertical;line-height:1.5;width:100%}
   </section>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="materials.js"></script>
 <script>
 const $=s=>document.querySelector(s);
@@ -225,7 +227,7 @@ const TEACHER='너는 한국 고등학교 선택과목 「문학과 영상」을
 const RANGE_NOTE=`아래 [시험 범위 자료]는 학생 교과서 본문을 옮겨 적은 것이다. 【필기: …】는 선생님이 수업에서 강조한 내용을 학생이 빨간 펜으로 적은 것이고("빨간색은 시험에 출제"), **굵은 글씨**와 "빨간 네모"는 교과서에 표시된 출제 예상 부분이다. 범위 밖 지식(다른 작품, 다른 용어)으로 문제를 내거나 채점하지 말고, 이 자료와 필기의 표현을 정답 근거로 삼는다.`;
 const saveLocal=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
-let sample=null,db=null,imgCaps=null;
+let sample=null,db=null,imgCaps=null,dl=null;
 let exams=[];           // db의 exams 문서들 (최신순)
 let cur=null;           // 지금 보는 시험
 let busy=null;          // 진행 중인 AbortController
@@ -454,6 +456,91 @@ function readSetup(){
   saveLocal();
 }
 
+
+/* ---------- PDF로 받기 ---------- */
+// 문항을 하나씩 그림으로 떠서 A4에 쌓는다. 문항이 페이지 사이에서 잘리지 않게 한다.
+const PDF_CSS=`.pp{width:720px;background:#fff;color:#111;font:15px/1.65 "Gowun Batang","AppleMyungjo",serif;padding:0}
+.pp .blk{padding:10px 4px 14px}
+.pp h1{font-size:24px;text-align:center;margin:0 0 4px;color:#111;font-family:inherit}
+.pp .sub{text-align:center;color:#444;font-size:13px}
+.pp .line{border-top:2px solid #111;margin-top:10px}
+.pp .q-top{display:flex;gap:6px;align-items:baseline}
+.pp .no{font-weight:700;flex:none}
+.pp .pt{flex:none;color:#555;font-size:13px}
+.pp .stem{flex:1;min-width:0}
+.pp .box{border:1px solid #777;border-radius:0;padding:8px 12px;margin-top:8px;position:relative}
+.pp .box::before{content:none}
+.pp .box.bogi{margin-top:14px}
+.pp .box.bogi::before{content:"< 보 기 >";position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#fff;padding:0 6px;font-size:12px}
+.pp ol.ch{list-style:none;margin:8px 0 0;padding:0 0 0 6px}
+.pp ol.ch li{margin:2px 0}
+.pp .ans{border:1px dashed #999;height:120px;margin-top:8px}
+.pp .key{font-size:14px}
+.pp .key b{font-weight:700}
+.pp p{margin:3px 0}.pp ul,.pp ol{margin:3px 0;padding-left:20px}
+.pp table{border-collapse:collapse;font-size:13px}.pp th,.pp td{border:1px solid #888;padding:3px 6px}
+.pp .memo{color:#111}.pp .memo::before{content:""}`;
+function pdfBlocks(ex){
+  const head=`<div class="blk"><h1>${esc(ex.title)}</h1><div class="sub">문학과 영상 · ${esc(secNames(ex.secs))} · 객관식 ${ex.questions.filter(q=>q.type==='mc').length}문항 · 서답형 ${ex.questions.filter(q=>q.type!=='mc').length}문항 · 100점</div><div class="sub">이름: ____________ 　 점수: ______</div><div class="line"></div></div>`;
+  const qs=ex.questions.map((q,i)=>`<div class="blk">
+    <div class="q-top"><span class="no">${i+1}.</span><div class="stem md">${md(q.stem)}</div><span class="pt">[${q.points}점]</span></div>
+    ${q.data?`<div class="box md">${md(q.data)}</div>`:''}
+    ${q.box?`<div class="box bogi md">${md(q.box)}</div>`:''}
+    ${q.type==='mc'?`<ol class="ch">${q.choices.map((c,k)=>`<li>${CIRC[k]} ${inline(c)}</li>`).join('')}</ol>`:'<div class="ans"></div>'}
+  </div>`);
+  const keyHead=`<div class="blk"><h1>정답과 해설</h1><div class="line"></div></div>`;
+  const keys=ex.questions.map((q,i)=>`<div class="blk key"><b>${i+1}. ${q.type==='mc'?'정답 '+CIRC[q.answer]:'[서답형]'}</b>
+    ${q.type==='mc'?`<div class="md">${md(q.explanation)}</div>`:`<div><b>채점 기준</b> ${(q.rubric||[]).map(r=>`${esc(r.c)}(${r.p}점)`).join(' / ')}</div><div><b>모범 답안</b></div><div class="md">${md(q.modelAnswer)}</div>`}</div>`);
+  return {paper:[head,...qs],key:[keyHead,...keys]};
+}
+async function exportPdf(ex,btn){
+  if(!ex)return;
+  if(!window.html2canvas||!window.jspdf){setStatus('PDF 도구를 불러오지 못했어요. 새로고침 후 다시 해 주세요.',true);return}
+  const old=btn.textContent;btn.disabled=true;btn.textContent='PDF 만드는 중…';
+  const host=document.createElement('div');
+  host.style.cssText='position:fixed;left:-10000px;top:0;z-index:-1';
+  host.innerHTML=`<style>${PDF_CSS}</style><div class="pp"></div>`;
+  document.body.append(host);
+  const pp=host.querySelector('.pp');
+  try{
+    await document.fonts?.ready;
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'mm',format:'a4'});
+    const M=15,W=210-2*M,H=297-2*M;let y=M,first=true;
+    const addBlock=async html=>{
+      pp.innerHTML=html;
+      // 웹 글꼴은 쓰인 글자 묶음만 받아 오므로, 이 블록의 글자를 미리 불러 둔다
+      const txt=pp.textContent;
+      await Promise.race([Promise.all(['400','700'].map(w=>document.fonts?.load(`${w} 15px "Gowun Batang"`,txt))),new Promise(r=>setTimeout(r,4000))]).catch(()=>{});
+      const c=await html2canvas(pp.firstElementChild,{scale:2,backgroundColor:'#ffffff',logging:false});
+      const mmPerPx=W/c.width;let h=c.height*mmPerPx;
+      if(y+h>M+H&&y>M){doc.addPage();y=M}
+      if(h<=H){doc.addImage(c.toDataURL('image/jpeg',.92),'JPEG',M,y,W,h);y+=h;return}
+      // 한 페이지보다 긴 블록은 잘라서 넣는다
+      let sy=0;const slicePx=Math.floor(H/mmPerPx);
+      while(sy<c.height){
+        const part=document.createElement('canvas');part.width=c.width;part.height=Math.min(slicePx,c.height-sy);
+        part.getContext('2d').drawImage(c,0,sy,c.width,part.height,0,0,c.width,part.height);
+        if(sy>0){doc.addPage();y=M}
+        const ph=part.height*mmPerPx;doc.addImage(part.toDataURL('image/jpeg',.92),'JPEG',M,y,W,ph);y+=ph;sy+=part.height;
+      }
+    };
+    const b=pdfBlocks(ex);
+    for(const h of b.paper)await addBlock(h);
+    doc.addPage();y=M;
+    for(const h of b.key)await addBlock(h);
+    const n=doc.getNumberOfPages();
+    for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(9);doc.setTextColor(120);doc.text(`- ${i} / ${n} -`,105,290,{align:'center'})}
+    const blob=doc.output('blob');
+    const name=(ex.title||'문학과 영상 모의고사').replace(/[\\/:*?"<>|]/g,' ').trim()+'.pdf';
+    await dl.save({filename:name,data:blob});
+    setStatus('PDF를 저장했어요.');
+  }catch(e){
+    if(e?.code==='declined')setStatus('');
+    else setStatus(e?.code==='rate_limited'?'저장 창이 이미 열려 있어요. 잠시 뒤 다시 해 주세요.':'PDF를 만들지 못했어요. 다시 해 주세요.',true);
+  }finally{host.remove();btn.disabled=false;btn.textContent=old}
+}
+
 /* ---------- 모의고사: 시험지 ---------- */
 function qHtml(q,i,ex,mode){ // mode: solve | review
   const a=ex.answers?.[i];const g=grade(ex,i);
@@ -494,7 +581,8 @@ function renderPaper(){
     return `<a href="#q${i}" class="${c}" data-jump="${i}">${i+1}</a>`}).join('');
   v.innerHTML=`
     <div class="row"><button class="ghost" id="back" type="button">← 목록</button>
-      ${done?`<button class="ghost" id="retry" type="button">다시 풀기</button>`:''}</div>
+      <span>${dl?`<button class="ghost" id="pdf" type="button">PDF로 받기</button>`:''}
+      ${done?`<button class="ghost" id="retry" type="button">다시 풀기</button>`:''}</span></div>
     ${done?`<div class="score"><b>${t.pct}</b><span>점 / 100</span></div>
       <div class="muted" style="text-align:center">${t.raw} / ${t.max}점 · 객관식 ${ex.questions.filter((q,i)=>q.type==='mc'&&grade(ex,i).score>=grade(ex,i).max).length}/${nMc} 정답${nEs?` · 서답형 ${ex.questions.reduce((s,q,i)=>s+(q.type==='essay'?grade(ex,i).score:0),0)}/${ex.questions.reduce((s,q)=>s+(q.type==='essay'?q.points:0),0)}점`:''}</div>`:''}
     <div class="omr" aria-label="문항 바로 가기">${omr}</div>
@@ -583,6 +671,7 @@ $('#v-exam').addEventListener('click',e=>{
     ch.closest('.choices').querySelectorAll('.choice').forEach(b=>b.setAttribute('aria-pressed',cur.answers[i]===+b.dataset.k));
     const o=document.querySelector(`.omr [data-jump="${i}"]`);o&&o.classList.toggle('done',cur.answers[i]!=null);
     updateLeft();saveSoon();return}
+  if(t.closest('#pdf'))return exportPdf(cur,t.closest('#pdf'));
   if(t.id==='submit')return submit();
   const j=t.closest('[data-jump]');
   if(j){e.preventDefault();document.getElementById('q'+j.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'})}
@@ -819,6 +908,8 @@ setTab('exam');
 (async()=>{
   const [s,d]=await Promise.all([window.claude?.use?.('sample')??null,window.claude?.use?.('db')??null]);
   sample=s;db=d;
+  dl=await (window.claude?.use?.('downloads')??null);
+  if(dl&&view.exam==='paper'&&cur)renderPaper();
   if(sample){
     imgCaps=(await sample.limits().catch(()=>null))?.images||null;
     document.querySelectorAll('.img-only').forEach(el=>el.classList.toggle('hidden',!imgCaps));
