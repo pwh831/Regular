@@ -50,8 +50,9 @@ textarea{resize:vertical;line-height:1.5;width:100%}
 @media (max-width:520px){.grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 
 /* 탭 */
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;background:rgba(255,255,255,.18);border-radius:18px;padding:6px}
-.tab{border:0;background:transparent;color:#fff;border-radius:13px;padding:10px 4px;min-height:48px;font-weight:700;font-size:15px}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;background:rgba(255,255,255,.18);border-radius:18px;padding:6px}
+.tab{border:0;background:transparent;color:#fff;border-radius:13px;padding:10px 2px;min-height:48px;font-weight:700;font-size:15px;word-break:keep-all}
+@media (max-width:420px){.tab{font-size:13px}}
 .tab[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(30,36,100,.2)}
 .tab .n{display:inline-block;min-width:20px;padding:0 6px;border-radius:99px;background:var(--bad);color:#fff;font-size:12px;margin-left:4px}
 
@@ -134,6 +135,31 @@ textarea{resize:vertical;line-height:1.5;width:100%}
 .note{font-size:12px;color:var(--muted)}
 .wait{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;padding:10px 0}
 .wait .big{font-family:var(--serif);font-size:19px;color:var(--ink)}
+
+/* 슬라이드·서답형 */
+.slides-pick{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow:auto;padding:4px 2px}
+.chip .pg{font-size:11px;opacity:.75;margin-right:4px}
+.chip.prio::after{content:" ★";color:var(--gold)}
+.chip[aria-pressed="true"].prio::after{color:#FFE9A8}
+.notice{border:1.5px solid var(--ink);padding:8px 12px;font-size:14px;line-height:1.5}
+.sec-h{display:inline-block;border:1.5px solid var(--ink);padding:4px 16px;font-family:var(--serif);font-weight:700;color:var(--ink);align-self:flex-start}
+.rub{border-collapse:collapse;width:100%;font-size:14px;margin-top:4px}
+.rub td{border:1px solid #9C96C8;padding:6px 10px}
+.rub td:first-child{background:#E6E3F2}
+.rub td:last-child{text-align:center;white-space:nowrap;width:70px}
+.src{font-size:12px;color:var(--pen);background:var(--pen-soft);border-radius:99px;padding:2px 10px;border:0;min-height:28px}
+details.slide{background:#fff;border:1px solid var(--line);border-radius:16px;padding:0 14px}
+details.slide>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:56px}
+details.slide>summary::-webkit-details-marker{display:none}
+details.slide>summary .pg{font-family:var(--serif);font-weight:700;color:var(--pen);width:34px;flex:none}
+details.slide>summary .t{flex:1;min-width:0;font-weight:700;color:var(--ink)}
+details.slide>summary .ok{color:var(--ok);font-size:13px;white-space:nowrap}
+details.slide .notes{margin:0 0 10px;padding-left:18px;font-size:15px}
+details.slide .notes li{margin:3px 0}
+details.slide[open]{padding-bottom:14px}
+details.slide.hot{border:2px solid var(--bad);background:var(--bad-soft)}
+details.slide.hot>summary .t{color:var(--bad)}
+.qq{display:flex;flex-direction:column;gap:8px;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
 </style>
 
 <div class="sky" aria-hidden="true">
@@ -148,75 +174,47 @@ textarea{resize:vertical;line-height:1.5;width:100%}
   <header>
     <div class="script">economics exam</div>
     <h1>경제 지필고사</h1>
-    <div class="sub">시험 범위로 모의고사를 만들고, 서술형까지 채점받아요</div>
-    <div class="status" id="status" role="status">Claude에 연결하는 중…</div>
+    <div class="sub">수업 PPT에서 나오는 서답형 4문항과 객관식을 대비해요</div>
+    <div class="status" id="status" role="status">불러오는 중…</div>
   </header>
 
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" data-tab="exam">모의고사</button>
-    <button class="tab" role="tab" data-tab="essay">서술형</button>
-    <button class="tab" role="tab" data-tab="wrong">오답노트</button>
-    <button class="tab" role="tab" data-tab="ask">질문하기</button>
+    <button class="tab" role="tab" data-tab="sd">서답형</button>
+    <button class="tab" role="tab" data-tab="mc">객관식</button>
+    <button class="tab" role="tab" data-tab="mq">암기</button>
+    <button class="tab" role="tab" data-tab="sl">슬라이드</button>
+    <button class="tab" role="tab" data-tab="wr">오답노트</button>
   </nav>
 
-  <!-- 모의고사 -->
-  <section id="v-exam" class="panel"></section>
-
-  <!-- 서술형 채점 -->
-  <section id="v-essay" class="panel hidden">
-    <h2>서술형 답안 채점</h2>
-    <p class="muted" style="margin:0">문제와 내가 쓴 답을 넣으면 예상 점수, 빠진 핵심어, 고쳐 쓴 모범답안을 알려 줘요.</p>
-    <label class="f">문제 (자료·조건까지 그대로)<textarea id="es-q" rows="4" placeholder="예) 그래프에서 X재 가격이 상승한 원인을 수요·공급 변동 요인을 들어 서술하시오. (4점)"></textarea></label>
-    <label class="f">내 답안<textarea id="es-a" rows="5" placeholder="시험지에 쓴 그대로 적어 주세요"></textarea></label>
-    <label class="f img-only hidden">답안 사진 (손글씨 가능, 선택)<input type="file" id="es-img" multiple></label>
-    <label class="f">채점 기준 (선생님이 알려 준 게 있으면, 선택)<textarea id="es-r" rows="2" placeholder="예) 수요 증가 언급 2점, 원인 1가지 1점, 결과 1점"></textarea></label>
-    <div class="row"><span class="note">채점 결과는 참고용이에요. 실제 기준은 선생님마다 달라요.</span>
-      <div><button class="btn stop hidden" id="es-stop" type="button">멈춤</button> <button class="btn" id="es-go" type="button">채점받기</button></div></div>
-    <div id="es-out" class="md"></div>
-  </section>
-
-  <!-- 오답노트 -->
-  <section id="v-wrong" class="panel hidden"></section>
-
-  <!-- 질문하기 -->
-  <section id="v-ask" class="panel hidden">
-    <div class="row"><h2>질문하기</h2><button class="ghost" id="ask-clear" type="button">새 대화</button></div>
-    <div class="chat" id="chat" aria-live="polite"></div>
-    <div class="chips" id="ask-chips"></div>
-    <form class="composer" id="ask-form">
-      <textarea id="ask-box" rows="1" placeholder="헷갈리는 개념을 물어보세요" aria-label="질문"></textarea>
-      <button class="btn" id="ask-send" type="submit">보내기</button>
-      <button class="btn stop hidden" id="ask-stop" type="button">멈춤</button>
-    </form>
-  </section>
+  <section id="v-sd" class="panel"></section>
+  <section id="v-mc" class="panel hidden"></section>
+  <section id="v-mq" class="panel hidden"></section>
+  <section id="v-sl" class="panel hidden"></section>
+  <section id="v-wr" class="panel hidden"></section>
 </div>
 
 <script>
 const $=s=>document.querySelector(s);
-const UNITS=[
-  ['Ⅰ. 경제생활과 경제 문제',['희소성과 기회비용','경제적 유인과 합리적 선택','경제 체제와 기본 문제','경제 주체와 경제 순환']],
-  ['Ⅱ. 시장과 경제 활동',['수요와 공급, 시장 균형','균형 변동','가격 탄력성','소비자·생산자 잉여','가격 규제(최고·최저가격제)','시장 실패와 정부 실패','기업의 역할과 생산']],
-  ['Ⅲ. 국가와 경제 활동',['국내총생산(GDP)과 경제 성장','실업','인플레이션','총수요와 총공급','재정 정책','통화 정책']],
-  ['Ⅳ. 세계 시장과 교역',['비교 우위와 무역','무역 정책','환율','국제 수지']],
-  ['Ⅴ. 경제생활과 금융',['금융 상품과 자산 관리','신용과 부채 관리','생애 주기와 재무 설계']]
-];
-const LEVELS={hs:'한국 고등학교 선택과목 「경제」 교과서 범위',univ:'대학 경제원론(미시·거시) 범위'};
-const KEY='econ-exam-v1';
-let S={level:'hs',tier:'default',units:[],scope:'',nMc:10,nEs:2,hard:'mid',chat:[]};
+const KEY='econ-exam-v2';
+let S={sel:[],nMc:5,tier:'default'};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
 const saveLocal=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
 let sample=null,db=null,imgCaps=null;
-let exams=[];           // db의 exams 문서들 (최신순)
-let cur=null;           // 지금 보는 시험
-let busy=null;          // 진행 중인 AbortController
-let tab='exam';
-const view={exam:'setup'}; // setup | gen | paper | grading
+let slides=[];          // materials (쪽 순서)
+let ref={style:'',past:null};
+let exams=[];           // db exams (최신순)
+let studied=new Set();  // progress/main.studied
+const cur={sd:null,mc:null};
+const view={sd:'setup',mc:'setup'}; // setup | busy | paper
+let busy=null,tab='sd';
 
 function setStatus(t,err){const s=$('#status');s.textContent=t;s.classList.toggle('err',!!err)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const CIRC=['①','②','③','④','⑤'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const pg=n=>'#'+String(n).padStart(3,'0');
+const fmt=n=>String(Math.round(n*10)/10);
 
 /* ---------- 간단한 Markdown ---------- */
 function inline(s){
@@ -229,18 +227,15 @@ function md(src){
   const lines=String(src??'').replace(/\r/g,'').split('\n');let out='',i=0;
   while(i<lines.length){
     const l=lines[i];let m;
-    if(/^```/.test(l)){let b=[];i++;while(i<lines.length&&!/^```/.test(lines[i]))b.push(lines[i++]);i++;out+=`<pre><code>${esc(b.join('\n'))}</code></pre>`;continue}
     if(/^\s*\|.*\|\s*$/.test(l)&&i+1<lines.length&&/^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i+1])&&lines[i+1].includes('-')){
       const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>inline(c.trim()));
       const h=cells(l);i+=2;const rows=[];
       while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i]))rows.push(cells(lines[i++]));
       out+=`<div class="tbl"><table><thead><tr>${h.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;continue}
-    if(m=l.match(/^(#{1,6})\s+(.*)/)){const t=m[1].length<=3?'h3':'h4';out+=`<${t}>${inline(m[2])}</${t}>`;i++;continue}
+    if(m=l.match(/^(#{1,6})\s+(.*)/)){out+=`<h4>${inline(m[2])}</h4>`;i++;continue}
     if(/^\s*[-*]\s+/.test(l)){const it=[];while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i]))it.push(lines[i++].replace(/^\s*[-*]\s+/,''));out+=`<ul>${it.map(x=>`<li>${inline(x)}</li>`).join('')}</ul>`;continue}
-    if(/^\s*\d+[.)]\s+/.test(l)){const it=[];while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i]))it.push(lines[i++].replace(/^\s*\d+[.)]\s+/,''));out+=`<ol>${it.map(x=>`<li>${inline(x)}</li>`).join('')}</ol>`;continue}
-    if(/^>\s?/.test(l)){const b=[];while(i<lines.length&&/^>\s?/.test(lines[i]))b.push(lines[i++].replace(/^>\s?/,''));out+=`<blockquote>${b.map(inline).join('<br>')}</blockquote>`;continue}
-    if(/^\s*(---|\*\*\*)\s*$/.test(l)||!l.trim()){i++;continue}
-    const p=[];while(i<lines.length&&lines[i].trim()&&!/^(#{1,6}\s|```|\s*[-*]\s+|\s*\d+[.)]\s+|>|\s*\|)/.test(lines[i]))p.push(lines[i++]);
+    if(!l.trim()){i++;continue}
+    const p=[];while(i<lines.length&&lines[i].trim()&&!/^(#{1,6}\s|\s*[-*]\s+|\s*\|)/.test(lines[i]))p.push(lines[i++]);
     if(!p.length)p.push(lines[i++]);
     out+=`<p>${p.map(inline).join('<br>')}</p>`;
   }
@@ -253,446 +248,535 @@ const COPY={
   sampling_disabled:'이 계정에서는 Claude를 쓸 수 없어요.',
   rate_limited:'요청이 많거나 사용량 한도에 닿았어요. 잠시 뒤에 다시 해 주세요.',
   session_expired:'claude.ai에 다시 로그인해 주세요.',
-  refused:'이 요청에는 답할 수 없어요. 내용을 바꿔 보세요.',
-  prompt_too_large:'넣은 자료가 너무 길어요. 줄여서 다시 해 주세요.',
-  invalid_json:'결과를 읽지 못했어요. 문항 수를 줄여서 다시 해 주세요.',
+  refused:'이 요청에는 답할 수 없어요.',
+  prompt_too_large:'고른 슬라이드가 너무 많아요. 줄여서 다시 해 주세요.',
+  invalid_json:'결과를 읽지 못했어요. 다시 해 주세요.',
   image_rejected:'사진을 읽지 못했어요. 다른 사진으로 해 주세요.',
   empty_completion:'답이 비어 있어요. 다시 해 주세요.'
 };
 const errMsg=e=>COPY[e?.code]||'연결에 문제가 있었어요. 다시 해 주세요.';
-function files(el){const f=[...(el?.files||[])];return imgCaps?f.slice(0,imgCaps.maxCount):[]}
+function needClaude(){if(!sample){setStatus('Claude에 연결되지 않았어요. claude.ai에서 열어 주세요.',true);return false}return true}
 
-/* ---------- 탭 ---------- */
-function setTab(t){
-  tab=t;
-  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  for(const k of ['exam','essay','wrong','ask'])$('#v-'+k).classList.toggle('hidden',k!==t);
-  if(t==='exam')renderExam();
-  if(t==='wrong')renderWrong();
-  if(t==='ask')renderChat();
+/* ---------- 슬라이드 자료 ---------- */
+// 고른 슬라이드(없으면 전부)를 보낸다. 전체 정리본은 약 5만 자라 한도 안에 들어가고, 한도는 나중에 자료가 늘 때를 위한 안전장치
+const POOL_CHARS=80000;
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function selSlides(avoid){
+  const s=new Set(S.sel),skip=new Set(avoid||[]);
+  let base=S.sel.length?slides.filter(x=>s.has(x.page)):slides;
+  const fresh=base.filter(x=>!skip.has(x.page));if(fresh.length>=4)base=fresh;
+  const order=[...shuffle(base.filter(x=>x.hot)),...shuffle(base.filter(x=>x.prio&&!x.hot)),...shuffle(base.filter(x=>!x.prio))];
+  const out=[];let n=0;
+  for(const x of order){const c=x.text.length+x.title.length+30;if(out.length&&n+c>POOL_CHARS)continue;out.push(x);n+=c}
+  return out.sort((a,b)=>a.page-b.page);
 }
-function wrongList(){
-  const out=[];
-  for(const ex of exams){
-    if(ex.status!=='done')continue;
-    ex.questions.forEach((q,i)=>{
-      const g=grade(ex,i);
-      if(g.score<g.max&&!(ex.mastered||[]).includes(i))out.push({ex,i,q,g});
-    });
-  }
-  return out;
+function slideText(list){return list.map(x=>`[${pg(x.page)} · ${x.unit}${x.tb?` · 교과서 ${x.tb}쪽`:''} · ${x.title}${x.hot?' · 선생님이 "시험에 낼거야"라고 적은 슬라이드':x.prio?' · 직접 추린 출제 후보':''}]\n${x.text}`).join('\n\n')}
+function recentPages(kind,n){const out=new Set();exams.filter(e=>e.kind===kind).slice(0,n).forEach(e=>e.questions.forEach(q=>(q.slides||[]).forEach(p=>out.add(p))));return[...out]}
+const openU=new Set(); // 펼쳐 둔 단원 (다시 그려도 유지)
+function pickerHtml(){
+  const sel=new Set(S.sel.length?S.sel:[]);const units=[...new Set(slides.map(x=>x.unit))];
+  if(!slides.length)return `<p class="muted" style="margin:0">슬라이드 자료가 아직 없어요.</p>`;
+  return `<div class="row"><span class="muted">출제 범위 · ${S.sel.length?S.sel.length+'장 고름':'전체 '+slides.length+'장'}</span>
+    <span><button class="ghost" type="button" data-pick="all">전체</button> <button class="ghost" type="button" data-pick="prio">★만</button></span></div>
+    <div class="slides-pick">${units.map(u=>{const us=slides.filter(x=>x.unit===u),k=us.filter(x=>sel.has(x.page)).length;
+      return `<details class="unit" data-u="${esc(u)}" ${openU.has(u)?'open':''}><summary class="unit-h">${esc(u)} <span class="muted">(${k?k+' / ':''}${us.length}장)</span></summary>
+      <div class="row" style="justify-content:flex-start;margin:4px 0"><button class="chip" type="button" data-unit="${esc(u)}">${k===us.length?'이 단원 빼기':'이 단원 전부'}</button></div>
+      <div class="chips">${us.map(x=>`<button class="chip ${x.prio?'prio':''}" type="button" data-pg="${x.page}" aria-pressed="${sel.has(x.page)}"><span class="pg">${pg(x.page)}</span>${esc(x.title)}</button>`).join('')}</div></details>`}).join('')}</div>
+    <div class="note">아무것도 안 고르면 PPT 전체에서 내요(최근에 쓴 슬라이드는 피해요). ★는 직접 추린 슬라이드, 빨간 테두리는 선생님이 "시험에 낼거야"라고 한 슬라이드예요.</div>`;
 }
-function renderTabBadge(){
-  const n=wrongList().length;
-  document.querySelector('.tab[data-tab="wrong"]').innerHTML='오답노트'+(n?`<span class="n">${n}</span>`:'');
+function onPick(e){
+  const c=e.target.closest('.chip[data-pg]');
+  if(c){const p=+c.dataset.pg;S.sel=S.sel.includes(p)?S.sel.filter(x=>x!==p):[...S.sel,p];saveLocal();renderTab();return true}
+  const un=e.target.closest('[data-unit]');
+  if(un){const us=slides.filter(x=>x.unit===un.dataset.unit).map(x=>x.page),all=us.every(p=>S.sel.includes(p));
+    S.sel=all?S.sel.filter(p=>!us.includes(p)):[...new Set([...S.sel,...us])];saveLocal();renderTab();return true}
+  const b=e.target.closest('[data-pick]');
+  if(b){S.sel=b.dataset.pick==='prio'?slides.filter(x=>x.prio).map(x=>x.page):[];saveLocal();renderTab();return true}
+  return false;
 }
 
 /* ---------- 채점 계산 ---------- */
 function grade(ex,i){
   const q=ex.questions[i],max=Number(q.points)||0;
-  if(q.type==='mc'){const a=ex.answers?.[i];return{max,score:a===q.answer?max:0,answered:a!=null}}
-  const g=ex.graded?.[i];return{max,score:g?Math.max(0,Math.min(max,Number(g.score)||0)):0,answered:!!(ex.answers?.[i]||'').trim(),g};
+  if(q.type==='mc'){const a=ex.answers?.[i];return{max,score:a===q.answer?max:0}}
+  const g=ex.graded?.[i];return{max,score:g?Math.max(0,Math.min(max,Number(g.score)||0)):0,g};
 }
-function total(ex){
-  let s=0,m=0;ex.questions.forEach((q,i)=>{const g=grade(ex,i);s+=g.score;m+=g.max});
-  return{raw:s,max:m,pct:m?Math.round(s/m*100):0};
-}
+function total(ex){let s=0,m=0;ex.questions.forEach((q,i)=>{const g=grade(ex,i);s+=g.score;m+=g.max});return{raw:s,max:m}}
+function answered(ex,i){const q=ex.questions[i],a=ex.answers?.[i];return q.type==='mc'?a!=null:!!String(a||'').trim()}
 
-/* ---------- 모의고사: 설정 ---------- */
-function renderExam(){
-  const v=$('#v-exam');
-  if(view.exam==='gen'||view.exam==='grading')return; // 진행 화면은 그대로 둔다
-  if(view.exam==='paper'&&cur)return renderPaper();
-  const sel=new Set(S.units);
-  v.innerHTML=`
-    <h2>모의고사 만들기</h2>
-    <div class="muted" style="margin-top:-8px">시험 범위를 고르고, 선생님이 강조한 내용이나 학습지를 붙여 넣으면 거기에 맞춰 출제해요.</div>
-    <div class="row"><label class="f" style="flex-direction:row;align-items:center">과정
-      <select id="lv"><option value="hs">고등학교 경제</option><option value="univ">대학 경제원론</option></select></label>
-      <button class="ghost" id="u-all" type="button">${sel.size?'범위 비우기':'전체 선택'}</button></div>
-    <div id="units">${UNITS.map(([u,subs],ui)=>`
-      <div class="unit"><button class="unit-h" type="button" data-u="${ui}">${esc(u)}</button>
-      <div class="chips">${subs.map(t=>`<button class="chip" type="button" data-t="${esc(t)}" aria-pressed="${sel.has(t)}">${esc(t)}</button>`).join('')}</div></div>`).join('')}
-    </div>
-    <label class="f">시험 범위 메모 · 강조 내용 · 학습지 (선택)
-      <textarea id="scope" rows="4" placeholder="예) 교과서 ○○출판사 54~98쪽. 선생님이 탄력성 계산이랑 최저임금 사례 꼭 나온다고 함. (학습지 내용을 그대로 붙여 넣어도 돼요)">${esc(S.scope)}</textarea></label>
-    <label class="f img-only ${imgCaps?'':'hidden'}">수업 자료·학습지 사진 (선택, 최대 ${imgCaps?.maxCount??0}장)<input type="file" id="scope-img" multiple accept="${esc(imgCaps?.mediaTypes?.join(',')||'image/*')}"></label>
-    <div class="grid3">
-      <label class="f">객관식<select id="nmc">${[5,10,15,20].map(n=>`<option value="${n}">${n}문항</option>`).join('')}</select></label>
-      <label class="f">서술형<select id="nes">${[0,1,2,3,4].map(n=>`<option value="${n}">${n}문항</option>`).join('')}</select></label>
-      <label class="f">난이도<select id="hard"><option value="easy">개념 확인</option><option value="mid">실전</option><option value="hard">고난도 많이</option></select></label>
-    </div>
-    <div class="row">
-      <label class="f" style="flex-direction:row;align-items:center">출제
-        <select id="tier"><option value="default">보통 (1~2분)</option><option value="complex">꼼꼼하게 (더 오래)</option></select></label>
-      <button class="btn" id="gen" type="button">시험지 만들기</button>
-    </div>
-    <div id="past"></div>`;
-  $('#lv').value=S.level;$('#nmc').value=S.nMc;$('#nes').value=S.nEs;$('#hard').value=S.hard;$('#tier').value=S.tier;
-  renderPast();
-}
-function renderPast(){
-  const el=$('#past');if(!el)return;
-  if(!exams.length){el.innerHTML='';return}
-  el.innerHTML=`<h2 style="margin:8px 0 10px">지난 시험지</h2><ul class="list">${exams.slice(0,15).map(ex=>{
-    const d=new Date(ex.createdAt);const t=total(ex);
-    return `<li><button class="item" type="button" data-ex="${esc(ex.id)}"><span><span class="t">${esc(ex.title||'모의고사')}</span><br><span class="muted">${d.getMonth()+1}월 ${d.getDate()}일 · ${ex.questions.length}문항</span></span>
-      <span class="s">${ex.status==='done'?t.pct+'점':'<span class="muted" style="font-size:14px">풀던 중</span>'}</span></button></li>`}).join('')}</ul>`;
-}
+/* ---------- 출제 프롬프트 ---------- */
+function pastSeodap(){const t=ref.past?.text||'';const k=t.indexOf('[ 서답형 1]');return k>=0?t.slice(k):''}
+function pastPptMc(){const t=ref.past?.text||'';const a=t.indexOf('14. '),b=t.indexOf('□ 서답형');return a>=0&&b>a?t.slice(a,b):''}
+function sdPrompt(){
+  const avoid=recentPages('sd',2),list=selSlides(avoid);
+  return `너는 한국 고등학교 2학년 「경제」 지필고사 서답형 문항을 내는 교사다. 아래 선생님의 출제 방식을 그대로 따라, 수업 PPT 슬라이드 내용으로 서답형 4문항을 만든다.
 
-/* ---------- 모의고사: 출제 ---------- */
-function examPrompt(){
-  const scope=S.units.length?S.units.join(', '):'전 단원';
-  const hard={easy:'개념을 바로 확인하는 기본 문항 위주',mid:'실제 학교 중간·기말고사 수준(기본 60%, 응용 30%, 고난도 10%)',hard:'응용·고난도 비중을 높여서(기본 30%, 응용 40%, 고난도 30%)'}[S.hard];
-  return `너는 ${LEVELS[S.level]}로 학교 지필고사(중간·기말고사) 문제를 내는 경제 교사다. 아래 조건으로 시험지 한 부를 만든다.
+${ref.style}
 
-[시험 범위] ${scope}
-[학생 메모·수업 자료]
-${S.scope.trim()||'(없음)'}
-${S._imgs?'[첨부 사진] 수업 자료·학습지 사진이 함께 있다. 사진 속 내용과 강조점을 우선 반영한다.':''}
+[작년 이 선생님의 실제 서답형 문항 — 형식·말투·채점 기준표를 그대로 본뜬다]
+${pastSeodap()}
+정답: ${ref.past?.answers||''}
 
-[구성] 객관식 5지선다 ${S.nMc}문항, 서술형 ${S.nEs}문항. 난이도는 ${hard}.
-[출제 규칙]
-- 실제 한국 학교 경제 시험지 말투로 쓴다("~으로 옳은 것은?", "~에 대한 설명으로 옳지 않은 것은?", "옳은 것만을 <보기>에서 있는 대로 고른 것은?").
-- 자료 제시형을 많이 쓴다: 표(Markdown 표), 사례, 대화문, 신문 기사 발췌, 가상 국가 갑·을국 비교. 그래프는 그릴 수 없으니 표나 글("수요 곡선이 오른쪽으로 이동")로 나타낸다.
-- <보기> 고르기 문항이면 box에 "ㄱ. …\\nㄴ. …\\nㄷ. …\\nㄹ. …"를 넣고 선택지는 "ㄱ, ㄴ" 같은 조합으로 한다. 사례·표 같은 제시문은 data에 넣는다.
-- 계산 문항(탄력성, 잉여, 기회비용, GDP, 물가상승률, 환율, 비교우위 등)을 범위에 맞게 섞는다. 숫자는 깔끔하게 떨어지게 만든다.
-- 정답은 반드시 하나뿐이어야 한다. 문제마다 스스로 풀어 검산하고, 복수 정답이나 오류가 있으면 고친 뒤 적는다. 정답 번호는 1~5에 고르게 나눈다.
-- 해설: 정답 근거와, 오답 선택지가 틀린 이유를 짧게.
-- 서술형은 조건을 붙인다(예: "~의 개념을 포함하여 두 문장 이내로 서술하시오"). 채점 기준은 부분 점수 항목으로 나누고 모범 답안을 쓴다.
-- 배점 합계는 정확히 100점. 서술형 합계는 서술형이 있을 때 20~35점.
-- 범위 밖 내용은 내지 않는다.
+[이번 출제 범위: 수업 PPT 슬라이드 정리]
+${slideText(list)}
+
+[만들 것]
+- 서답형 1, 2: 각 5점. 둘 중 하나는 답 하나(5점, 부분 점수 없음: 지문 보고 용어·제도·인물 이름, 또는 슬라이드 수치로 계산), 다른 하나는 지문 속 (A), (B) 두 칸(각 2.5점, 서로 짝을 이루는 개념). 어느 쪽을 어떤 형식으로 할지는 섞어서 정한다.
+- 서술형·단답형 모두 교과서에 나오는 평범한 기본 개념(기본 경제 문제, 경제 체제, 수요·공급 변동 요인 같은 것)은 내지 않는다. PPT에만 있는 AI 답변 스크린샷, 뉴스 캡처, 보충 자료, 예시답안, 판서에서 낸다.
+- 서답형 3, 4: 각 10점, 부분 점수 있음. 그런 PPT 슬라이드의 내용에서 핵심 부분이 4개 또는 5개가 되도록 낸다("개념 + 원인 N가지", "용어와 예를 각각" 등). 채점 기준표: 핵심 5부분이면 "네 부분 8점 / 세 부분 6점 / 두 부분 4점 / 한 부분 2점", 4부분이면 "세 부분 7.5점 / 두 부분 5점 / 한 부분 2.5점"(전부 맞으면 10점). keyPoints에 핵심 부분을 정확히 4~5개 적는다.
+- 네 문항은 서로 다른 슬라이드에서 낸다. 슬라이드에 없는 내용을 정답으로 요구하지 않는다(지문을 꾸밀 때는 슬라이드 내용을 바꿔 써도 된다).
+${avoid.length?`- 최근 서답형에 이미 쓴 슬라이드(${avoid.map(pg).join(', ')})는 되도록 피한다.`:''}
+- 정답과 채점 기준을 스스로 다시 확인한다.
 
 [출력] 다른 말 없이 JSON 하나만:
-{"title":"시험지 제목(예: 2학기 중간고사 대비 1회)","questions":[
- {"type":"mc","unit":"세부 단원","points":4,"stem":"발문","data":"제시문(Markdown, 없으면 빈 문자열)","box":"<보기> 내용(없으면 빈 문자열)","choices":["①내용","②","③","④","⑤ (번호 기호 없이 내용만)"],"answer":3,"explanation":"해설"},
- {"type":"essay","unit":"세부 단원","points":10,"stem":"발문과 조건","data":"","box":"","rubric":[{"c":"채점 항목","p":4}],"modelAnswer":"모범 답안"}
-]}
-객관식을 먼저, 서술형을 뒤에 둔다.`;
+{"questions":[
+ {"no":1,"type":"short","kind":"단답형","points":5,"partial":"부분 점수 없음","slides":[쪽 번호],"stem":"발문(배점 표기는 빼고)","data":"지문·표(Markdown, 없으면 빈 문자열)","answer":"정답","accept":["허용할 다른 표기"],"explanation":"정답 근거(어느 슬라이드의 무엇인지)"},
+ {"no":2,"type":"short","kind":"단답형","points":5,"partial":"부분 점수 없음 또는 각 2.5점","slides":[],"stem":"","data":"","answer":"","accept":[],"explanation":""},
+ {"no":3,"type":"essay","kind":"서술형","points":10,"partial":"부분 점수 있음","slides":[],"stem":"","data":"","keyPoints":["핵심 부분 1","…"],"table":[{"c":"핵심 내용 중 네 부분만 올바르게 서술한 경우","p":8}],"modelAnswer":"모범 답안"},
+ {"no":4,"type":"essay","kind":"서술형","points":10,"partial":"부분 점수 있음","slides":[],"stem":"","data":"","keyPoints":[],"table":[],"modelAnswer":""}
+]}`;
 }
-function cleanExam(j){
-  const qs=(Array.isArray(j?.questions)?j.questions:[]).map(q=>{
-    const o={type:q.type==='essay'?'essay':'mc',unit:String(q.unit||''),points:Math.max(1,Math.round(Number(q.points)||0)),stem:String(q.stem||''),data:String(q.data||''),box:String(q.box||'')};
-    if(o.type==='mc'){
-      o.choices=(Array.isArray(q.choices)?q.choices:[]).map(c=>String(c).replace(/^\s*[①②③④⑤]\s*/,''));
+function mcPrompt(n){
+  const avoid=recentPages('mc',2),list=selSlides(avoid);
+  return `너는 한국 고등학교 2학년 「경제」 지필고사 객관식을 내는 교사다. 이 선생님은 객관식 대부분을 학평·모평 기출로 내고, 2~3문항만 수업 PPT의 사소한 슬라이드(뉴스 캡처, AI 답변 스크린샷, 통계 그래프, 곁가지 교양)에서 그대로 낸다. 그 PPT 출제 문항을 연습용으로 ${n}문항 만든다.
+
+[작년 실제 PPT 출제 문항 예시]
+${pastPptMc()}
+(같은 선생님 사회와 문화 예시: "다음 중 신에너지에 해당하는 것은?", "사회 구조와 사회 변동에 대한 설명으로 올바른 것은?"(디지털 교과서 보급률 슬라이드))
+
+[출제 범위: 수업 PPT 슬라이드 정리]
+${slideText(list)}
+
+[규칙]
+- 슬라이드의 세부 사실(숫자, 연도, 비율, 순서, 인물, 출처, 사례 이름, 목록 항목, 분류)을 묻는다. 5지선다, "~에 대한 설명으로 올바른 것은?/올바르지 않은 것은?", "다음 중 ~에 해당하는 것은?", "시기 순서대로 배열한 것은?" 같은 단순 선지형.
+- 오답 선지는 숫자·연도·순서를 살짝 바꾸거나, 주체를 바꾸거나, 다른 슬라이드 내용을 섞어 그럴듯하게 만든다.
+- 정답은 반드시 하나. 슬라이드에 근거가 없는 선지를 정답으로 두지 않는다. 스스로 검산한다. 정답 번호는 고르게.
+- 문항마다 서로 다른 슬라이드에서 낸다. ★(선생님 강조 후보) 슬라이드를 조금 더 자주 쓴다.
+${avoid.length?`- 최근에 쓴 슬라이드(${avoid.map(pg).join(', ')})는 되도록 피한다.`:''}
+- 배점은 4.3~4.7 사이 소수 하나.
+
+[출력] 다른 말 없이 JSON 하나만:
+{"questions":[{"type":"mc","slides":[쪽 번호],"points":4.5,"stem":"발문","data":"제시문(없으면 빈 문자열)","box":"<보기>(없으면 빈 문자열)","choices":["번호 없이 5개"],"answer":1~5,"explanation":"정답 근거와 틀린 선지 이유(슬라이드 쪽 번호 포함)"}]}`;
+}
+function cleanQs(j){
+  return (Array.isArray(j?.questions)?j.questions:[]).map(q=>{
+    const t=q.type==='mc'?'mc':q.type==='essay'?'essay':'short';
+    const o={type:t,points:Math.max(1,Number(q.points)||0),stem:String(q.stem||''),data:String(q.data||''),slides:(Array.isArray(q.slides)?q.slides:[]).map(Number).filter(n=>n>0)};
+    if(t==='mc'){
+      o.box=String(q.box||'');o.choices=(Array.isArray(q.choices)?q.choices:[]).map(c=>String(c).replace(/^\s*[①②③④⑤]\s*/,''));
       o.answer=Number(q.answer)-1;o.explanation=String(q.explanation||'');
       if(o.choices.length!==5||!(o.answer>=0&&o.answer<5))return null;
     }else{
-      o.rubric=(Array.isArray(q.rubric)?q.rubric:[]).map(r=>({c:String(r.c||''),p:Number(r.p)||0}));
-      o.modelAnswer=String(q.modelAnswer||'');
+      o.no=Number(q.no)||0;o.kind=String(q.kind||(t==='essay'?'서술형':'단답형'));o.partial=String(q.partial||'');
+      if(t==='short'){o.answer=String(q.answer||'');o.accept=(Array.isArray(q.accept)?q.accept:[]).map(String);o.explanation=String(q.explanation||'')}
+      else{o.keyPoints=(Array.isArray(q.keyPoints)?q.keyPoints:[]).map(String);o.table=(Array.isArray(q.table)?q.table:[]).map(r=>({c:String(r.c||''),p:Number(r.p)||0}));o.modelAnswer=String(q.modelAnswer||'')}
     }
     return o.stem?o:null;
   }).filter(Boolean);
-  return{title:String(j?.title||'경제 모의고사'),questions:qs};
-}
-async function generate(){
-  if(!sample){setStatus('Claude에 연결되지 않았어요. claude.ai에서 열어 주세요.',true);return}
-  readSetup();
-  const imgs=files($('#scope-img'));S._imgs=imgs.length>0;
-  const prompt=examPrompt();delete S._imgs;
-  view.exam='gen';
-  const total=S.nMc+S.nEs;
-  $('#v-exam').innerHTML=`<div class="wait"><div class="big">시험지를 만드는 중이에요</div>
-    <div class="muted" id="gen-msg">문제를 구상하는 중… (1~2분, 꼼꼼하게는 더 걸려요)</div>
-    <div class="bar" style="width:100%"><i id="gen-bar" style="width:3%"></i></div>
-    <button class="btn stop" id="gen-stop" type="button">그만두기</button></div>`;
-  const ctl=busy=new AbortController();
-  $('#gen-stop').onclick=()=>ctl.abort();
-  try{
-    const j=await sample.json(prompt,{signal:ctl.signal,modelTier:S.tier,cache:false,...(imgs.length?{images:imgs}:{}),
-      onText:({text})=>{
-        const n=(text.match(/"type"\s*:/g)||[]).length;
-        const m=$('#gen-msg'),b=$('#gen-bar');
-        if(m)m.textContent=n?`${Math.min(n,total)}번 문제 쓰는 중… / ${total}문항`:'제목과 구성을 정하는 중…';
-        if(b)b.style.width=Math.max(3,Math.min(97,n/total*100))+'%';
-      }});
-    const ex=cleanExam(j);
-    if(!ex.questions.length)throw{code:'invalid_json'};
-    cur={id:uid(),createdAt:new Date().toISOString(),level:S.level,units:[...S.units],scope:S.scope,status:'draft',answers:{},graded:{},mastered:[],...ex};
-    exams.unshift(cur);
-    await saveExam(cur);
-    view.exam='paper';
-    setStatus(ex.questions.length<total?`${ex.questions.length}문항이 만들어졌어요(형식이 어긋난 문항은 뺐어요).`:'');
-    renderPaper();window.scrollTo({top:0,behavior:'smooth'});
-  }catch(e){
-    view.exam='setup';renderExam();
-    if(e?.code!=='cancelled')setStatus(errMsg(e),true);
-  }finally{busy=null}
-}
-function readSetup(){
-  const g=id=>document.getElementById(id);
-  if(!g('lv'))return;
-  S.level=g('lv').value;S.nMc=+g('nmc').value;S.nEs=+g('nes').value;S.hard=g('hard').value;S.tier=g('tier').value;S.scope=g('scope').value;
-  saveLocal();
 }
 
-/* ---------- 모의고사: 시험지 ---------- */
-function qHtml(q,i,ex,mode){ // mode: solve | review
-  const a=ex.answers?.[i];const g=grade(ex,i);
-  let body='';
-  if(q.type==='mc'){
-    body=`<ul class="choices">${q.choices.map((c,k)=>{
-      let cls='',pressed=a===k;
-      if(mode==='review'){if(k===q.answer)cls='right';else if(a===k)cls='wrong'}
-      return `<li><button class="choice ${cls}" type="button" data-q="${i}" data-k="${k}" aria-pressed="${pressed}" ${mode==='review'?'disabled':''}><span class="k">${k+1}</span><span class="md">${inline(c)}</span></button></li>`}).join('')}</ul>`;
-    if(mode==='review'){
-      const ok=a===q.answer;
-      body+=`<div class="explain ${ok?'ok':'bad'}"><span class="mark ${ok?'ok':'bad'}">${ok?'정답':a==null?'안 풂':'오답'}</span> · 정답 ${CIRC[q.answer]}<div class="md">${md(q.explanation)}</div></div>`;
-    }
-  }else{
-    if(mode==='solve')body=`<textarea rows="5" data-es="${i}" placeholder="답안을 쓰세요">${esc(a||'')}</textarea>`;
-    else{
-      const r=g.g;const cls=g.score>=g.max?'ok':g.score>0?'mid':'bad';
-      body=`<div class="explain"><b>내 답안</b><div style="white-space:pre-wrap">${esc(a||'(비워 둠)')}</div></div>
-        <div class="explain ${cls}"><span class="mark ${cls}">${g.score} / ${g.max}점</span>${r?.feedback?`<div class="md">${md(r.feedback)}</div>`:''}
-        ${r?.missing?.length?`<div><b>빠진 핵심:</b> ${r.missing.map(esc).join(', ')}</div>`:''}</div>
-        <div class="explain"><b>채점 기준</b><ul style="margin:4px 0;padding-left:20px">${(q.rubric||[]).map(x=>`<li>${esc(x.c)} (${x.p}점)</li>`).join('')}</ul><b>모범 답안</b><div class="md">${md(q.modelAnswer)}</div></div>`;
-    }
-  }
-  return `<div class="q" id="q${i}"><div class="q-top"><span class="q-no">${i+1}.</span><div class="q-stem md">${md(q.stem)}</div><span class="q-pt">[${q.points}점]</span></div>
-    ${q.data?`<div class="box plain md">${md(q.data)}</div>`:''}
-    ${q.box?`<div class="box md">${md(q.box)}</div>`:''}
-    ${body}${mode==='review'&&q.unit?`<div class="tag">${esc(q.unit)}</div>`:''}</div>`;
+/* ---------- 출제 ---------- */
+async function generate(kind){
+  if(!needClaude())return;
+  const n=kind==='mc'?S.nMc:4;
+  const prompt=kind==='mc'?mcPrompt(n):sdPrompt();
+  view[kind]='busy';
+  const v=$('#v-'+kind);
+  v.innerHTML=`<div class="wait"><div class="big">${kind==='mc'?'PPT 객관식':'서답형 시험지'}를 만드는 중이에요</div>
+    <div class="muted" id="gen-msg">슬라이드를 훑는 중… (1~2분)</div>
+    <div class="bar" style="width:100%"><i id="gen-bar" style="width:3%"></i></div>
+    <button class="btn stop" id="gen-stop" type="button">그만두기</button></div>`;
+  const ctl=busy=new AbortController();$('#gen-stop').onclick=()=>ctl.abort();
+  try{
+    const j=await sample.json(prompt,{signal:ctl.signal,modelTier:S.tier,cache:false,onText:({text})=>{
+      const k=(text.match(/"stem"\s*:/g)||[]).length;const m=$('#gen-msg'),b=$('#gen-bar');
+      if(m)m.textContent=k?`${Math.min(k,n)}번 문제 쓰는 중… / ${n}문항`:'문제를 구상하는 중…';
+      if(b)b.style.width=Math.max(3,Math.min(97,k/n*100))+'%';
+    }});
+    const qs=cleanQs(j).filter(q=>kind==='mc'?q.type==='mc':q.type!=='mc');
+    if(!qs.length)throw{code:'invalid_json'};
+    if(kind==='sd')qs.sort((a,b)=>(a.no||9)-(b.no||9));
+    const ex={id:uid(),kind,createdAt:new Date().toISOString(),title:kind==='mc'?'PPT 객관식':'서답형 모의',sel:[...S.sel],status:'draft',answers:{},graded:{},mastered:[],questions:qs};
+    exams.unshift(ex);cur[kind]=ex;view[kind]='paper';
+    await saveExam(ex);
+    setStatus(qs.length<n?`${qs.length}문항만 만들어졌어요(형식이 어긋난 문항은 뺐어요).`:'');
+  }catch(e){view[kind]='setup';if(e?.code!=='cancelled')setStatus(errMsg(e),true)}
+  finally{busy=null;renderTab();window.scrollTo({top:0,behavior:'smooth'})}
 }
-function renderPaper(){
-  const ex=cur,done=ex.status==='done',mode=done?'review':'solve';
-  const v=$('#v-exam');
-  const t=total(ex);
-  const nMc=ex.questions.filter(q=>q.type==='mc').length,nEs=ex.questions.length-nMc;
-  const omr=ex.questions.map((q,i)=>{
-    let c='';
-    if(done){const g=grade(ex,i);c=g.score>=g.max?'ok':g.score>0?'mid':'bad'}
-    else if(q.type==='mc'?ex.answers[i]!=null:(ex.answers[i]||'').trim())c='done';
-    return `<a href="#q${i}" class="${c}" data-jump="${i}">${i+1}</a>`}).join('');
-  v.innerHTML=`
-    <div class="row"><button class="ghost" id="back" type="button">← 목록</button>
-      ${done?`<button class="ghost" id="retry" type="button">다시 풀기</button>`:''}</div>
-    ${done?`<div class="score"><b>${t.pct}</b><span>점 / 100</span></div>
-      <div class="muted" style="text-align:center">${t.raw} / ${t.max}점 · 객관식 ${ex.questions.filter((q,i)=>q.type==='mc'&&grade(ex,i).score>=grade(ex,i).max).length}/${nMc} 정답${nEs?` · 서술형 ${ex.questions.reduce((s,q,i)=>s+(q.type==='essay'?grade(ex,i).score:0),0)}/${ex.questions.reduce((s,q)=>s+(q.type==='essay'?q.points:0),0)}점`:''}</div>`:''}
-    <div class="omr" aria-label="문항 바로 가기">${omr}</div>
-    <div class="paper">
-      <div class="paper-h"><h2>${esc(ex.title)}</h2><div class="muted">${esc(ex.units?.length?ex.units.join(' · '):'전 단원')}</div>
-        <div class="muted">객관식 ${nMc}문항 · 서술형 ${nEs}문항 · 100점</div></div>
-      ${ex.questions.map((q,i)=>qHtml(q,i,ex,mode)).join('')}
-    </div>
-    ${done?'':`<div class="row"><span class="muted" id="left"></span><button class="btn" id="submit" type="button">답안 제출</button></div>`}`;
-  updateLeft();
-}
-function updateLeft(){
-  const el=$('#left');if(!el||!cur)return;
-  const n=cur.questions.filter((q,i)=>q.type==='mc'?cur.answers[i]==null:!(cur.answers[i]||'').trim()).length;
-  el.textContent=n?`안 푼 문항 ${n}개`:'모두 풀었어요';
-}
-let saveT=null;
-function saveSoon(){clearTimeout(saveT);saveT=setTimeout(()=>cur&&saveExam(cur),1200)}
 async function saveExam(ex){
   if(!db)return;
   try{await db.doc('exams/'+ex.id).set(JSON.parse(JSON.stringify(ex)))}
-  catch(e){setStatus('시험지를 저장하지 못했어요. 이 화면을 닫으면 사라질 수 있어요.',true)}
+  catch(e){setStatus('저장하지 못했어요. 이 화면을 닫으면 사라질 수 있어요.',true)}
 }
+let saveT=null;
+function saveSoon(ex){clearTimeout(saveT);saveT=setTimeout(()=>saveExam(ex),1200)}
 
-async function submit(){
-  const ex=cur;
-  const left=ex.questions.filter((q,i)=>q.type==='mc'?ex.answers[i]==null:!(ex.answers[i]||'').trim()).length;
-  if(left&&!confirm(`안 푼 문항이 ${left}개 있어요. 그래도 제출할까요?`))return;
-  clearTimeout(saveT);
-  const essays=ex.questions.map((q,i)=>({q,i})).filter(x=>x.q.type==='essay'&&(ex.answers[x.i]||'').trim());
-  ex.graded={};
-  if(essays.length){
-    if(!sample){setStatus('Claude에 연결되지 않아 서술형을 채점할 수 없어요.',true);return}
-    view.exam='grading';
-    $('#v-exam').innerHTML=`<div class="wait"><div class="big">서술형을 채점하는 중이에요</div><div class="muted">채점 기준에 맞춰 부분 점수를 매겨요 (30초~1분)</div><button class="btn stop" id="gen-stop" type="button">그만두기</button></div>`;
-    const ctl=busy=new AbortController();$('#gen-stop').onclick=()=>ctl.abort();
-    const prompt=`너는 ${LEVELS[ex.level||'hs']} 경제 서술형 답안을 채점하는 교사다. 채점 기준에 맞춰 공정하게 부분 점수를 준다. 핵심 개념어가 빠지거나 인과가 틀리면 감점하고, 표현이 달라도 뜻이 맞으면 인정한다. 피드백은 학생에게 말하듯 한국어로 2~3문장.
-${essays.map(({q,i})=>`
-### 문항 ${i}
-배점: ${q.points}
-발문: ${q.stem}
-${q.data?'제시문: '+q.data:''}
-채점 기준: ${(q.rubric||[]).map(r=>`${r.c}(${r.p}점)`).join(' / ')}
-모범 답안: ${q.modelAnswer}
-학생 답안: ${ex.answers[i]}`).join('\n')}
-
-[출력] JSON 배열만: [{"i":문항번호,"score":점수,"feedback":"피드백","missing":["빠진 핵심어"]}]`;
-    try{
-      const r=await sample.json(prompt,{signal:ctl.signal,cache:false});
-      for(const x of Array.isArray(r)?r:[])if(essays.some(e=>e.i===Number(x.i)))
-        ex.graded[Number(x.i)]={score:Number(x.score)||0,feedback:String(x.feedback||''),missing:(Array.isArray(x.missing)?x.missing:[]).map(String)};
-    }catch(e){
-      view.exam='paper';renderPaper();
-      if(e?.code!=='cancelled')setStatus('서술형 채점에 실패했어요: '+errMsg(e),true);
-      return;
-    }finally{busy=null}
+/* ---------- 시험지 ---------- */
+function srcHtml(q){return (q.slides||[]).map(p=>`<button class="src" type="button" data-goto="${p}">PPT ${pg(p)}${slides.find(x=>x.page===p)?' · '+esc(slides.find(x=>x.page===p).title):''}</button>`).join(' ')}
+function rubricHtml(q){
+  if(q.type==='short')return `<div><b>정답</b> ${esc(q.answer)}${q.accept?.length?` <span class="muted">(인정: ${q.accept.map(esc).join(', ')})</span>`:''}</div><div class="md">${md(q.explanation)}</div>`;
+  return `<b>채점 기준</b><table class="rub">${(q.table||[]).map(r=>`<tr><td>${esc(r.c)}</td><td>${fmt(r.p)}점</td></tr>`).join('')}</table>
+    ${q.keyPoints?.length?`<div style="margin-top:6px"><b>핵심 부분</b><ol style="margin:4px 0;padding-left:22px">${q.keyPoints.map(k=>`<li>${esc(k)}</li>`).join('')}</ol></div>`:''}
+    <b>모범 답안</b><div class="md">${md(q.modelAnswer)}</div>`;
+}
+function qHtml(q,i,ex,mode){
+  const a=ex.answers?.[i],g=grade(ex,i);
+  const head=q.type==='mc'
+    ?`<div class="q-top"><span class="q-no">${i+1}.</span><div class="q-stem md">${md(q.stem)} [${fmt(q.points)}]</div></div>`
+    :`<div class="q-top"><div class="q-stem md">${md(`[ 서답형 ${q.no||i+1} ](${q.kind}) ${q.stem} (${fmt(q.points)}점. ${q.partial||''})`)}</div></div>`;
+  let body='';
+  if(q.type==='mc'){
+    body=`<ul class="choices">${q.choices.map((c,k)=>{
+      let cls='';if(mode==='review'){if(k===q.answer)cls='right';else if(a===k)cls='wrong'}
+      return `<li><button class="choice ${cls}" type="button" data-q="${i}" data-k="${k}" aria-pressed="${a===k}" ${mode==='review'?'disabled':''}><span class="k">${k+1}</span><span class="md">${inline(c)}</span></button></li>`}).join('')}</ul>`;
+    if(mode==='review'){const ok=a===q.answer;body+=`<div class="explain ${ok?'ok':'bad'}"><span class="mark ${ok?'ok':'bad'}">${ok?'정답':a==null?'안 풂':'오답'}</span> · 정답 ${CIRC[q.answer]}<div class="md">${md(q.explanation)}</div></div>`}
+  }else{
+    if(q.type==='essay'&&mode==='solve')body+=`<div><b style="font-size:14px">※ 채점 기준</b><table class="rub">${(q.table||[]).map(r=>`<tr><td>${esc(r.c)}</td><td>${fmt(r.p)}점</td></tr>`).join('')}</table></div>`;
+    if(mode==='solve')body+=`<textarea rows="${q.type==='essay'?6:2}" data-es="${i}" placeholder="${q.type==='essay'?'답안을 쓰세요':'답'}">${esc(a||'')}</textarea>`;
+    else{
+      const r=g.g,cls=g.score>=g.max?'ok':g.score>0?'mid':'bad';
+      body+=`<div class="explain"><b>내 답안</b><div style="white-space:pre-wrap">${esc(a||r?.read||'(비워 둠)')}</div></div>
+        <div class="explain ${cls}"><span class="mark ${cls}">${fmt(g.score)} / ${fmt(g.max)}점</span>${r?.feedback?`<div class="md">${md(r.feedback)}</div>`:''}
+        ${r?.missing?.length?`<div><b>빠진 핵심:</b> ${r.missing.map(esc).join(', ')}</div>`:''}</div>
+        <div class="explain">${rubricHtml(q)}</div>`;
+    }
   }
-  ex.status='done';ex.submittedAt=new Date().toISOString();
-  view.exam='paper';
-  await saveExam(ex);
-  setStatus('');renderTabBadge();renderPaper();window.scrollTo({top:0,behavior:'smooth'});
+  return `<div class="q" id="q-${ex.kind}-${i}">${head}
+    ${q.data?`<div class="box plain md">${md(q.data)}</div>`:''}${q.box?`<div class="box md">${md(q.box)}</div>`:''}
+    ${body}${mode==='review'?`<div>${srcHtml(q)}</div>`:''}</div>`;
+}
+function renderPaper(kind){
+  const ex=cur[kind],done=ex.status==='done',mode=done?'review':'solve',v=$('#v-'+kind),t=total(ex);
+  const nOk=ex.questions.filter((q,i)=>grade(ex,i).score>=grade(ex,i).max).length;
+  const omr=ex.questions.map((q,i)=>{let c='';if(done){const g=grade(ex,i);c=g.score>=g.max?'ok':g.score>0?'mid':'bad'}else if(answered(ex,i))c='done';
+    return `<a href="#" class="${c}" data-jump="${i}">${kind==='sd'?'서'+(q.no||i+1):i+1}</a>`}).join('');
+  v.innerHTML=`<div class="row"><button class="ghost" type="button" data-act="back">← 목록</button>${done?`<button class="ghost" type="button" data-act="retry">다시 풀기</button>`:''}</div>
+    ${done?`<div class="score"><b>${fmt(t.raw)}</b><span>점 / ${fmt(t.max)}</span></div><div class="muted" style="text-align:center">${nOk} / ${ex.questions.length}문항 만점</div>`:''}
+    <div class="omr">${omr}</div>
+    <div class="paper">
+      ${kind==='sd'?`<div class="notice">□ 서답형 문항은 검정색 볼펜으로 정확하게 작성하시기 바랍니다.<br>□ 답은 반드시 답안지의 해당 번호에 기입해야 하며, 해당 번호에 기입하지 않은 경우 점수를 인정하지 않습니다.</div><div class="sec-h">서답형(단답형, 서·논술형)</div>`
+        :`<div class="paper-h"><h2>PPT 객관식</h2><div class="muted">수업 슬라이드에서 나오는 2~3문항 대비</div></div>`}
+      ${ex.questions.map((q,i)=>qHtml(q,i,ex,mode)).join('')}
+    </div>
+    ${done?'':`${kind==='sd'?`<label class="f ${imgCaps?'':'hidden'}">종이에 썼다면 답안 사진 (선택, 빈칸인 문항만 사진에서 읽어요)<input type="file" id="ans-img" multiple accept="${esc(imgCaps?.mediaTypes?.join(',')||'image/*')}"></label>`:''}
+      <div class="row"><span class="muted" id="left-${kind}"></span><button class="btn" type="button" data-act="submit">${kind==='sd'?'채점받기':'답안 제출'}</button></div>`}`;
+  updateLeft(kind);
+}
+function updateLeft(kind){const el=$('#left-'+kind),ex=cur[kind];if(!el||!ex)return;const n=ex.questions.filter((q,i)=>!answered(ex,i)).length;el.textContent=n?`안 푼 문항 ${n}개`:'모두 풀었어요'}
+
+async function submit(kind){
+  const ex=cur[kind];
+  const imgs=kind==='sd'?[...($('#ans-img')?.files||[])].slice(0,imgCaps?.maxCount||0):[];
+  const left=ex.questions.filter((q,i)=>!answered(ex,i)).length;
+  if(left&&!imgs.length&&!confirm(`안 푼 문항이 ${left}개 있어요. 그래도 제출할까요?`))return;
+  clearTimeout(saveT);ex.graded={};
+  const todo=ex.questions.map((q,i)=>({q,i})).filter(x=>x.q.type!=='mc'&&(answered(ex,x.i)||imgs.length));
+  if(todo.length){
+    if(!needClaude())return;
+    view[kind]='busy';
+    $('#v-'+kind).innerHTML=`<div class="wait"><div class="big">채점 기준표로 채점하는 중이에요</div><div class="muted">30초~1분</div><button class="btn stop" id="gen-stop" type="button">그만두기</button></div>`;
+    const ctl=busy=new AbortController();$('#gen-stop').onclick=()=>ctl.abort();
+    const prompt=`너는 고등학교 「경제」 서답형 채점 교사다. 문항별 채점 기준표를 기계적으로 그대로 적용한다.
+- 단답형 "부분 점수 없음": 정답 또는 인정 표기와 같은 뜻의 정확한 용어·이름이면 만점, 아니면 0점. 맞춤법이 조금 틀려도 같은 용어로 알아볼 수 있으면 인정. 비슷하지만 다른 용어는 0점.
+- (A)(B)처럼 "각 2.5점"이면 칸마다 따로 채점.
+- 서술형: 핵심 부분 목록 중 올바르게 서술한 개수를 세어 채점 기준표의 점수를 준다. 전부 맞으면 만점. 틀린 내용이 섞인 부분은 인정하지 않는다.
+- feedback은 학생에게 1~2문장(어느 핵심 부분이 맞고 무엇이 빠졌는지). missing은 빠진 핵심 부분 짧게.
+${imgs.length?'- 학생 답안이 "(사진)"이면 첨부한 답안지 사진에서 그 번호의 답을 찾아 읽고, read에 읽은 그대로 옮겨 적는다. 찾을 수 없으면 0점.':''}
+${todo.map(({q,i})=>`
+### 문항 ${i} — 서답형 ${q.no||i+1} (${q.kind}, ${fmt(q.points)}점, ${q.partial})
+발문: ${q.stem}
+${q.data?'지문: '+q.data:''}
+${q.type==='short'?`정답: ${q.answer}${q.accept?.length?' / 인정: '+q.accept.join(', '):''}`:`핵심 부분: ${(q.keyPoints||[]).map((k,n)=>`(${n+1}) ${k}`).join(' ')}
+채점 기준표: ${(q.table||[]).map(r=>`${r.c} ${r.p}점`).join(' / ')}
+모범 답안: ${q.modelAnswer}`}
+학생 답안: ${String(ex.answers[i]||'').trim()||'(사진)'}`).join('\n')}
+
+[출력] JSON 배열만: [{"i":문항번호,"score":점수,"read":"사진에서 읽은 답(사진이 아니면 빈 문자열)","feedback":"","missing":[]}]`;
+    try{
+      const r=await sample.json(prompt,{signal:ctl.signal,cache:false,...(imgs.length?{images:imgs}:{})});
+      for(const x of Array.isArray(r)?r:[]){const i=Number(x.i);if(todo.some(t=>t.i===i))ex.graded[i]={score:Number(x.score)||0,read:String(x.read||''),feedback:String(x.feedback||''),missing:(Array.isArray(x.missing)?x.missing:[]).map(String)}}
+    }catch(e){view[kind]='paper';renderTab();if(e?.code!=='cancelled')setStatus('채점에 실패했어요: '+errMsg(e),true);return}
+    finally{busy=null}
+  }
+  ex.status='done';ex.submittedAt=new Date().toISOString();view[kind]='paper';
+  await saveExam(ex);setStatus('');renderBadge();renderTab();window.scrollTo({top:0,behavior:'smooth'});
 }
 
-/* 모의고사 이벤트 (위임) */
-$('#v-exam').addEventListener('click',e=>{
-  const t=e.target;
-  const chip=t.closest('.chip[data-t]');
-  if(chip){const x=chip.dataset.t;S.units=S.units.includes(x)?S.units.filter(u=>u!==x):[...S.units,x];chip.setAttribute('aria-pressed',S.units.includes(x));readSetup();saveLocal();$('#u-all').textContent=S.units.length?'범위 비우기':'전체 선택';return}
-  const uh=t.closest('.unit-h');
-  if(uh){const subs=UNITS[+uh.dataset.u][1];const all=subs.every(s=>S.units.includes(s));S.units=all?S.units.filter(u=>!subs.includes(u)):[...new Set([...S.units,...subs])];readSetup();saveLocal();renderExam();return}
-  if(t.id==='u-all'){S.units=S.units.length?[]:UNITS.flatMap(u=>u[1]);readSetup();saveLocal();renderExam();return}
-  if(t.id==='gen')return generate();
-  const it=t.closest('[data-ex]');
-  if(it){cur=exams.find(x=>x.id===it.dataset.ex);if(cur){view.exam='paper';renderPaper();window.scrollTo({top:0})}return}
-  if(t.closest('#back')){if(cur&&cur.status!=='done'){clearTimeout(saveT);saveExam(cur)}cur=null;view.exam='setup';renderExam();return}
-  if(t.closest('#retry')){
-    const ex=cur;cur={...JSON.parse(JSON.stringify(ex)),id:uid(),createdAt:new Date().toISOString(),status:'draft',answers:{},graded:{},mastered:[],title:ex.title.replace(/( \(다시\))*$/,'')+' (다시)'};
-    exams.unshift(cur);saveExam(cur);renderPaper();window.scrollTo({top:0});return}
-  const ch=t.closest('.choice[data-q]');
-  if(ch&&cur&&cur.status!=='done'){
-    const i=+ch.dataset.q,k=+ch.dataset.k;
-    cur.answers[i]=cur.answers[i]===k?null:k;if(cur.answers[i]==null)delete cur.answers[i];
-    ch.closest('.choices').querySelectorAll('.choice').forEach(b=>b.setAttribute('aria-pressed',cur.answers[i]===+b.dataset.k));
-    const o=document.querySelector(`.omr [data-jump="${i}"]`);o&&o.classList.toggle('done',cur.answers[i]!=null);
-    updateLeft();saveSoon();return}
-  if(t.id==='submit')return submit();
-  const j=t.closest('[data-jump]');
-  if(j){e.preventDefault();document.getElementById('q'+j.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'})}
+/* ---------- 서답형·PPT 객관식 화면 ---------- */
+function renderSetup(kind){
+  const v=$('#v-'+kind),past=exams.filter(e=>e.kind===kind);
+  v.innerHTML=`<h2>${kind==='sd'?'서답형 모의 (5점 · 5점 · 10점 · 10점)':'PPT 객관식'}</h2>
+    <p class="muted" style="margin:-6px 0 0">${kind==='sd'
+      ?'작년 기출과 같은 틀로 서답형 4문항을 만들어요. 서술형은 선생님 채점 기준표(핵심 부분 개수)로 채점해요.'
+      :'시험에 2~3문항 나오는 PPT 출제 문항을 연습해요. 슬라이드의 숫자·연도·인물·사례까지 물어요.'}</p>
+    ${pickerHtml()}
+    <div class="row">
+      <span class="opts">${kind==='mc'?`<label>문항 <select data-set="nMc">${[3,5,10].map(n=>`<option value="${n}" ${S.nMc===n?'selected':''}>${n}문항</option>`).join('')}</select></label>`:''}
+        <label>출제 <select data-set="tier"><option value="default" ${S.tier==='default'?'selected':''}>보통</option><option value="complex" ${S.tier==='complex'?'selected':''}>꼼꼼하게</option></select></label></span>
+      <button class="btn" type="button" data-act="gen">${kind==='sd'?'서답형 만들기':'문제 만들기'}</button></div>
+    ${past.length?`<h2 style="margin-top:6px">지난 시험지</h2><ul class="list">${past.slice(0,12).map(ex=>{const d=new Date(ex.createdAt),t=total(ex);
+      return `<li><button class="item" type="button" data-ex="${esc(ex.id)}"><span><span class="t">${esc(ex.title)}</span><br><span class="muted">${d.getMonth()+1}월 ${d.getDate()}일 · ${ex.questions.length}문항 · ${[...new Set(ex.questions.flatMap(q=>q.slides||[]))].map(pg).join(' ')}</span></span>
+        <span class="s">${ex.status==='done'?fmt(t.raw)+'<span class="muted" style="font-size:13px">/'+fmt(t.max)+'</span>':'<span class="muted" style="font-size:14px">풀던 중</span>'}</span></button></li>`}).join('')}</ul>`:''}`;
+}
+function renderTab(){
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
+  for(const k of ['sd','mc','mq','sl','wr'])$('#v-'+k).classList.toggle('hidden',k!==tab);
+  if(tab==='sd'||tab==='mc'){if(view[tab]==='busy')return;if(view[tab]==='paper'&&cur[tab])renderPaper(tab);else renderSetup(tab)}
+  if(tab==='sl')renderSlides();
+  if(tab==='wr')renderWrong();
+  if(tab==='mq')renderMemo();
+}
+for(const kind of ['sd','mc']){
+  const v=$('#v-'+kind);
+  v.addEventListener('click',e=>{
+    if(onPick(e))return;
+    const t=e.target,act=t.closest('[data-act]')?.dataset.act;
+    if(act==='gen')return generate(kind);
+    if(act==='submit')return submit(kind);
+    if(act==='back'){const ex=cur[kind];if(ex&&ex.status!=='done'){clearTimeout(saveT);saveExam(ex)}cur[kind]=null;view[kind]='setup';return renderTab()}
+    if(act==='retry'){const ex=cur[kind];const n={...JSON.parse(JSON.stringify(ex)),id:uid(),createdAt:new Date().toISOString(),status:'draft',answers:{},graded:{},mastered:[],title:ex.title.replace(/( \(다시\))*$/,'')+' (다시)'};exams.unshift(n);cur[kind]=n;saveExam(n);renderTab();return window.scrollTo({top:0})}
+    const it=t.closest('[data-ex]');if(it){cur[kind]=exams.find(x=>x.id===it.dataset.ex);if(cur[kind]){view[kind]='paper';renderTab();window.scrollTo({top:0})}return}
+    const ch=t.closest('.choice[data-q]'),ex=cur[kind];
+    if(ch&&ex&&ex.status!=='done'){const i=+ch.dataset.q,k=+ch.dataset.k;if(ex.answers[i]===k)delete ex.answers[i];else ex.answers[i]=k;
+      ch.closest('.choices').querySelectorAll('.choice').forEach(b=>b.setAttribute('aria-pressed',ex.answers[i]===+b.dataset.k));
+      v.querySelector(`[data-jump="${i}"]`)?.classList.toggle('done',ex.answers[i]!=null);updateLeft(kind);saveSoon(ex);return}
+    const j=t.closest('[data-jump]');if(j){e.preventDefault();document.getElementById(`q-${kind}-${j.dataset.jump}`)?.scrollIntoView({behavior:'smooth',block:'start'});return}
+    const g=t.closest('[data-goto]');if(g)return gotoSlide(+g.dataset.goto);
+  });
+  v.addEventListener('input',e=>{const ta=e.target.closest('textarea[data-es]'),ex=cur[kind];if(!ta||!ex)return;const i=+ta.dataset.es;ex.answers[i]=ta.value;v.querySelector(`[data-jump="${i}"]`)?.classList.toggle('done',!!ta.value.trim());updateLeft(kind);saveSoon(ex)});
+  v.addEventListener('change',e=>{const s=e.target.dataset.set;if(s){S[s]=s==='nMc'?+e.target.value:e.target.value;saveLocal()}});
+  v.addEventListener('toggle',e=>{const d=e.target;if(d.matches?.('details.unit[data-u]')){d.open?openU.add(d.dataset.u):openU.delete(d.dataset.u)}},true);
+}
+
+/* ---------- 슬라이드 ---------- */
+const quick={}; // page -> {loading} | {qs:[], picks:{}}
+const SF={unit:'',only:'all',q:''}; // 슬라이드 탭 거르기
+function renderSlides(){
+  const v=$('#v-sl'),n=slides.filter(x=>studied.has(x.page)).length;
+  const q=SF.q.trim().toLowerCase();
+  const shown=slides.filter(x=>(!SF.unit||x.unit===SF.unit)&&(SF.only==='all'||(SF.only==='prio'&&x.prio)||(SF.only==='todo'&&!studied.has(x.page)))&&(!q||(x.title+' '+x.text).toLowerCase().includes(q)));
+  const units=[...new Set(shown.map(x=>x.unit))];
+  const had=document.activeElement?.id==='sl-q';
+  v.innerHTML=`<div class="row"><h2>슬라이드 ${slides.length}장</h2><span class="muted">외운 슬라이드 ${n} / ${slides.length}</span></div>
+    <div class="bar"><i style="width:${slides.length?n/slides.length*100:0}%"></i></div>
+    <p class="muted" style="margin:0">선생님은 사소한 슬라이드에서도 내요. 슬라이드를 열어 읽고 "확인 문제"로 세부까지 외웠는지 확인하세요.</p>
+    <div class="opts"><select id="sl-unit" aria-label="단원"><option value="">모든 단원</option>${[...new Set(slides.map(x=>x.unit))].map(u=>`<option ${SF.unit===u?'selected':''}>${esc(u)}</option>`).join('')}</select>
+      <select id="sl-only" aria-label="보기"><option value="all">전부</option><option value="prio" ${SF.only==='prio'?'selected':''}>★만</option><option value="todo" ${SF.only==='todo'?'selected':''}>아직 안 외운 것</option></select>
+      <input id="sl-q" type="search" placeholder="검색 (예: 탄력성)" value="${esc(SF.q)}" style="flex:1;min-width:140px;background:#fff;border:1.5px solid #DAD5F5;border-radius:10px;padding:6px 10px;min-height:40px"></div>
+    <div class="muted">${shown.length}장</div>
+    ${units.map(u=>`<h2 style="font-size:17px;margin-top:6px">${esc(u)}</h2>${shown.filter(x=>x.unit===u).map(x=>{
+      const q=quick[x.page];
+      return `<details class="slide${x.hot?' hot':''}" id="sl-${x.page}" data-p="${x.page}" ${q||openS.has(x.page)?'open':''}><summary><span class="pg">${pg(x.page)}</span><span class="t">${esc(x.title)}${x.prio?' <span style="color:var(--gold)">★</span>':''}${x.tb?` <span class="muted" style="font-weight:400;font-size:12px">교과서 ${x.tb}쪽</span>`:''}</span>${studied.has(x.page)?'<span class="ok">✓ 외움</span>':''}</summary>
+        <ul class="notes">${x.text.split('\n').map(l=>`<li>${inline(l.replace(/^[-·]\s*/,''))}</li>`).join('')}</ul>
+        <div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-quiz="${x.page}" ${q?.loading?'disabled':''}>${q?.loading?'만드는 중…':q?.qs?'새 확인 문제':'확인 문제 3개'}</button>
+          <button class="ghost" type="button" data-study="${x.page}">${studied.has(x.page)?'외움 취소':'외웠어요 ✓'}</button></div>
+        ${q?.qs?`<div class="qq">${q.qs.map((qq,k)=>quickHtml(x.page,qq,k,q.picks[k])).join('')}</div>`:''}</details>`}).join('')}`).join('')}`;
+  if(had){const i=$('#sl-q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}
+}
+const openS=new Set(); // 펼쳐 둔 슬라이드
+let slT=null;
+$('#v-sl').addEventListener('toggle',e=>{const d=e.target;if(d.matches?.('details.slide[data-p]')){d.open?openS.add(+d.dataset.p):openS.delete(+d.dataset.p)}},true);
+$('#v-sl').addEventListener('input',e=>{if(e.target.id==='sl-q'){SF.q=e.target.value;clearTimeout(slT);slT=setTimeout(renderSlides,250)}});
+$('#v-sl').addEventListener('change',e=>{if(e.target.id==='sl-unit'){SF.unit=e.target.value;renderSlides()}if(e.target.id==='sl-only'){SF.only=e.target.value;renderSlides()}});
+function quickHtml(p,q,k,a){
+  return `<div><div class="md"><b>${k+1}.</b> ${inline(q.stem)}</div>${q.data?`<div class="box plain md">${md(q.data)}</div>`:''}
+    <ul class="choices" style="margin-top:6px">${q.choices.map((c,n)=>{let cls='';if(a!=null){if(n===q.answer)cls='right';else if(n===a)cls='wrong'}
+      return `<li><button class="choice ${cls}" type="button" data-qp="${p}" data-qk="${k}" data-qn="${n}" ${a!=null?'disabled':''}><span class="k">${n+1}</span><span class="md">${inline(c)}</span></button></li>`}).join('')}</ul>
+    ${a!=null?`<div class="explain ${a===q.answer?'ok':'bad'}" style="margin-top:6px"><span class="mark ${a===q.answer?'ok':'bad'}">${a===q.answer?'정답':'오답'}</span> · 정답 ${CIRC[q.answer]}<div class="md">${md(q.explanation)}</div></div>`:''}</div>`;
+}
+async function saveStudied(){if(!db)return;try{await db.doc('progress/main').set({studied:[...studied].sort((a,b)=>a-b),updatedAt:new Date().toISOString()})}catch(e){setStatus('진도를 저장하지 못했어요.',true)}}
+$('#v-sl').addEventListener('click',async e=>{
+  const s=e.target.closest('[data-study]');
+  if(s){const p=+s.dataset.study;studied.has(p)?studied.delete(p):studied.add(p);renderSlides();document.getElementById('sl-'+p).open=true;saveStudied();return}
+  const c=e.target.closest('[data-qp]');
+  if(c){const q=quick[+c.dataset.qp];if(q?.qs&&q.picks[+c.dataset.qk]==null){q.picks[+c.dataset.qk]=+c.dataset.qn;renderSlides()}return}
+  const b=e.target.closest('[data-quiz]');
+  if(b){
+    if(!needClaude())return;
+    const p=+b.dataset.quiz,x=slides.find(y=>y.page===p);if(!x)return;
+    quick[p]={loading:true};renderSlides();
+    try{
+      const j=await sample.json(`고등학교 「경제」 수업 슬라이드 하나로, 학생이 세부 내용까지 외웠는지 확인하는 5지선다 3문항을 만든다. 숫자·연도·순서·인물·출처·목록 항목·분류를 골고루 묻고, 오답은 숫자나 항목을 살짝 바꿔 그럴듯하게. 정답은 하나, 슬라이드에 근거한 것만.
+[${pg(x.page)} · ${x.title}]
+${x.text}
+[출력] JSON만: {"questions":[{"type":"mc","stem":"발문","data":"","choices":["번호 없이 5개"],"answer":1~5,"explanation":"근거"}]}`,{cache:false});
+      const qs=cleanQs({questions:(j?.questions||[]).map(q=>({...q,type:'mc',points:1,slides:[p]}))});
+      if(!qs.length)throw{code:'invalid_json'};
+      quick[p]={qs,picks:{}};
+    }catch(err){delete quick[p];if(err?.code!=='cancelled')setStatus(errMsg(err),true)}
+    renderSlides();document.getElementById('sl-'+p)?.setAttribute('open','');
+  }
 });
-$('#v-exam').addEventListener('input',e=>{
-  const ta=e.target.closest('textarea[data-es]');
-  if(ta&&cur){const i=+ta.dataset.es;cur.answers[i]=ta.value;const o=document.querySelector(`.omr [data-jump="${i}"]`);o&&o.classList.toggle('done',!!ta.value.trim());updateLeft();saveSoon();return}
-  if(e.target.id==='scope')readSetup();
+function gotoSlide(p){tab='sl';renderTab();const d=document.getElementById('sl-'+p);if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}}
+
+/* ---------- 암기 퀴즈 ---------- */
+// memo/all.items: [{id,u(단원),c(분류),q,a,acc[],s(슬라이드),p(중요도 0~2)}], progress/memo.stats: {id:{c,x,last}}
+let memo=[],mstats={},MQ=null; // MQ: 진행 중인 퀴즈
+S.mq=Object.assign({unit:'',cat:'',imp:1,n:10,mode:'mix',weak:false},S.mq||{});
+const LONG=new Set(['목록','비교']);
+const nrm=s=>String(s||'').toLowerCase().replace(/[\s·.,()\[\]「」『』"'“”‘’~\-:;!?/→①②③④⑤|]/g,'');
+function matchOne(u,cands){return cands.map(nrm).filter(Boolean).some(c=>u===c||(c.length>=2&&u.includes(c))||(u.length>=2&&c.includes(u)&&u.length/c.length>=0.8))}
+function autoCheck(it,ans){
+  const u=nrm(ans);if(!u)return false;
+  // (A)(B) 짝: 두 칸 모두 맞아야 정답 (칸당 2.5점)
+  if(it.pair)return it.pair.every(c=>c.map(nrm).filter(Boolean).some(x=>u.includes(x)));
+  const cands=[it.a,...(it.acc||[]),it.a.split(/[(:,/]/)[0]].map(nrm).filter(Boolean);
+  return cands.some(c=>u===c||(c.length>=2&&u.includes(c))||(u.length>=2&&c.includes(u)&&u.length/c.length>=0.8));
+}
+function memoPool(){
+  const m=S.mq;return memo.filter(x=>(!m.unit||x.u===m.unit)&&(!m.cat||x.c===m.cat)&&x.p>=m.imp);
+}
+function weakScore(x){const s=mstats[x.id];if(!s)return 0.5;return (s.x+1)/(s.c+s.x+2)} // 틀린 비율이 높을수록 큼, 처음 보는 건 중간
+function buildQuiz(items){
+  return items.map(it=>{
+    const type=S.mq.mode==='mc'?'mc':S.mq.mode==='sa'?'sa':(LONG.has(it.c)||it.a.length>40?'mc':(Math.random()<.5?'sa':'mc'));
+    const q={id:it.id,type};
+    if(type==='mc'){
+      const same=memo.filter(y=>y.id!==it.id&&y.c===it.c&&y.a!==it.a);
+      const near=shuffle(same.filter(y=>y.u===it.u)),far=shuffle(same.filter(y=>y.u!==it.u));
+      const ds=[];for(const y of [...near,...far]){if(ds.length>=4)break;if(!ds.includes(y.a))ds.push(y.a)}
+      const ch=shuffle([it.a,...ds]);q.choices=ch;q.answer=ch.indexOf(it.a);
+    }
+    return q;
+  });
+}
+function startMemo(items){
+  if(!items.length){setStatus('조건에 맞는 항목이 없어요. 범위를 넓혀 주세요.',true);return}
+  MQ={qs:buildQuiz(items),i:0,res:{}};setStatus('');renderMemo();window.scrollTo({top:0,behavior:'smooth'});
+}
+function pickItems(){
+  let pool=memoPool();
+  pool=S.mq.weak?[...pool].sort((a,b)=>weakScore(b)-weakScore(a)||Math.random()-.5):shuffle(pool);
+  return pool.slice(0,S.mq.n);
+}
+let mSaveT=null;
+function saveMStats(){clearTimeout(mSaveT);mSaveT=setTimeout(async()=>{if(!db)return;try{await db.doc('progress/memo').set({stats:mstats,updatedAt:new Date().toISOString()})}catch(e){setStatus('암기 기록을 저장하지 못했어요.',true)}},800)}
+function record(id,ok){const s=mstats[id]||(mstats[id]={c:0,x:0});ok?s.c++:s.x++;s.last=ok?1:0;saveMStats()}
+const itemOf=id=>memo.find(x=>x.id===id);
+const starOf=p=>p===2?'<span style="color:var(--bad)">★★</span> ':p===1?'<span style="color:var(--gold)">★</span> ':'';
+
+function renderMemo(){
+  const v=$('#v-mq');
+  if(!memo.length){v.innerHTML='<h2>암기 퀴즈</h2><p class="muted" style="margin:0">암기 항목을 불러오지 못했어요.</p>';return}
+  if(MQ&&MQ.i<MQ.qs.length)return renderMemoQ();
+  if(MQ)return renderMemoEnd();
+  const m=S.mq,units=[...new Set(memo.map(x=>x.u))],cats=[...new Set(memo.map(x=>x.c))];
+  const seen=memo.filter(x=>mstats[x.id]).length,ok=memo.filter(x=>mstats[x.id]?.last===1).length;
+  const weak=memo.filter(x=>(mstats[x.id]?.x||0)>0).sort((a,b)=>weakScore(b)-weakScore(a)).slice(0,6);
+  v.innerHTML=`<h2>암기 퀴즈</h2>
+    <p class="muted" style="margin:-6px 0 0">암기 노트 PDF의 ${memo.length}개 항목(A 10점 서술형 · B-1 5점 (A)(B) 짝 · B-2 5점 답 하나 · C 숫자)으로 바로 문제를 내요. 객관식은 보기를 고르고, 주관식은 직접 써요. 단답형은 부분 점수가 없으니 정확한 명칭으로 쓰는 연습을 하세요.</p>
+    <div class="row"><span class="muted">풀어 본 항목 ${seen} / ${memo.length} · 최근에 맞힌 항목 ${ok}</span></div>
+    <div class="bar"><i style="width:${ok/memo.length*100}%"></i></div>
+    <div class="grid3">
+      <label class="f">구역<select data-mq="unit"><option value="">전체</option>${units.map(u=>`<option ${m.unit===u?'selected':''}>${esc(u)}</option>`).join('')}</select></label>
+      <label class="f">분류<select data-mq="cat"><option value="">전체</option>${cats.map(c=>`<option ${m.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      <label class="f">중요도<select data-mq="imp"><option value="2" ${m.imp==2?'selected':''}>★★만</option><option value="1" ${m.imp==1?'selected':''}>★ 이상</option><option value="0" ${m.imp==0?'selected':''}>전부(사소한 것 포함)</option></select></label>
+      <label class="f">방식<select data-mq="mode"><option value="mix" ${m.mode==='mix'?'selected':''}>섞기</option><option value="mc" ${m.mode==='mc'?'selected':''}>객관식만</option><option value="sa" ${m.mode==='sa'?'selected':''}>주관식만</option></select></label>
+      <label class="f">문항 수<select data-mq="n">${[10,20,30,50].map(n=>`<option value="${n}" ${m.n==n?'selected':''}>${n}문항</option>`).join('')}</select></label>
+      <label class="f">순서<select data-mq="weak"><option value="0" ${!m.weak?'selected':''}>무작위</option><option value="1" ${m.weak?'selected':''}>틀린 것 위주</option></select></label>
+    </div>
+    <div class="row"><span class="muted">해당 항목 ${memoPool().length}개</span><button class="btn" type="button" data-mact="start">시작</button></div>
+    ${weak.length?`<h2 style="font-size:17px">자주 틀린 항목</h2><ul class="list">${weak.map(x=>`<li class="item" style="display:block"><div>${starOf(x.p)}${esc(x.q)}</div><div style="font-weight:700;margin-top:2px">${esc(x.a)}</div><div class="muted" style="font-size:12px">맞힘 ${mstats[x.id].c} · 틀림 ${mstats[x.id].x}${x.s?' · '+pg(x.s):''}</div></li>`).join('')}</ul>
+      <div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-mact="weak">자주 틀린 것만 풀기</button></div>`:''}`;
+}
+function renderMemoQ(){
+  const v=$('#v-mq'),q=MQ.qs[MQ.i],it=itemOf(q.id),r=MQ.res[MQ.i];
+  const done=r!=null;
+  let body='';
+  if(q.type==='mc'){
+    body=`<ul class="choices">${q.choices.map((c,k)=>{let cls='';if(done){if(k===q.answer)cls='right';else if(k===r.pick)cls='wrong'}
+      return `<li><button class="choice ${cls}" type="button" data-mk="${k}" ${done?'disabled':''}><span class="k">${k+1}</span><span>${esc(c)}</span></button></li>`}).join('')}</ul>`;
+  }else{
+    body=`<form id="mq-form" class="composer"><textarea id="mq-ans" rows="${LONG.has(it.c)?4:1}" placeholder="${LONG.has(it.c)?'빠짐없이 써 보세요':it.pair?'(A) ○○ (B) ○○':'정확한 명칭으로'}" ${done?'disabled':''}>${esc(r?.text||'')}</textarea>${done?'':'<button class="btn" type="submit">확인</button>'}</form>
+      ${done?'':'<div class="row" style="justify-content:flex-end"><button class="ghost" type="button" data-mact="giveup">모르겠어요</button></div>'}`;
+  }
+  let fb='';
+  if(done){
+    const cls=r.ok?'ok':'bad';
+    fb=`<div class="explain ${cls}"><span class="mark ${cls}">${r.ok?'정답':'오답'}</span>${r.note?` · ${esc(r.note)}`:''}
+      <div style="margin-top:4px"><b>정답</b> ${esc(it.a)}</div>${it.h?`<div style="margin-top:2px;color:var(--bad);font-weight:700">암기 코드 · ${esc(it.h)}</div>`:''}${r.fb?`<div class="md">${md(r.fb)}</div>`:''}
+      ${it.s?`<div style="margin-top:6px"><button class="src" type="button" data-goto="${it.s}">PPT ${pg(it.s)} 보기</button></div>`:''}</div>
+      ${q.type==='sa'&&!r.ok&&!r.gaveUp?`<div class="row" style="justify-content:flex-end">${sample&&LONG.has(it.c)?'<button class="ghost" type="button" data-mact="claude">Claude에게 채점받기</button>':''}<button class="ghost" type="button" data-mact="override">맞았어요 (표기만 달라요)</button></div>`:''}
+      <div class="row" style="justify-content:flex-end"><button class="btn" type="button" data-mact="next">${MQ.i+1<MQ.qs.length?'다음':'결과 보기'}</button></div>`;
+  }
+  const nOk=Object.values(MQ.res).filter(x=>x.ok).length;
+  v.innerHTML=`<div class="row"><button class="ghost" type="button" data-mact="quit">← 그만하기</button><span class="muted">${MQ.i+1} / ${MQ.qs.length} · 맞힘 ${nOk}</span></div>
+    <div class="bar"><i style="width:${(MQ.i+(done?1:0))/MQ.qs.length*100}%"></i></div>
+    <div class="muted" style="font-size:13px">${esc(it.u)} · ${esc(it.c)} · ${q.type==='mc'?'객관식':'주관식'}</div>
+    <div style="font-family:var(--serif);font-weight:700;font-size:20px;color:var(--ink);line-height:1.4">${starOf(it.p)}${esc(it.q)}</div>
+    ${body}${fb}`;
+  if(!done&&q.type==='sa')setTimeout(()=>$('#mq-ans')?.focus(),0);
+}
+function renderMemoEnd(){
+  const v=$('#v-mq'),n=MQ.qs.length,res=MQ.qs.map((q,i)=>({q,r:MQ.res[i]}));
+  const ok=res.filter(x=>x.r?.ok).length,wrong=res.filter(x=>!x.r?.ok);
+  v.innerHTML=`<h2>결과</h2><div class="score"><b>${ok}</b><span>/ ${n} 정답</span></div>
+    ${wrong.length?`<h2 style="font-size:17px">틀린 항목</h2><ul class="list">${wrong.map(({q})=>{const it=itemOf(q.id);return `<li class="item" style="display:block"><div>${starOf(it.p)}${esc(it.q)}</div><div style="font-weight:700;margin-top:2px">${esc(it.a)}</div><div class="muted" style="font-size:12px">${pg(it.s)}</div></li>`}).join('')}</ul>`:'<p class="muted" style="margin:0">모두 맞혔어요!</p>'}
+    <div class="row" style="justify-content:flex-end">${wrong.length?'<button class="ghost" type="button" data-mact="retrywrong">틀린 것만 다시</button>':''}<button class="ghost" type="button" data-mact="quit">설정으로</button><button class="btn" type="button" data-mact="again">새로 풀기</button></div>`;
+}
+function answerMemo(res){MQ.res[MQ.i]=res;record(MQ.qs[MQ.i].id,res.ok);renderMemoQ()}
+async function claudeGrade(){
+  const q=MQ.qs[MQ.i],it=itemOf(q.id),r=MQ.res[MQ.i];if(!needClaude()||!r)return;
+  r.note='Claude가 채점하는 중…';renderMemoQ();
+  try{
+    const j=await sample.json(`고등학교 「경제」 암기 확인 문제 채점. 학생 답이 정답의 핵심 요소를 모두 담았는지 본다. 표현이 달라도 뜻이 같으면 인정, 빠진 요소가 있으면 오답.
+문제: ${it.q}
+정답: ${it.a}
+학생 답: ${r.text}
+JSON만: {"ok":true/false,"got":"맞힌 요소","missing":"빠진 요소","feedback":"한두 문장"}`,{cache:false,modelTier:'quick'});
+    const was=r.ok;r.ok=!!j?.ok;r.note=r.ok?'Claude 채점: 인정':'Claude 채점';r.fb=[j?.feedback,j?.missing?`**빠진 것:** ${j.missing}`:''].filter(Boolean).join('\n');
+    if(r.ok!==was){const s=mstats[it.id];if(s){if(r.ok){s.x=Math.max(0,s.x-1);s.c++}else{s.c=Math.max(0,s.c-1);s.x++}s.last=r.ok?1:0;saveMStats()}}
+  }catch(e){r.note='';if(e?.code!=='cancelled')setStatus(errMsg(e),true)}
+  renderMemoQ();
+}
+$('#v-mq').addEventListener('change',e=>{const k=e.target.dataset.mq;if(!k)return;const v=e.target.value;S.mq[k]=k==='n'||k==='imp'?+v:k==='weak'?v==='1':v;saveLocal();renderMemo()});
+$('#v-mq').addEventListener('submit',e=>{e.preventDefault();const t=$('#mq-ans')?.value||'';if(!t.trim())return;const it=itemOf(MQ.qs[MQ.i].id);
+  const ok=!LONG.has(it.c)&&autoCheck(it,t);
+  const half=it.pair&&!ok?it.pair.filter(c=>c.map(nrm).filter(Boolean).some(x=>nrm(t).includes(x))).length:0;
+  answerMemo({text:t,ok,note:LONG.has(it.c)&&!ok?'목록형은 직접 비교하거나 Claude에게 채점받으세요':half?'한 칸만 맞음 (2.5점)':''})});
+$('#v-mq').addEventListener('keydown',e=>{if(e.target.id==='mq-ans'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!LONG.has(itemOf(MQ.qs[MQ.i].id)?.c)){e.preventDefault();$('#mq-form').requestSubmit()}});
+$('#v-mq').addEventListener('click',e=>{
+  const k=e.target.closest('[data-mk]');
+  if(k&&MQ&&MQ.res[MQ.i]==null){const q=MQ.qs[MQ.i],pick=+k.dataset.mk;answerMemo({pick,ok:pick===q.answer});return}
+  const g=e.target.closest('[data-goto]');if(g)return gotoSlide(+g.dataset.goto);
+  const a=e.target.closest('[data-mact]')?.dataset.mact;if(!a)return;
+  if(a==='start')return startMemo(pickItems());
+  if(a==='weak')return startMemo(memo.filter(x=>(mstats[x.id]?.x||0)>0).sort((a,b)=>weakScore(b)-weakScore(a)).slice(0,S.mq.n));
+  if(a==='quit'){MQ=null;return renderMemo()}
+  if(a==='next'){MQ.i++;renderMemo();return window.scrollTo({top:0})}
+  if(a==='giveup')return answerMemo({text:$('#mq-ans')?.value||'',ok:false,gaveUp:true});
+  if(a==='override'){const r=MQ.res[MQ.i],s=mstats[MQ.qs[MQ.i].id];if(r&&!r.ok){r.ok=true;r.note='직접 인정';if(s){s.x=Math.max(0,s.x-1);s.c++;s.last=1;saveMStats()}renderMemoQ()}return}
+  if(a==='claude')return claudeGrade();
+  if(a==='retrywrong')return startMemo(MQ.qs.filter((q,i)=>!MQ.res[i]?.ok).map(q=>itemOf(q.id)));
+  if(a==='again')return startMemo(pickItems());
 });
-$('#v-exam').addEventListener('change',e=>{if(['lv','nmc','nes','hard','tier'].includes(e.target.id))readSetup()});
 
 /* ---------- 오답노트 ---------- */
-let similar={}; // key -> {q, answer}
+function wrongList(){
+  const out=[];
+  for(const ex of exams){if(ex.status!=='done')continue;
+    ex.questions.forEach((q,i)=>{const g=grade(ex,i);if(g.score<g.max&&!(ex.mastered||[]).includes(i))out.push({ex,i,q})})}
+  return out;
+}
+function renderBadge(){const n=wrongList().length;document.querySelector('.tab[data-tab="wr"]').innerHTML='오답노트'+(n?`<span class="n">${n}</span>`:'')}
 function renderWrong(){
-  renderTabBadge();
-  const v=$('#v-wrong');const list=wrongList();
-  if(!list.length){v.innerHTML=`<h2>오답노트</h2><p class="muted" style="margin:0">${exams.some(x=>x.status==='done')?'틀린 문제가 없어요. 잘했어요!':'모의고사를 제출하면 틀린 문제가 여기 모여요.'}</p>`;return}
-  // 단원별 개수
-  const byUnit={};for(const x of list){const u=x.q.unit||'기타';byUnit[u]=(byUnit[u]||0)+1}
+  renderBadge();
+  const v=$('#v-wr'),list=wrongList();
+  if(!list.length){v.innerHTML=`<h2>오답노트</h2><p class="muted" style="margin:0">${exams.some(x=>x.status==='done')?'틀린 문제가 없어요.':'시험지를 채점받으면 틀리거나 감점된 문항이 여기 모여요.'}</p>`;return}
+  const bySlide={};for(const x of list)for(const p of x.q.slides||[])bySlide[p]=(bySlide[p]||0)+1;
   v.innerHTML=`<h2>오답노트 <span class="muted">${list.length}문항</span></h2>
-    <div class="chips">${Object.entries(byUnit).sort((a,b)=>b[1]-a[1]).map(([u,n])=>`<span class="chip" style="cursor:default">${esc(u)} · ${n}</span>`).join('')}</div>
-    <div class="paper">${list.map(({ex,i,q})=>{
-      const key=ex.id+':'+i;const sim=similar[key];
-      return `<div>${qHtml(q,i,ex,'review').replace(`id="q${i}"`,'')}
-        <div class="muted" style="margin-top:6px">${esc(ex.title)}</div>
-        <div class="row" style="justify-content:flex-end;margin-top:6px">
-          <button class="ghost" data-sim="${esc(key)}" type="button" ${sim?.loading?'disabled':''}>${sim?.loading?'만드는 중…':'비슷한 문제 풀기'}</button>
-          <button class="ghost" data-master="${esc(key)}" type="button">이제 알아요 ✓</button></div>
-        ${sim?.q?simHtml(key,sim):''}</div>`}).join('<hr style="border:0;border-top:1px dashed var(--line);margin:0">')}</div>`;
+    <div class="note">자주 틀린 슬라이드</div>
+    <div class="chips">${Object.entries(bySlide).sort((a,b)=>b[1]-a[1]).map(([p,n])=>`<button class="chip" type="button" data-goto="${p}">${pg(+p)} ${esc(slides.find(x=>x.page===+p)?.title||'')} · ${n}</button>`).join('')}</div>
+    <div class="paper">${list.map(({ex,i,q})=>`<div>${qHtml(q,i,ex,'review').replace(/ id="q-[^"]*"/,'')}
+      <div class="row" style="margin-top:6px"><span class="muted">${esc(ex.title)}</span><button class="ghost" type="button" data-master="${esc(ex.id)}:${i}">이제 알아요 ✓</button></div></div>`).join('<hr style="border:0;border-top:1px dashed var(--line);margin:0">')}</div>`;
 }
-function simHtml(key,sim){
-  const q=sim.q,a=sim.pick;
-  return `<div class="explain" style="margin-top:8px;background:#fff;border:1px solid var(--line)"><b>비슷한 문제</b>
-    <div class="md">${md(q.stem)}</div>${q.data?`<div class="box plain md">${md(q.data)}</div>`:''}${q.box?`<div class="box md">${md(q.box)}</div>`:''}
-    <ul class="choices" style="margin-top:8px">${q.choices.map((c,k)=>{
-      let cls='';if(a!=null){if(k===q.answer)cls='right';else if(k===a)cls='wrong'}
-      return `<li><button class="choice ${cls}" type="button" data-simk="${k}" data-key="${esc(key)}" ${a!=null?'disabled':''}><span class="k">${k+1}</span><span class="md">${inline(c)}</span></button></li>`}).join('')}</ul>
-    ${a!=null?`<div class="explain ${a===q.answer?'ok':'bad'}" style="margin-top:8px"><span class="mark ${a===q.answer?'ok':'bad'}">${a===q.answer?'정답!':'아쉬워요'}</span> · 정답 ${CIRC[q.answer]}<div class="md">${md(q.explanation)}</div></div>`:''}</div>`;
-}
-$('#v-wrong').addEventListener('click',async e=>{
+$('#v-wr').addEventListener('click',e=>{
   const m=e.target.closest('[data-master]');
   if(m){const [id,i]=m.dataset.master.split(':');const ex=exams.find(x=>x.id===id);if(!ex)return;ex.mastered=[...(ex.mastered||[]),+i];renderWrong();saveExam(ex);return}
-  const k=e.target.closest('[data-simk]');
-  if(k){const s=similar[k.dataset.key];if(s&&s.pick==null){s.pick=+k.dataset.simk;renderWrong()}return}
-  const b=e.target.closest('[data-sim]');
-  if(b){
-    if(!sample){setStatus('Claude에 연결되지 않았어요.',true);return}
-    const key=b.dataset.sim;const [id,i]=key.split(':');const ex=exams.find(x=>x.id===id);const q=ex?.questions[+i];if(!q)return;
-    similar[key]={loading:true};renderWrong();
-    try{
-      const j=await sample.json(`${LEVELS[ex.level||'hs']}의 학교 경제 시험 문제를 만든다. 학생이 아래 문제를 틀렸다. 같은 개념을 묻되 숫자·사례·표현을 바꾼 5지선다 객관식 한 문항을 새로 만든다. 정답은 하나뿐이어야 하고 스스로 검산한다.
-[틀린 문제] ${q.stem}
-${q.data?'[제시문] '+q.data:''}${q.box?'\n[보기] '+q.box:''}
-${q.type==='mc'?'[선택지] '+q.choices.map((c,k)=>CIRC[k]+c).join(' ')+'\n[정답] '+CIRC[q.answer]:'[모범 답안] '+q.modelAnswer}
-[출력] JSON만: {"stem":"발문","data":"제시문(없으면 빈 문자열)","box":"<보기>(없으면 빈 문자열)","choices":["5개, 번호 없이"],"answer":1~5,"explanation":"해설"}`,{cache:false});
-      const c=cleanExam({questions:[{...j,type:'mc',points:1}]}).questions[0];
-      if(!c)throw{code:'invalid_json'};
-      similar[key]={q:c,pick:null};
-    }catch(err){delete similar[key];if(err?.code!=='cancelled')setStatus(errMsg(err),true)}
-    renderWrong();
-  }
+  const g=e.target.closest('[data-goto]');if(g)gotoSlide(+g.dataset.goto);
 });
 
-/* ---------- 서술형 채점 ---------- */
-$('#es-go').onclick=async()=>{
-  const q=$('#es-q').value.trim(),a=$('#es-a').value.trim(),r=$('#es-r').value.trim();
-  const imgs=files($('#es-img'));
-  if(!q||(!a&&!imgs.length)){setStatus('문제와 답안을 넣어 주세요.',true);return}
-  if(!sample){setStatus('Claude에 연결되지 않았어요. claude.ai에서 열어 주세요.',true);return}
-  setStatus('');
-  const out=$('#es-out');out.innerHTML='<p class="muted">채점하는 중…</p>';
-  const ctl=busy=new AbortController();
-  $('#es-go').disabled=true;$('#es-stop').classList.remove('hidden');$('#es-stop').onclick=()=>ctl.abort();
-  try{
-    const res=await sample(`너는 ${LEVELS[S.level]} 경제 서술형 답안을 채점하는 교사다. 학교 지필고사 채점 기준처럼 엄격하지만 공정하게 본다.
-[문제]
-${q}
-${r?'[채점 기준]\n'+r:'[채점 기준] 주어지지 않았다. 문제에서 배점을 찾고, 없으면 10점 만점으로 보고 합리적인 부분 점수 기준을 먼저 세운다.'}
-[학생 답안]
-${a||'(첨부한 사진 속 손글씨 답안을 읽어서 채점한다. 먼저 읽은 내용을 그대로 옮겨 적는다.)'}
-
-다음 형식의 Markdown으로 답한다:
-### 예상 점수: ○ / ○점
-### 채점 근거 (항목별 표: 채점 항목 | 배점 | 받은 점수 | 이유)
-### 잘한 점
-### 빠진 핵심어·감점 요인
-### 고쳐 쓴 모범 답안 (학생 답을 살려서, 조건 분량 안에서)`,{signal:ctl.signal,cache:false,...(imgs.length?{images:imgs}:{}),onText:({text})=>{out.innerHTML=md(text)}});
-    out.innerHTML=md(res.text);
-  }catch(e){
-    out.innerHTML=e?.text&&e.code!=='refused'?md(e.text):'';
-    if(e?.code!=='cancelled')setStatus(errMsg(e),true);
-  }finally{busy=null;$('#es-go').disabled=false;$('#es-stop').classList.add('hidden')}
-};
-
-/* ---------- 질문하기 ---------- */
-const ASK_CHIPS=['수요 변동과 수요량 변동 차이','가격 탄력성 계산 공식 정리','최고가격제 하면 왜 초과 수요가 생겨?','비교 우위 쉽게 설명해줘','환율 상승이 수출입·물가에 주는 영향','GDP에 포함되는 것과 안 되는 것'];
-function renderChat(){
-  const ch=$('#chat');ch.innerHTML='';
-  if(!S.chat.length)ch.innerHTML='<p class="muted" style="margin:0">시험 공부하다 막힌 개념을 물어보세요. 예시를 눌러도 돼요.</p>';
-  for(const t of S.chat)ch.append(bubble(t));
-  $('#ask-chips').innerHTML=S.chat.length?'':ASK_CHIPS.map(t=>`<button class="chip" type="button">${esc(t)}</button>`).join('');
-}
-function bubble(t){
-  const d=document.createElement('div');
-  if(t.role==='user'){d.className='msg me';d.textContent=t.content}
-  else{d.className='msg ai md'+(t.err?' err':'');d.innerHTML=t.err?esc(t.content):md(t.content)}
-  return d;
-}
-async function ask(text){
-  text=text.trim();if(!text||busy)return;
-  if(!sample){setStatus('Claude에 연결되지 않았어요. claude.ai에서 열어 주세요.',true);return}
-  while(S.chat.length&&S.chat[S.chat.length-1].err)S.chat.pop();
-  S.chat.push({role:'user',content:text});saveLocal();renderChat();
-  const b=bubble({role:'assistant',content:''});b.innerHTML='<span class="muted">생각하는 중…</span>';$('#chat').append(b);b.scrollIntoView({block:'end',behavior:'smooth'});
-  const ctl=busy=new AbortController();
-  $('#ask-send').classList.add('hidden');$('#ask-stop').classList.remove('hidden');
-  const hist=S.chat.filter(x=>!x.err).slice(-20);if(hist[0].role!=='user')hist.shift();
-  const rules=`너는 ${LEVELS[S.level]}를 가르치는 친절하고 정확한 경제 교사다. 학생은 학교 지필고사를 준비 중이다. 한국어로, 교과서 용어를 써서 설명한다. 순서: 핵심 한 줄 → 개념 설명(그래프는 말로: 어느 곡선이 어느 쪽으로 이동) → 예시나 간단한 계산 → 시험에 자주 나오는 함정 → 3줄 요약. Markdown(### 소제목, **굵게**, 목록, 표)을 쓴다. 모르는 것은 모른다고 한다. 아래는 학생과의 대화다.`;
-  try{
-    const r=await sample([{role:'user',content:rules},...hist],{signal:ctl.signal,cache:false,onText:({text})=>{b.innerHTML=md(text)}});
-    S.chat.push({role:'assistant',content:r.text});
-  }catch(e){
-    if(e?.text&&e.code!=='refused')S.chat.push({role:'assistant',content:e.text});
-    else if(e?.code!=='cancelled')S.chat.push({role:'assistant',content:errMsg(e),err:true});
-  }finally{
-    busy=null;saveLocal();renderChat();
-    $('#ask-send').classList.remove('hidden');$('#ask-stop').classList.add('hidden');
-    $('#chat').lastElementChild?.scrollIntoView({block:'end',behavior:'smooth'});
-  }
-}
-$('#ask-chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c)ask(c.textContent)});
-$('#ask-clear').onclick=()=>{if(busy)return;S.chat=[];saveLocal();renderChat()};
-$('#ask-stop').onclick=()=>busy?.abort();
-const box=$('#ask-box');
-const grow=()=>{box.style.height='auto';box.style.height=Math.min(box.scrollHeight,200)+'px'};
-box.addEventListener('input',grow);
-box.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#ask-form').requestSubmit()}});
-$('#ask-form').addEventListener('submit',e=>{e.preventDefault();const v=box.value;if(!v.trim()||busy)return;box.value='';grow();ask(v)});
-
-document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)setTab(b.dataset.tab)});
-window.addEventListener('beforeunload',()=>{if(cur&&cur.status!=='done'&&saveT){clearTimeout(saveT);saveExam(cur)}});
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b){tab=b.dataset.tab;renderTab()}});
 
 /* 별 */
 (function(){let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;let h='';
@@ -700,27 +784,26 @@ window.addEventListener('beforeunload',()=>{if(cur&&cur.status!=='done'&&saveT){
     h+=`<span class="st" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px;opacity:${o}${z===3?';box-shadow:0 0 6px #fff':''}"></span>`}
   $('#stars').innerHTML=h;})();
 
-setTab('exam');
+renderTab();
 
 /* ---------- 연결 ---------- */
 (async()=>{
   const [s,d]=await Promise.all([window.claude?.use?.('sample')??null,window.claude?.use?.('db')??null]);
   sample=s;db=d;
-  if(sample){
-    imgCaps=(await sample.limits().catch(()=>null))?.images||null;
-    document.querySelectorAll('.img-only').forEach(el=>el.classList.toggle('hidden',!imgCaps));
-    const ei=$('#es-img');if(ei&&imgCaps)ei.accept=imgCaps.mediaTypes.join(',');
-  }
-  if(db){
-    try{
-      const snap=await db.collection('exams').orderBy('createdAt','desc').limit(100).get();
-      exams=snap.docs.map(x=>({...x.data(),id:x.id})).filter(x=>Array.isArray(x.questions));
-    }catch(e){setStatus('지난 시험지를 불러오지 못했어요.',true)}
-  }
-  if(!sample)setStatus('Claude에 연결할 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);
-  else if(!db)setStatus('저장소에 연결되지 않아 시험지가 이 화면에만 남아요.',true);
-  else if(!$('#status').classList.contains('err'))setStatus('');
-  if(tab==='exam')renderExam();else if(tab==='wrong')renderWrong();
-  renderTabBadge();
+  if(sample)imgCaps=(await sample.limits().catch(()=>null))?.images||null;
+  if(!db){setStatus('저장소에 연결할 수 없어요. claude.ai에서 열어 주세요.',true);return}
+  try{
+    const [m,r,x,p,mm,mp]=await Promise.all([db.collection('materials').get(),db.collection('reference').get(),db.collection('exams').orderBy('createdAt','desc').limit(200).get(),db.doc('progress/main').get(),db.doc('memo/all').get(),db.doc('progress/memo').get()]);
+    // 정리본 전체는 materials/all 한 문서에 slides 배열로 들어 있다
+    slides=m.docs.flatMap(y=>{const d=y.data();return Array.isArray(d?.slides)?d.slides:[d]}).filter(y=>y&&y.page).sort((a,b)=>a.page-b.page);
+    for(const y of r.docs){if(y.id==='style')ref.style=y.data().text||'';if(y.id==='past-2025-1')ref.past=y.data()}
+    exams=x.docs.map(y=>({...y.data(),id:y.id})).filter(y=>Array.isArray(y.questions)&&(y.kind==='sd'||y.kind==='mc'));
+    if(p.exists)studied=new Set(p.data().studied||[]);
+    if(mm.exists)memo=mm.data().items||[];
+    if(mp.exists)mstats=mp.data().stats||{};
+    S.sel=S.sel.filter(n=>slides.some(y=>y.page===n));
+    setStatus(sample?'':'Claude에 연결할 수 없는 화면이에요. 문제 만들기와 채점은 claude.ai에서 돼요.',!sample);
+  }catch(e){setStatus('자료를 불러오지 못했어요. 새로고침해 주세요.',true)}
+  renderBadge();renderTab();
 })();
 </script>
