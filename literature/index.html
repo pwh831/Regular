@@ -44,7 +44,7 @@ button{cursor:pointer}
 .ghost:disabled{opacity:.45;cursor:default}
 .hidden{display:none!important}
 label.f{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
-textarea,select,input[type=file]{background:#fff;border:1.5px solid #DAD5F5;border-radius:14px;padding:10px 12px;color:var(--text);min-height:44px}
+textarea,select,input[type=file],input[type=number]{background:#fff;border:1.5px solid #DAD5F5;border-radius:14px;padding:10px 12px;color:var(--text);min-height:44px}
 textarea{resize:vertical;line-height:1.5;width:100%}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 @media (max-width:520px){.grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
@@ -216,11 +216,15 @@ textarea{resize:vertical;line-height:1.5;width:100%}
 const $=s=>document.querySelector(s);
 const SECS=window.LIT?.sections||[];
 const EXAM_INFO=window.LIT?.exam||'';
-const SIZES={real:{mc:21,es:8,label:'실전: 객관식 21 · 서답형 8'},half:{mc:10,es:4,label:'절반: 객관식 10 · 서답형 4'},short:{mc:6,es:2,label:'짧게: 객관식 6 · 서답형 2'}};
+const PRESETS=[[21,8,'실전'],[10,4,'절반'],[6,2,'짧게'],[0,5,'서답형만']];
+const MAX_MC=30,MAX_ES=15;
+const clampN=(v,max)=>Math.max(0,Math.min(max,Math.round(Number(v)||0)));
 const KEY='lit-exam-v1';
-let S={tier:'default',secs:SECS.map(x=>x.id),scope:'',size:'half',hard:'mid',chat:[],known:[],cardSrc:'전체',cardMode:'cards',srcSec:SECS[0]?.id};
+let S={tier:'default',secs:SECS.map(x=>x.id),scope:'',nMc:10,nEs:4,hard:'mid',chat:[],known:[],cardSrc:'전체',cardMode:'cards',srcSec:SECS[0]?.id};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
 S.secs=S.secs.filter(id=>SECS.some(x=>x.id===id));
+if(S.size){const o={real:[21,8],half:[10,4],short:[6,2]}[S.size];if(o)[S.nMc,S.nEs]=o;delete S.size}
+S.nMc=clampN(S.nMc,MAX_MC);S.nEs=clampN(S.nEs,MAX_ES);
 const srcText=ids=>SECS.filter(x=>!ids||ids.includes(x.id)).map(x=>x.text).join('\n\n');
 const secNames=ids=>ids&&ids.length&&ids.length<SECS.length?SECS.filter(x=>ids.includes(x.id)).map(x=>x.short).join(' · '):'1단원 전체';
 const TEACHER='너는 한국 고등학교 선택과목 「문학과 영상」을 가르치며 1단원 「문학과 영상 만나기」 지필고사를 출제·채점하는 교사다.';
@@ -337,15 +341,19 @@ function renderExam(){
       <textarea id="scope" rows="3" placeholder="예) 선생님이 S#40 교차 편집이랑 오프 스크린 구분 꼭 나온다고 함. 프린트 내용을 붙여 넣어도 돼요.">${esc(S.scope)}</textarea></label>
     <label class="f img-only ${imgCaps?'':'hidden'}">추가 프린트·필기 사진 (선택, 최대 ${imgCaps?.maxCount??0}장)<input type="file" id="scope-img" multiple accept="${esc(imgCaps?.mediaTypes?.join(',')||'image/*')}"></label>
     <div class="grid3">
-      <label class="f">문항 수<select id="size">${Object.entries(SIZES).map(([k,x])=>`<option value="${k}">${x.label}</option>`).join('')}</select></label>
+      <label class="f">객관식 (0~${MAX_MC})<input type="number" id="nmc" min="0" max="${MAX_MC}" step="1" inputmode="numeric" value="${S.nMc}"></label>
+      <label class="f">서답형 (0~${MAX_ES})<input type="number" id="nes" min="0" max="${MAX_ES}" step="1" inputmode="numeric" value="${S.nEs}"></label>
+    </div>
+    <div class="chips" aria-label="문항 수 빠르게 고르기">${PRESETS.map(([m,e,l])=>`<button class="chip" type="button" data-preset="${m},${e}" aria-pressed="${S.nMc===m&&S.nEs===e}">${l} ${m}+${e}</button>`).join('')}</div>
+    <div class="grid3">
       <label class="f">난이도<select id="hard"><option value="easy">개념 확인</option><option value="mid">실전</option><option value="hard">고난도 많이</option></select></label>
       <label class="f">출제<select id="tier"><option value="default">보통</option><option value="complex">꼼꼼하게 (더 오래)</option></select></label>
     </div>
-    <div class="row"><span class="note">실전 29문항은 만드는 데 3~5분쯤 걸려요.</span>
-      <button class="btn" id="gen" type="button" ${sel.size?'':'disabled'}>시험지 만들기</button>
+    <div class="row"><span class="note" id="n-note"></span>
+      <button class="btn" id="gen" type="button" ${sel.size&&S.nMc+S.nEs?'':'disabled'}>시험지 만들기</button>
     </div>
     <div id="past"></div>`;
-  $('#size').value=S.size;$('#hard').value=S.hard;$('#tier').value=S.tier;
+  $('#hard').value=S.hard;$('#tier').value=S.tier;updateCountNote();
   renderPast();
 }
 function renderPast(){
@@ -359,7 +367,8 @@ function renderPast(){
 
 /* ---------- 모의고사: 출제 ---------- */
 function examPrompt(){
-  const z=SIZES[S.size]||SIZES.half;
+  const z={mc:S.nMc,es:S.nEs};
+  const pts=z.mc&&z.es?{mc:70,es:30}:z.mc?{mc:100,es:0}:{mc:0,es:100};
   const hard={easy:'개념·용어를 바로 확인하는 기본 문항 위주',mid:'실제 학교 중간·기말고사 수준(기본 50%, 응용 35%, 고난도 15%)',hard:'응용·고난도 비중을 높여서(기본 30%, 응용 40%, 고난도 30%)'}[S.hard];
   return `${TEACHER} 아래 범위로 지필고사 시험지 한 부를 만든다.
 ${RANGE_NOTE}
@@ -371,7 +380,7 @@ ${EXAM_INFO}
 ${S.scope.trim()||'(없음)'}
 ${S._imgs?'[첨부 사진] 추가 프린트·필기 사진이 함께 있다. 사진 속 내용과 강조점을 우선 반영한다.':''}
 
-[구성] 객관식 5지선다 ${z.mc}문항(합계 70점), 서답형 ${z.es}문항(합계 30점). 총 100점. 난이도는 ${hard}.
+[구성] 객관식 5지선다 정확히 ${z.mc}문항(합계 ${pts.mc}점), 서답형 정확히 ${z.es}문항(합계 ${pts.es}점). 총 100점. 문항 수를 꼭 지킨다. 난이도는 ${hard}.
 [출제 규칙]
 - 한국 고등학교 국어·문학 시험지 말투로 쓴다("윗글에 대한 설명으로 적절하지 않은 것은?", "ⓐ~ⓔ에 대한 이해로 가장 적절한 것은?", "<보기>를 참고하여 ㉠을 감상한 내용으로 적절하지 않은 것은?", "(가)와 (나)를 비교한 내용으로 적절한 것은?").
 - 제시문을 적극 쓴다: 이성부 「봄」 전문(범위에 있으면 원문 그대로, ㉠~㉤ 밑줄 문항과 구성·표현상 특징 문항을 꼭 넣는다), 대본 장면(S#21, S#39~42), 원작 소설 발췌, 작가의 글·〈한중록〉, 「문학과 영상이 세상을 그리는 방법」, 활동 작품(〈나는 오늘〉, 〈아주 환한 날들〉, 〈낮잠〉 장면 설명, 〈영진설비 돈 갖다주기〉, 로맨틱 코미디 글), 시나리오 용어 프린트. 제시문은 범위 자료 원문을 그대로 옮기고(필기 표시 【】는 빼고), 한 문항당 15줄 이내로 발췌한다. 밑줄 부분은 ㉠, ㉡ 또는 ⓐ, ⓑ 기호를 붙여 표시한다.
@@ -389,7 +398,7 @@ ${S._imgs?'[첨부 사진] 추가 프린트·필기 사진이 함께 있다. 사
 - 정답은 반드시 하나뿐이어야 한다. 문제마다 범위 자료와 대조해 스스로 풀어 보고, 복수 정답이나 근거 없는 선택지가 있으면 고친 뒤 적는다. 정답 번호는 1~5에 고르게 나눈다.
 - 해설: 정답 근거(범위 자료의 어느 부분인지)와 오답 선택지가 틀린 이유를 짧게.
 - 서답형은 단답형(용어·어휘·기호 쓰기)과 서술형(조건 제시: "~를 포함하여 두 문장 이내로 서술하시오", "~와 비교하여 쓰시오")을 섞는다. 활동 문항과 교과서 질문(①②③)을 변형해도 좋다. 채점 기준은 부분 점수 항목으로 나누고, 모범 답안은 교과서 예시 답과 필기의 표현을 살려 쓴다.
-- 객관식 배점은 3~4점, 서답형은 2~6점으로 해서 객관식 합계 70점, 서답형 합계 30점을 정확히 맞춘다.
+- 배점은 정수로 하고 객관식 합계 ${pts.mc}점, 서답형 합계 ${pts.es}점을 정확히 맞춘다(문항 수에 맞게 나눈다).
 - 범위 밖 내용은 내지 않는다.
 
 [출력] 다른 말 없이 JSON 하나만:
@@ -423,7 +432,7 @@ async function generate(){
   const imgs=files($('#scope-img'));S._imgs=imgs.length>0;
   const prompt=examPrompt();delete S._imgs;
   view.exam='gen';
-  const total=(SIZES[S.size]||SIZES.half).mc+(SIZES[S.size]||SIZES.half).es;
+  const total=S.nMc+S.nEs;
   $('#v-exam').innerHTML=`<div class="wait"><div class="big">시험지를 만드는 중이에요</div>
     <div class="muted" id="gen-msg">범위를 읽고 문제를 구상하는 중… (문항 수에 따라 1~5분)</div>
     <div class="bar" style="width:100%"><i id="gen-bar" style="width:3%"></i></div>
@@ -453,8 +462,8 @@ async function generate(){
 }
 function readSetup(){
   const g=id=>document.getElementById(id);
-  if(!g('size'))return;
-  S.size=g('size').value;S.hard=g('hard').value;S.tier=g('tier').value;S.scope=g('scope').value;
+  if(!g('nmc'))return;
+  S.nMc=clampN(g('nmc').value,MAX_MC);S.nEs=clampN(g('nes').value,MAX_ES);S.hard=g('hard').value;S.tier=g('tier').value;S.scope=g('scope').value;
   saveLocal();
 }
 
@@ -659,6 +668,8 @@ $('#v-exam').addEventListener('click',e=>{
   const chip=t.closest('.chip[data-t]');
   if(chip){const x=chip.dataset.t;S.secs=S.secs.includes(x)?S.secs.filter(u=>u!==x):[...S.secs,x];readSetup();saveLocal();renderExam();return}
   if(t.id==='u-all'){S.secs=S.secs.length===SECS.length?[]:SECS.map(x=>x.id);readSetup();saveLocal();renderExam();return}
+  const pr=t.closest('[data-preset]');
+  if(pr){[S.nMc,S.nEs]=pr.dataset.preset.split(',').map(Number);saveLocal();$('#nmc').value=S.nMc;$('#nes').value=S.nEs;updateCountNote();return}
   if(t.id==='gen')return generate();
   const it=t.closest('[data-ex]');
   if(it){cur=exams.find(x=>x.id===it.dataset.ex);if(cur){view.exam='paper';renderPaper();window.scrollTo({top:0})}return}
@@ -682,8 +693,17 @@ $('#v-exam').addEventListener('input',e=>{
   const ta=e.target.closest('textarea[data-es]');
   if(ta&&cur){const i=+ta.dataset.es;cur.answers[i]=ta.value;const o=document.querySelector(`.omr [data-jump="${i}"]`);o&&o.classList.toggle('done',!!ta.value.trim());updateLeft();saveSoon();return}
   if(e.target.id==='scope')readSetup();
+  if(['nmc','nes'].includes(e.target.id)&&e.target.value!==''){readSetup();updateCountNote()}
 });
-$('#v-exam').addEventListener('change',e=>{if(['size','hard','tier'].includes(e.target.id))readSetup()});
+$('#v-exam').addEventListener('change',e=>{
+  if(['nmc','nes'].includes(e.target.id)){readSetup();e.target.value=e.target.id==='nmc'?S.nMc:S.nEs;updateCountNote();return}
+  if(['hard','tier'].includes(e.target.id))readSetup()});
+function updateCountNote(){
+  const n=S.nMc+S.nEs,el=$('#n-note');if(!el)return;
+  const g=$('#gen');if(g)g.disabled=!S.secs.length||!n;
+  document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.preset===S.nMc+','+S.nEs));
+  el.textContent=!n?'문항 수를 1개 이상 정해 주세요.':`총 ${n}문항${S.nMc&&S.nEs?' · 객관식 70점 + 서답형 30점':''} · 만드는 데 ${n<=8?'1분 안팎':n<=16?'1~3분':'3~5분'}쯤 걸려요.`;
+}
 
 /* ---------- 오답노트 ---------- */
 let similar={}; // key -> {q, answer}
