@@ -1,0 +1,277 @@
+<title>공부 홈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Dancing+Script:wght@500&display=swap">
+<style>
+/* 다른 공부 앱들과 같은 노을 밤하늘. 한 가지 풍경으로 고정한 디자인이라 다크 모드를 따로 두지 않는다 */
+:root{
+  color-scheme:light;
+  --ink:#2E2A5A; --text:#332F5C; --muted:#625E8C; --line:#E1DDF6;
+  --glass:rgba(255,255,255,.82); --glass-edge:rgba(255,255,255,.72);
+  --pen:#4A4FB0; --pen-soft:#ECEAFB; --row:#F4F2FD; --late:#8A3560; --late-soft:#FBDDE8;
+  --serif:"Gowun Batang","AppleMyungjo",serif;
+  --sans:"Gowun Dodum",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --script:"Dancing Script",cursive;
+  --sky:linear-gradient(180deg,#2C3787 0%,#5566C9 22%,#9C93DE 40%,#E7B6D8 52%,#F4C9DD 55%,#B9AEE6 56%,#A89CE0 75%,#9A8FD8 100%);
+}
+*{box-sizing:border-box}
+html{background:#2C3787}
+body{background:var(--sky);background-attachment:fixed;min-height:100vh;color:var(--text);font:16px/1.55 var(--sans);padding-inline:16px;padding-block:28px 56px;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.sky .sea{position:absolute;left:0;right:0;top:56%;bottom:0;background:repeating-linear-gradient(180deg,transparent 0 9px,rgba(255,255,255,.13) 10px,transparent 12px)}
+.sky .cloud{position:absolute;border-radius:50%;filter:blur(28px)}
+.sky .st{position:absolute;border-radius:50%;background:#fff}
+.sky .moon{position:absolute;right:12%;top:56px;width:56px;height:56px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:18px;position:relative;z-index:1}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:700;text-wrap:balance}
+h1{font-size:34px;line-height:1.2;color:#fff}
+h2{font-size:20px;color:var(--ink)}
+.script{font-family:var(--script);font-size:26px;line-height:1;color:#FFE9F3}
+.sub{color:#E4E3FF;font-size:14px}
+a{color:var(--pen)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.refresh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#E4E3FF;font-size:13px}
+.refresh button{background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:99px;padding:8px 14px;min-height:40px}
+.refresh button:disabled{opacity:.5;cursor:default}
+.warn{background:rgba(138,53,96,.85);color:#fff;border-radius:14px;padding:10px 14px;font-size:14px}
+.panel{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--glass-edge);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 16px 40px rgba(44,55,135,.22);min-width:0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* 오늘 할 일 */
+.big{font-family:var(--serif);font-weight:700;font-size:40px;line-height:1;color:var(--ink)}
+.big small{font-size:16px;color:var(--muted);font-family:var(--sans);font-weight:400;margin-left:6px}
+.meter{height:8px;border-radius:99px;background:#E9E6F8;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8E9BEA,#F0A9CB)}
+.group h3{font-size:14px;color:var(--muted);font-family:var(--sans);font-weight:400;margin:6px 0}
+.todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.todo li a{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--row);border-radius:16px;padding:12px 14px;text-decoration:none;color:var(--text);min-height:56px}
+.todo li.late a{background:#FDF0F5}
+.todo li a:hover{box-shadow:inset 0 0 0 1.5px #CFC9EE}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--pen)}
+.ttl{font-size:16px;color:var(--ink);overflow-wrap:anywhere}
+.det{font-size:12px;color:var(--muted)}
+.todo li.late .det{color:var(--late)}
+.go{font-size:13px;color:var(--pen);white-space:nowrap;background:#fff;border:1px solid #DAD5F5;border-radius:10px;padding:6px 10px}
+.empty{color:var(--muted);font-size:14px;padding:18px;border:1.5px dashed #CFC9EE;border-radius:16px;text-align:center;background:rgba(255,255,255,.4)}
+
+/* D-day 엽서 */
+.ddays{display:flex;gap:14px;flex-wrap:wrap}
+.card{position:relative;width:124px;min-height:120px;padding:26px 10px 12px;border-radius:6px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;box-shadow:0 10px 24px rgba(30,36,100,.35),inset 0 0 0 4px rgba(255,255,255,.35)}
+.card:nth-child(3n+1){background:linear-gradient(180deg,#7C86DD 0%,#B7A6E6 55%,#F2BCD6 100%);transform:rotate(-2deg)}
+.card:nth-child(3n+2){background:linear-gradient(180deg,#4F5BC0 0%,#8C8BDD 60%,#C9B9EE 100%);transform:rotate(1.5deg)}
+.card:nth-child(3n){background:linear-gradient(180deg,#3A4CB5 0%,#6E8BE0 60%,#BBC8F2 100%);transform:rotate(-1deg)}
+.card .n{font-family:var(--serif);font-weight:700;font-size:28px;line-height:1.05}
+.card .s{font-size:13px}
+.card .d{font-size:11px;opacity:.9}
+
+/* 이번 주 */
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wd{background:#fff;border-radius:12px;padding:8px 4px;text-align:center;border:1px solid var(--line)}
+.wd b{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.wd span{font-family:var(--serif);font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.wd.full{background:var(--pen);border-color:var(--pen)}
+.wd.full b,.wd.full span{color:#fff}
+.wd.today{box-shadow:0 0 0 2px #F4C9DD}
+
+/* 과목 */
+.subjects{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:860px){.subjects{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sj{background:#fff;border-radius:16px;padding:12px;border:1px solid var(--line);display:flex;flex-direction:column;gap:4px;min-width:0}
+.sj .nm{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-weight:700;color:var(--ink)}
+.sj .st{font-size:12px;color:var(--muted)}
+.sj .dd{font-size:12px;color:var(--pen)}
+.sj a{font-size:13px;margin-top:4px;text-decoration:none}
+
+/* 앱 */
+.apps{display:flex;gap:8px;flex-wrap:wrap}
+.apps a{background:#fff;border:1px solid #DAD5F5;border-radius:12px;padding:10px 14px;text-decoration:none;color:var(--ink);font-size:14px;min-height:44px;display:flex;align-items:center}
+.apps a.main{background:var(--pen);border-color:var(--pen);color:#fff}
+</style>
+
+<div class="sky" aria-hidden="true">
+  <div class="sea"></div>
+  <div class="cloud" style="left:-6%;top:40%;width:46%;height:150px;background:rgba(255,236,246,.5)"></div>
+  <div class="cloud" style="right:-8%;top:24%;width:40%;height:130px;background:rgba(238,226,255,.45)"></div>
+  <svg class="moon" viewBox="0 0 64 64"><defs><mask id="cres"><rect width="64" height="64" fill="#fff"/><circle cx="42" cy="24" r="22" fill="#000"/></mask></defs><circle cx="30" cy="32" r="22" fill="#FFF6D8" mask="url(#cres)"/></svg>
+  <div id="stars"></div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="script">connecting the dots</div>
+      <h1>공부 홈</h1>
+      <div class="sub" id="when">불러오는 중…</div>
+    </div>
+    <div class="refresh">
+      <span id="rstatus" role="status"></span>
+      <button type="button" id="refresh" hidden>지금 새로고침</button>
+    </div>
+  </header>
+  <div class="warn" id="stale" hidden></div>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-today">
+      <div class="row">
+        <h2 id="h-today">오늘 할 일</h2>
+        <span class="muted" id="doneLine"></span>
+      </div>
+      <div class="big" id="count">–</div>
+      <div class="meter" aria-hidden="true"><i id="meter" style="width:0%"></i></div>
+      <div id="todo"></div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <section class="panel" aria-labelledby="h-exam">
+        <h2 id="h-exam">시험까지</h2>
+        <div class="ddays" id="ddays"></div>
+      </section>
+      <section class="panel" aria-labelledby="h-week">
+        <div class="row"><h2 id="h-week">이번 주</h2><span class="muted">완료 / 할 일 (플래너 기준)</span></div>
+        <div class="week" id="week"></div>
+        <div class="muted" id="extra"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="h-subj">
+    <div class="row"><h2 id="h-subj">8과목</h2><span class="muted">최근 7일 복습 · 남은 오답</span></div>
+    <div class="subjects" id="subjects"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-apps">
+    <h2 id="h-apps">앱 바로가기</h2>
+    <nav class="apps" aria-label="공부 앱">
+      <a class="main" href="https://claude.ai/artifact/AGrdmtMU9agaqqtpoBbqkV" target="_blank" rel="noopener">복습 플래너</a>
+      <a href="https://claude.ai/artifact/StK4zvRCC7kfHcVPJtjmHD" target="_blank" rel="noopener">영단어 시험</a>
+      <a href="https://claude.ai/artifact/ER7W1Mv79CCcMd9s6qR4f4" target="_blank" rel="noopener">오답 코치</a>
+      <a href="https://claude.ai/code/artifact/d48ddac4-e922-44a7-a34f-f9dbf4927a3a" target="_blank" rel="noopener">지역이해 퀴즈</a>
+      <a href="https://claude.ai/artifact/WnUDfbE5hL63tMvSxpHasb" target="_blank" rel="noopener">일본어 단어시험</a>
+      <a href="https://claude.ai/artifact/Cy11ZFb1hWvjp1YxnW84JX" target="_blank" rel="noopener">문학과 영상 모의고사</a>
+      <a href="https://claude.ai/artifact/SCy6xivPdPR8Vi6E4gj9Bs" target="_blank" rel="noopener">경제 지필고사</a>
+    </nav>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const WD=['일','월','화','수','목','금','토'];
+const TRIGGER='trig_01JNii7tnN8YygWcVK9weiAi';   // 홈 요약 루틴 id (발행 때 채움)
+const GROUPS=[['first','새로 외울 것'],['review','오늘 복습'],['mistake','오답 다시 풀기'],['overdue','밀린 것']];
+function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmt(s){const d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')'}
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function link(href,cls){const a=document.createElement('a');a.href=href;a.target='_blank';a.rel='noopener';if(cls)a.className=cls;return a}
+function safeUrl(u){return typeof u==='string'&&/^https:\/\/claude\.ai\//.test(u)?u:null}
+
+function render(s){
+  const today=ymd(new Date());
+  $('#when').textContent=s?`${fmt(s.kstDate)} ${s.kstTime} 기준`:'아직 요약이 없어요';
+  const stale=s&&s.kstDate!==today;
+  $('#stale').hidden=!stale&&!!s;
+  if(!s){$('#stale').hidden=false;$('#stale').textContent='첫 요약은 루틴이 만들어요. 오전 6:25, 오후 4:25, 저녁 8:25에 자동으로 바뀌어요.';}
+  else if(stale)$('#stale').textContent=`${fmt(s.kstDate)} 기준 요약이에요. 다음 자동 갱신을 기다리거나 새로고침을 눌러 주세요.`;
+  if(!s)return;
+
+  // 오늘 할 일
+  const todo=Array.isArray(s.todo)?s.todo:[];
+  $('#count').innerHTML='';$('#count').append(String(todo.length),el('small',null,'개 남음'));
+  const planned=s.plannedToday||0,done=s.doneToday||0;
+  $('#doneLine').textContent=planned?`플래너 오늘 몫 ${done}/${planned} 완료`:'';
+  $('#meter').style.width=(planned?Math.round(done/planned*100):0)+'%';
+  const box=$('#todo');box.innerHTML='';
+  if(!todo.length){box.append(el('div','empty','오늘 남은 게 없어요. 잘했어요.'))}
+  GROUPS.forEach(([g,label])=>{
+    const xs=todo.filter(x=>x.group===g);if(!xs.length)return;
+    const wrap=el('div','group');wrap.append(el('h3',null,label+' · '+xs.length));
+    const ul=el('ul','todo');
+    xs.forEach(x=>{
+      const li=el('li',g==='overdue'?'late':null);
+      const a=link(safeUrl(x.url)||'#');
+      const dot=el('span','dot');if(x.color)dot.style.background=x.color;
+      const mid=el('span');mid.append(el('div','ttl',x.title||''),el('div','det',[x.subject,x.detail].filter(Boolean).join(' · ')));
+      a.append(dot,mid,el('span','go',(x.app||'열기')+' ›'));
+      a.setAttribute('aria-label',`${x.subject||''} ${x.title||''} ${x.detail||''}, ${x.app||''} 열기`);
+      li.append(a);ul.append(li);
+    });
+    wrap.append(ul);box.append(wrap);
+  });
+
+  // D-day
+  const dd=$('#ddays');dd.innerHTML='';
+  const exams=Array.isArray(s.exams)?s.exams:[];
+  if(!exams.length){
+    const p=el('div','muted','과목별 시험일을 넣으면 여기에 D-day가 떠요. ');
+    const a=link(s.plannerUrl||'https://claude.ai/artifact/AGrdmtMU9agaqqtpoBbqkV');a.textContent='플래너에서 시험일 넣기';p.append(a);dd.append(p);
+  }else exams.slice(0,8).forEach(e=>{const c=el('div','card');c.append(el('span','n',e.dday===0?'D-DAY':'D-'+e.dday),el('span','s',e.subject),el('span','d',fmt(e.date)));dd.append(c)});
+
+  // 이번 주
+  const wk=$('#week');wk.innerHTML='';
+  (Array.isArray(s.week)?s.week:[]).forEach(w=>{
+    const full=w.planned>0&&w.done>=w.planned;
+    const c=el('div','wd'+(full?' full':'')+(w.date===s.kstDate?' today':''));
+    c.append(el('b',null,fmt(w.date)),el('span',null,w.planned?`${w.done}/${w.planned}`:'–'));
+    c.setAttribute('aria-label',`${fmt(w.date)} ${w.planned?w.done+'개 완료, 할 일 '+w.planned+'개':'할 일 없음'}`);
+    wk.append(c);
+  });
+  const v=s.vocab||{},co=s.coach||{};
+  const bits=[];
+  if(v.overall!=null)bits.push(`영단어 마지막 정답률 ${v.overall}%`);
+  bits.push(`영단어 시험 최근 7일 ${v.sessions7||0}번`);
+  bits.push(`남은 오답 ${co.open||0}개`+(co.topCause?` · 최근 2주 가장 많은 이유: ${co.topCause}`:''));
+  $('#extra').textContent=bits.join(' · ');
+
+  // 과목
+  const sg=$('#subjects');sg.innerHTML='';
+  (Array.isArray(s.subjects)?s.subjects:[]).forEach(x=>{
+    const c=el('div','sj');
+    const nm=el('div','nm');const dot=el('span','dot');if(x.color)dot.style.background=x.color;nm.append(dot,el('span',null,x.name));
+    c.append(nm);
+    c.append(el('div','dd',x.dday!=null&&x.dday>=0?(x.dday===0?'오늘 시험':`D-${x.dday} · ${fmt(x.examDate)}`):'시험일 미정'));
+    c.append(el('div','st',x.due7?`복습 ${x.done7}/${x.due7}`+(x.overdue?` · 밀림 ${x.overdue}`:''):'최근 복습 없음'));
+    c.append(el('div','st',x.mistakesOpen?`오답 ${x.mistakesOpen}개`+(x.mistakesDue?` (오늘 ${x.mistakesDue})`:''):'남은 오답 없음'));
+    const u=safeUrl(x.url);if(u){const a=link(u);a.textContent='공부하러 가기 ›';c.append(a)}
+    sg.append(c);
+  });
+}
+
+/* 별 */
+(function(){let seed=31;const r=()=>(seed=(seed*9301+49297)%233280)/233280;let h='';
+  for(let i=0;i<50;i++){const x=(r()*100).toFixed(1),y=(r()*42).toFixed(1),z=r()<.15?3:(r()<.5?2:1.4),o=(.45+r()*.55).toFixed(2);
+    h+=`<span class="st" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px;opacity:${o}${z===3?';box-shadow:0 0 6px #fff':''}"></span>`}
+  $('#stars').innerHTML=h;})();
+
+render(null);
+
+(async()=>{
+  const [db,mcp]=await Promise.all(['db','mcp'].map(n=>window.claude?.use?.(n)??null));
+  if(!db){$('#when').textContent='저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.';return}
+  db.doc('snapshot/main').onSnapshot(sn=>render(sn.exists?sn.data():null),()=>{$('#rstatus').textContent='요약을 불러오지 못했어요. 새로고침해 주세요.'});
+  // 새로고침: 요약 루틴을 지금 한 번 돌린다(1분쯤 걸림). 커넥터를 못 쓰면 버튼을 숨긴다.
+  if(mcp&&!TRIGGER.endsWith('PENDING')){
+    const btn=$('#refresh');btn.hidden=false;
+    btn.addEventListener('click',async()=>{
+      btn.disabled=true;$('#rstatus').textContent='요약을 다시 만드는 중… 1분쯤 걸려요';
+      try{
+        await mcp.callTool('Claude Code Remote','fire_trigger',{trigger_id:TRIGGER});
+        $('#rstatus').textContent='요청했어요. 잠시 뒤 자동으로 바뀌어요.';
+      }catch(e){
+        const c=e&&e.code;
+        $('#rstatus').textContent=c==='server_not_connected'?'Claude Code Remote 커넥터가 연결돼 있지 않아요.'
+          :c==='not_in_manifest'?'이 화면에서 새로고침을 허용하지 않았어요.'
+          :c==='needs_reauth'?'claude.ai 설정 → 커넥터에서 다시 연결해 주세요.'
+          :'새로고침을 요청하지 못했어요. 자동 갱신을 기다려 주세요.';
+      }
+      setTimeout(()=>{btn.disabled=false},90000);
+    });
+  }
+})();
+})();
+</script>
