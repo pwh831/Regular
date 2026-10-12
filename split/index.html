@@ -1,0 +1,449 @@
+<title>분량 나누기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Dancing+Script:wght@500&display=swap">
+<style>
+/* 다른 공부 앱들과 같은 노을 밤하늘. 한 가지 풍경으로 고정한 디자인이라 다크 모드를 따로 두지 않는다 */
+:root{
+  color-scheme:light;
+  --ink:#2E2A5A; --text:#332F5C; --muted:#625E8C; --line:#E1DDF6;
+  --glass:rgba(255,255,255,.82); --glass-edge:rgba(255,255,255,.72);
+  --pen:#4A4FB0; --pen-soft:#ECEAFB; --row:#F4F2FD; --late:#8A3560; --late-soft:#FBDDE8; --ok:#23845A; --ok-soft:#E1F3EA;
+  --serif:"Gowun Batang","AppleMyungjo",serif;
+  --sans:"Gowun Dodum",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --script:"Dancing Script",cursive;
+  --sky:linear-gradient(180deg,#2C3787 0%,#5566C9 22%,#9C93DE 40%,#E7B6D8 52%,#F4C9DD 55%,#B9AEE6 56%,#A89CE0 75%,#9A8FD8 100%);
+}
+*{box-sizing:border-box}
+html{background:#2C3787}
+body{background:var(--sky);background-attachment:fixed;min-height:100vh;color:var(--text);font:16px/1.55 var(--sans);padding-inline:16px;padding-block:28px 56px;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.sky .sea{position:absolute;left:0;right:0;top:56%;bottom:0;background:repeating-linear-gradient(180deg,transparent 0 9px,rgba(255,255,255,.13) 10px,transparent 12px)}
+.sky .cloud{position:absolute;border-radius:50%;filter:blur(28px)}
+.sky .moon{position:absolute;right:12%;top:56px;width:56px;height:56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px;position:relative;z-index:1}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:700;text-wrap:balance}
+h1{font-size:32px;line-height:1.2;color:#fff}
+h2{font-size:20px;color:var(--ink)}
+h3{font-size:16px;color:var(--ink)}
+.script{font-family:var(--script);font-size:26px;line-height:1;color:#FFE9F3}
+.sub{color:#E4E3FF;font-size:14px;max-width:62ch}
+.status{font-size:13px;color:#E4E3FF;min-height:20px}
+.status.err{color:#fff;background:rgba(138,53,96,.85);padding:4px 10px;border-radius:99px;display:inline-block}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+.panel{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--glass-edge);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 16px 40px rgba(44,55,135,.22);min-width:0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:14px}
+.btn{background:var(--pen);color:#fff;border:0;border-radius:14px;padding:11px 18px;font-weight:700;min-height:46px}
+.btn:disabled{opacity:.45;cursor:default}
+.ghost{background:#fff;border:1px solid #DAD5F5;border-radius:12px;padding:8px 12px;min-height:42px;color:var(--ink);font-size:14px}
+.ghost.danger{color:var(--late);border-color:var(--late-soft)}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],select,textarea{background:rgba(255,255,255,.95);border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;border-radius:12px;padding:9px 11px;font-size:16px;width:100%;min-width:0;color:var(--text)}
+textarea{min-height:90px;resize:vertical}
+
+/* 계획 목록 */
+.plans{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pcard{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:120px}
+.pcard[aria-pressed="true"]{border-color:var(--pen);box-shadow:0 0 0 3px var(--pen-soft)}
+.pcard .t{font-family:var(--serif);font-weight:700;font-size:17px;color:var(--ink)}
+.pcard .m{font-size:13px;color:var(--muted)}
+.pcard .late{color:var(--late)}
+.bar{height:8px;border-radius:99px;background:#E9E6F8;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8E9BEA,#F0A9CB)}
+.newcard{border-style:dashed;align-items:center;justify-content:center;color:var(--pen);font-weight:700}
+
+/* 오늘 분량 */
+.today{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:560px){.today{grid-template-columns:minmax(0,1fr)}}
+.card{width:140px;min-height:132px;border-radius:6px;padding:14px;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;background:linear-gradient(180deg,#4F5BC0 0%,#8C8BDD 60%,#F2BCD6 100%);box-shadow:0 10px 24px rgba(30,36,100,.35),inset 0 0 0 4px rgba(255,255,255,.35);transform:rotate(-2deg)}
+.card .lab{font-family:var(--script);font-size:17px;opacity:.9}
+.card .big{font-family:var(--serif);font-weight:700;font-size:30px;line-height:1.1}
+.card .small{font-size:12px;opacity:.9;text-align:center}
+.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.parts li{background:var(--row);border-radius:12px;padding:10px 12px;font-size:16px;color:var(--ink)}
+.parts li small{display:block;font-size:12px;color:var(--muted)}
+
+/* 일정 */
+.days{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto}
+.day{display:grid;grid-template-columns:auto 92px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:#fff;border:1px solid var(--line)}
+.day.past:not(.done){background:#FDF0F5}
+.day.isToday{box-shadow:0 0 0 2px var(--pen)}
+.day.done{opacity:.6}
+.day .d{font-family:var(--serif);color:var(--ink);font-size:14px}
+.day .w{font-size:14px;overflow-wrap:anywhere}
+.day .e{font-size:12px;color:var(--muted);white-space:nowrap}
+.chk{width:40px;height:40px;border-radius:50%;border:1.5px solid #CFC9EE;background:#fff;display:grid;place-items:center;padding:0}
+.chk svg{width:18px;height:18px}
+.chk svg path{fill:#DAD5F5}
+.day.done .chk{background:var(--pen);border-color:var(--pen)}
+.day.done .chk svg path{fill:#FFE9A8}
+@media (max-width:560px){.day{grid-template-columns:auto minmax(0,1fr)}.day .w,.day .e{grid-column:2}}
+
+/* 만들기 */
+.units{display:flex;flex-direction:column;gap:8px}
+.urow{display:grid;grid-template-columns:minmax(0,2fr) 90px 120px auto;gap:8px;align-items:end}
+@media (max-width:640px){.urow{grid-template-columns:minmax(0,1fr) 90px}.urow>label:nth-child(3),.urow>button{grid-column:span 1}}
+.two{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.two{grid-template-columns:minmax(0,1fr)}}
+.weekdays{display:flex;gap:6px;flex-wrap:wrap}
+.weekdays label{flex-direction:row;align-items:center;gap:4px;font-size:14px;color:var(--ink);background:#fff;border:1px solid #DAD5F5;border-radius:10px;padding:6px 10px}
+.weekdays input{width:auto}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:14px;background:#fff;border:1px solid #DAD5F5;border-radius:10px;padding:8px 12px}
+.preview{background:var(--pen-soft);border-radius:14px;padding:12px;font-size:14px;color:var(--ink)}
+.ai{background:#fff;border:1px dashed #CFC9EE;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+</style>
+
+<div class="sky" aria-hidden="true">
+  <div class="sea"></div>
+  <div class="cloud" style="left:-6%;top:40%;width:46%;height:150px;background:rgba(255,236,246,.5)"></div>
+  <div class="cloud" style="right:-8%;top:24%;width:40%;height:130px;background:rgba(238,226,255,.45)"></div>
+  <svg class="moon" viewBox="0 0 64 64"><defs><mask id="cres"><rect width="64" height="64" fill="#fff"/><circle cx="42" cy="24" r="22" fill="#000"/></mask></defs><circle cx="30" cy="32" r="22" fill="#FFF6D8" mask="url(#cres)"/></svg>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="script">one day at a time</div>
+    <h1>분량 나누기</h1>
+    <div class="sub">문제집이나 인강의 분량을 넣으면 하루 몫으로 나눠 줘요. 밀리면 남은 분량을 다시 나눠요.</div>
+    <div class="status" id="status" role="status">불러오는 중…</div>
+  </header>
+
+  <section class="panel" aria-labelledby="h-plans">
+    <h2 id="h-plans">내 교재 · 인강</h2>
+    <div class="plans" id="plans"></div>
+  </section>
+
+  <!-- 선택한 계획 -->
+  <section class="panel" id="detail" hidden aria-labelledby="h-detail">
+    <div class="row"><h2 id="h-detail"></h2><span class="muted" id="dMeta"></span></div>
+    <div class="today">
+      <div class="card" aria-hidden="true"><span class="lab">today</span><span class="big" id="tAmt">–</span><span class="small" id="tDate"></span></div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <h3 id="tHead">오늘 분량</h3>
+        <ul class="parts" id="tParts"></ul>
+        <div class="acts"><button class="btn" id="tDone" type="button">오늘 분량 끝!</button></div>
+      </div>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="dBar" style="width:0%"></i></div>
+    <div class="row">
+      <span class="muted" id="lateLine"></span>
+      <div class="acts">
+        <button class="ghost" id="rbKeepEnd" type="button">남은 분량 다시 나누기 · 끝나는 날 그대로</button>
+        <button class="ghost" id="rbKeepDaily" type="button">남은 분량 다시 나누기 · 하루 분량 그대로</button>
+      </div>
+    </div>
+    <h3>전체 일정</h3>
+    <ul class="days" id="days"></ul>
+    <div class="acts"><button class="ghost" id="edit" type="button">설정 바꾸기</button><button class="ghost danger" id="del" type="button">이 계획 삭제</button></div>
+  </section>
+
+  <!-- 만들기 / 바꾸기 -->
+  <section class="panel" id="form" hidden aria-labelledby="h-form">
+    <h2 id="h-form">새 교재 · 인강</h2>
+    <div class="ai" id="aiBox">
+      <h3>사진이나 글로 채우기</h3>
+      <div class="muted">목차, 빠른 정답 페이지, 인강 강의 목록 사진이나 복사한 글을 주면 단원과 개수를 채워 줘요. 채운 뒤 꼭 확인해 주세요.</div>
+      <label>사진 (여러 장 가능)<input type="file" id="aiFiles" accept="image/*" multiple></label>
+      <label>또는 글 붙여넣기<textarea id="aiText" placeholder="예) 1강 지수 2강 지수법칙 … 또는 'A 지수 152문제, B 로그 135문제'"></textarea></label>
+      <div class="acts"><button class="ghost" id="aiGo" type="button">단원 채우기</button><span class="muted" id="aiMsg" role="status"></span></div>
+    </div>
+    <div class="two">
+      <label>이름<input type="text" id="fTitle" maxlength="40" placeholder="예) 자이스토리 고2 대수"></label>
+      <label>종류<select id="fKind"><option value="book">문제집 (문제 단위)</option><option value="lecture">인강 (강 단위)</option></select></label>
+      <label>시작하는 날<input type="date" id="fStart"></label>
+    </div>
+    <h3>단원</h3>
+    <div class="muted">"한 번에"는 모의고사처럼 나누지 않고 하루에 통째로 하는 것. 무게는 한 개가 보통 몇 개 분량인지예요(시간 재는 모의고사 2.5, 긴 강의 1.5).</div>
+    <div class="units" id="units"></div>
+    <div class="acts"><button class="ghost" id="addUnit" type="button">+ 단원 추가</button></div>
+    <h3>쉬는 요일</h3>
+    <div class="weekdays" id="rest"></div>
+    <div class="muted">쉬는 요일에는 새 분량을 넣지 않아요. 밀린 걸 하는 날로 쓰면 좋아요.</div>
+    <h3>나누는 방법</h3>
+    <div class="seg">
+      <label><input type="radio" name="mode" value="daily" checked> 하루에 <input type="number" id="fPer" min="1" max="500" value="45" style="width:80px"> <span id="perUnit">개</span>씩</label>
+      <label><input type="radio" name="mode" value="end"> <input type="date" id="fEnd"> 까지 끝내기</label>
+    </div>
+    <div class="preview" id="preview" aria-live="polite"></div>
+    <div class="acts"><button class="btn" id="save" type="button">저장하고 나누기</button><button class="ghost" id="cancel" type="button">취소</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const WD=['일','월','화','수','목','금','토'];
+const COLORS=['#5FC2C9','#6F9BE6','#EE8FB6','#A087E3','#F2B45B','#7FB069','#E88A7D'];
+const STAR='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>';
+let db=null, sample=null, plans=[], sel=null, editing=null, confirmDel=false;
+
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function addDays(s,n){const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)}
+function fmt(s){const d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')'}
+function today(){return ymd(new Date())}
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function setStatus(t,err){const e=$('#status');e.textContent=t;e.className='status'+(err?' err':'')}
+function uLabel(p){return p.kind==='lecture'?'강':'문제'}
+
+/* ---------- 나누기 (split.py와 같은 규칙) ---------- */
+function studyDates(start,rest,n,end){
+  const out=[];let d=start;const R=new Set(rest||[]);let guard=0;
+  while((n==null||out.length<n)&&(end==null||d<=end)&&guard++<2000){if(!R.has(parse(d).getDay()))out.push(d);d=addDays(d,1)}
+  return out;
+}
+function totalEffort(units){return units.reduce((s,u)=>s+u.count*(u.weight||1),0)}
+function split(units,dates){
+  const atoms=[];
+  units.forEach((u,ui)=>{const w=u.weight||1;if(u.whole)atoms.push([ui,1,u.count,u.count*w]);else for(let p=1;p<=u.count;p++)atoms.push([ui,p,p,w])});
+  const total=atoms.reduce((s,a)=>s+a[3],0),n=dates.length;
+  const days=dates.map(d=>({date:d,parts:[],effort:0,done:false,doneAt:null}));
+  if(!n||!total)return [];
+  let cum=0;
+  for(const [ui,a,b,e] of atoms){
+    const k=Math.min(n-1,Math.floor((cum+e/2)/total*n));cum+=e;
+    const day=days[k];day.effort+=e;const last=day.parts[day.parts.length-1];
+    if(last&&last.unit===ui&&last.to===a-1&&!units[ui].whole)last.to=b;else day.parts.push({unit:ui,from:a,to:b});
+  }
+  for(let k=0;k<days.length-1;k++){
+    const ps=days[k].parts,last=ps[ps.length-1],nxt=days[k+1].parts;
+    if(last&&ps.length>1&&!units[last.unit].whole&&last.from===1&&last.to-last.from+1<5&&nxt.length&&nxt[0].unit===last.unit){
+      ps.pop();const w=(units[last.unit].weight||1)*(last.to-last.from+1);days[k].effort-=w;days[k+1].effort+=w;nxt[0].from=last.from;
+    }
+  }
+  days.forEach(d=>d.effort=Math.round(d.effort*10)/10);
+  return days.filter(d=>d.parts.length);
+}
+function planDays(p){
+  const total=totalEffort(p.units);
+  if(p.mode==='end'&&p.endDate)return split(p.units,studyDates(p.startDate,p.restDays,null,p.endDate));
+  return split(p.units,studyDates(p.startDate,p.restDays,Math.ceil(total/Math.max(1,p.perDay||1))));
+}
+/* 남은 것만 떼어 내서 오늘부터 다시 나누기 */
+function remainingUnits(p){
+  const doneSet=new Map(); // unit -> 끝낸 번호들
+  p.days.filter(d=>d.done).forEach(d=>d.parts.forEach(pt=>{const s=doneSet.get(pt.unit)||new Set();for(let i=pt.from;i<=pt.to;i++)s.add(i);doneSet.set(pt.unit,s)}));
+  const out=[];
+  p.units.forEach((u,ui)=>{
+    const s=doneSet.get(ui)||new Set();
+    if(u.whole){if(!s.size)out.push({...u,orig:ui,offset:0});return}
+    let i=1;while(i<=u.count){ // 끝내지 않은 연속 구간마다 하나의 조각
+      if(s.has(i)){i++;continue}let j=i;while(j+1<=u.count&&!s.has(j+1))j++;
+      out.push({...u,count:j-i+1,orig:ui,offset:i-1});i=j+1;
+    }
+  });
+  return out;
+}
+function rebalance(p,keep){
+  const rem=remainingUnits(p);if(!rem.length)return p.days;
+  const t=today();
+  const pieces=rem.map(r=>({name:r.name,count:r.count,weight:r.weight,whole:r.whole}));
+  let dates;
+  if(keep==='end'){const end=p.days[p.days.length-1].date;dates=studyDates(t,p.restDays,null,end<t?t:end)}
+  else dates=studyDates(t,p.restDays,Math.ceil(totalEffort(pieces)/Math.max(1,p.perDay||45)));
+  const nd=split(pieces,dates).map(d=>({...d,parts:d.parts.map(pt=>{const r=rem[pt.unit];return {unit:r.orig,from:pt.from+r.offset,to:pt.to+r.offset}})}));
+  // 이미 끝낸 날은 그대로 남기고 그 뒤에 새 일정
+  return [...p.days.filter(d=>d.done),...nd];
+}
+function partText(p,pt){const u=p.units[pt.unit];if(!u)return '';return u.whole?u.name:`${u.name} ${pt.from}–${pt.to}${p.kind==='lecture'?'강':'번'}`}
+function partCount(p,pt){const u=p.units[pt.unit];return u?(u.whole?u.count:pt.to-pt.from+1):0}
+
+/* ---------- 그리기 ---------- */
+function stats(p){
+  const t=today(),total=p.days.length,done=p.days.filter(d=>d.done).length;
+  const late=p.days.filter(d=>!d.done&&d.date<t).length;
+  const todayDay=p.days.find(d=>d.date===t)||null;
+  const next=p.days.find(d=>!d.done&&d.date>=t)||null;
+  return {total,done,late,todayDay,next,end:p.days.length?p.days[p.days.length-1].date:null};
+}
+function renderPlans(){
+  const box=$('#plans');box.innerHTML='';
+  plans.forEach(p=>{
+    const s=stats(p);const b=el('button','pcard');b.type='button';b.setAttribute('aria-pressed',String(sel===p.id));
+    const t=el('span','t',p.title);
+    const m=el('span','m',`${s.done}/${s.total}일 · ${s.end?fmt(s.end)+' 끝':''}`);
+    const today_=el('span','m',s.todayDay?(s.todayDay.done?'오늘 분량 끝 ✓':'오늘: '+s.todayDay.parts.map(pt=>partText(p,pt)).join(' + ')):'오늘은 쉬는 날');
+    if(s.todayDay&&s.todayDay.done)today_.textContent='오늘 분량 끝';
+    const bar=el('div','bar');const i=el('i');i.style.width=(s.total?Math.round(s.done/s.total*100):0)+'%';bar.append(i);
+    b.append(t,m,today_,bar);
+    if(s.late){b.append(el('span','m late',`밀린 날 ${s.late}일`))}
+    b.addEventListener('click',()=>{sel=p.id;confirmDel=false;closeForm();render()});
+    box.append(b);
+  });
+  const nb=el('button','pcard newcard','+ 새 교재 · 인강');nb.type='button';nb.addEventListener('click',()=>openForm(null));box.append(nb);
+}
+function renderDetail(){
+  const p=plans.find(x=>x.id===sel);$('#detail').hidden=!p;if(!p)return;
+  const s=stats(p);
+  $('#h-detail').textContent=p.title;
+  $('#dMeta').textContent=`${p.units.length}단원 · ${p.days.length}일 · ${p.restDays&&p.restDays.length?WD.filter((_,i)=>p.restDays.includes(i)).join('·')+' 쉼 · ':''}${s.end?fmt(s.end)+' 끝':''}`;
+  $('#dBar').style.width=(s.total?Math.round(s.done/s.total*100):0)+'%';
+  const d=s.todayDay&&!s.todayDay.done?s.todayDay:(s.todayDay?null:s.next);
+  const tParts=$('#tParts');tParts.innerHTML='';
+  if(s.todayDay&&s.todayDay.done){$('#tHead').textContent='오늘 분량 끝!';$('#tAmt').textContent='✓';$('#tDate').textContent=fmt(today());$('#tDone').hidden=true;
+    if(s.next){const li=el('li');li.append('다음: '+s.next.parts.map(pt=>partText(p,pt)).join(' + '),el('small',null,fmt(s.next.date)));tParts.append(li)}}
+  else if(d){
+    $('#tHead').textContent=d.date===today()?'오늘 분량':'다음 분량 ('+fmt(d.date)+')';
+    const cnt=d.parts.reduce((a,pt)=>a+partCount(p,pt),0);
+    $('#tAmt').textContent=cnt+uLabel(p).slice(0,1);$('#tDate').textContent=fmt(d.date);
+    d.parts.forEach(pt=>{const li=el('li');const u=p.units[pt.unit];li.append(partText(p,pt),el('small',null,u&&u.whole?`${u.count}${p.kind==='lecture'?'강':'문항'} · 한 번에`:`${partCount(p,pt)}${p.kind==='lecture'?'강':'문제'}`));tParts.append(li)});
+    $('#tDone').hidden=d.date!==today();$('#tDone').dataset.date=d.date;
+  }else{$('#tHead').textContent='모두 끝냈어요';$('#tAmt').textContent='끝';$('#tDate').textContent='';$('#tDone').hidden=true}
+  $('#lateLine').textContent=s.late?`밀린 날 ${s.late}일 · 다시 나누면 오늘부터 남은 분량을 새로 잡아요`:'밀린 날 없음';
+  $('#rbKeepEnd').disabled=$('#rbKeepDaily').disabled=!p.days.some(x=>!x.done);
+  const ul=$('#days');ul.innerHTML='';const t=today();
+  p.days.forEach((x,i)=>{
+    const li=el('li','day'+(x.done?' done':'')+(x.date<t?' past':'')+(x.date===t?' isToday':''));
+    const c=el('button','chk');c.type='button';c.innerHTML=STAR;c.setAttribute('aria-label',`${fmt(x.date)} ${x.done?'완료 취소':'완료'}`);c.setAttribute('aria-pressed',String(x.done));
+    c.addEventListener('click',()=>toggleDay(p,i));
+    const cnt=x.parts.reduce((a,pt)=>a+partCount(p,pt),0);
+    li.append(c,el('span','d',fmt(x.date)),el('span','w',x.parts.map(pt=>partText(p,pt)).join(' + ')),el('span','e',cnt+(p.kind==='lecture'?'강':'문제')));
+    ul.append(li);
+  });
+  const ti=ul.querySelector('.isToday');if(ti)ti.scrollIntoView({block:'nearest'});
+  $('#del').textContent=confirmDel?'정말 삭제':'이 계획 삭제';
+}
+function render(){renderPlans();renderDetail()}
+
+/* ---------- 행동 ---------- */
+async function save(p,msg){
+  if(!db){setStatus('저장소에 연결되지 않아 저장할 수 없어요.',true);return false}
+  const {id,...data}=p;
+  try{await db.doc('plans/'+id).set(data);if(msg)setStatus(msg);return true}
+  catch(e){setStatus(e&&e.code==='quota_exceeded'?'저장 공간이 가득 찼어요.':'저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.',true);return false}
+}
+async function toggleDay(p,i){
+  const days=p.days.map((d,k)=>k===i?{...d,done:!d.done,doneAt:!d.done?today():null}:d);
+  await save({...p,days},days[i].done?'완료!':'완료를 취소했어요');
+}
+$('#tDone').addEventListener('click',()=>{const p=plans.find(x=>x.id===sel);if(!p)return;const i=p.days.findIndex(d=>d.date===$('#tDone').dataset.date);if(i>=0&&!p.days[i].done)toggleDay(p,i)});
+$('#rbKeepEnd').addEventListener('click',async()=>{const p=plans.find(x=>x.id===sel);if(p)await save({...p,days:rebalance(p,'end')},'남은 분량을 끝나는 날까지 다시 나눴어요')});
+$('#rbKeepDaily').addEventListener('click',async()=>{const p=plans.find(x=>x.id===sel);if(p)await save({...p,days:rebalance(p,'daily')},'남은 분량을 하루 분량 그대로 다시 나눴어요')});
+$('#del').addEventListener('click',async()=>{
+  const p=plans.find(x=>x.id===sel);if(!p)return;
+  if(!confirmDel){confirmDel=true;renderDetail();return}
+  try{await db.doc('plans/'+p.id).delete();sel=null;confirmDel=false;setStatus('삭제했어요')}catch(e){setStatus('삭제하지 못했어요.',true)}
+});
+$('#edit').addEventListener('click',()=>{const p=plans.find(x=>x.id===sel);if(p)openForm(p)});
+
+/* ---------- 만들기 폼 ---------- */
+function unitRow(u){
+  const r=el('div','urow');
+  r.innerHTML=`<label>단원 이름<input type="text" data-k="name" maxlength="60"></label><label>개수<input type="number" data-k="count" min="1" max="2000"></label><label>무게 · 방식<select data-k="mode"><option value="1">보통 (1)</option><option value="1.5">조금 무거움 (1.5)</option><option value="2.5w">한 번에 · 시험 (2.5)</option><option value="1w">한 번에 (1)</option></select></label><button class="ghost danger" type="button" data-rm aria-label="이 단원 빼기">빼기</button>`;
+  r.querySelector('[data-k=name]').value=u?.name||'';r.querySelector('[data-k=count]').value=u?.count||'';
+  r.querySelector('[data-k=mode]').value=u?(u.whole?((u.weight||1)>=2?'2.5w':'1w'):((u.weight||1)>1?'1.5':'1')):'1';
+  r.querySelector('[data-rm]').addEventListener('click',()=>{r.remove();preview()});
+  r.addEventListener('input',preview);
+  return r;
+}
+function readUnits(){
+  return [...document.querySelectorAll('.urow')].map(r=>{
+    const name=r.querySelector('[data-k=name]').value.trim(),count=parseInt(r.querySelector('[data-k=count]').value,10),m=r.querySelector('[data-k=mode]').value;
+    return {name,count,weight:parseFloat(m),whole:m.endsWith('w')};
+  }).filter(u=>u.name&&u.count>0);
+}
+function readForm(){
+  const mode=document.querySelector('input[name=mode]:checked').value;
+  return {title:$('#fTitle').value.trim(),kind:$('#fKind').value,startDate:$('#fStart').value||today(),
+    restDays:[...document.querySelectorAll('[data-rd]')].filter(b=>b.checked).map(b=>Number(b.dataset.rd)),
+    mode,perDay:parseInt($('#fPer').value,10)||45,endDate:mode==='end'?($('#fEnd').value||null):null,units:readUnits()};
+}
+function preview(){
+  const f=readForm();$('#perUnit').textContent=f.kind==='lecture'?'강':'문제';
+  if(!f.units.length){$('#preview').textContent='단원을 하나 이상 넣어 주세요.';$('#save').disabled=true;return}
+  if(f.mode==='end'&&(!f.endDate||f.endDate<f.startDate)){$('#preview').textContent='끝낼 날을 시작하는 날 뒤로 골라 주세요.';$('#save').disabled=true;return}
+  const days=planDays(f),total=f.units.reduce((s,u)=>s+u.count,0),eff=totalEffort(f.units);
+  if(!days.length){$('#preview').textContent='공부하는 날이 없어요. 쉬는 요일이나 날짜를 확인해 주세요.';$('#save').disabled=true;return}
+  const per=Math.round(eff/days.length*10)/10;
+  $('#preview').textContent=`전체 ${total}${f.kind==='lecture'?'강':'문제'} → ${days.length}일 · 하루 약 ${per}${f.kind==='lecture'?'강':'문제'} 분량 · ${fmt(days[0].date)} 시작, ${fmt(days[days.length-1].date)} 끝`;
+  $('#save').disabled=!f.title;
+}
+function openForm(p){
+  editing=p;$('#form').hidden=false;$('#h-form').textContent=p?'설정 바꾸기':'새 교재 · 인강';
+  $('#fTitle').value=p?.title||'';$('#fKind').value=p?.kind||'book';$('#fStart').value=p?(p.days.some(d=>d.done)?today():p.startDate):addDays(today(),1);
+  $('#fPer').value=p?.perDay||45;$('#fEnd').value=p?.endDate||'';
+  document.querySelector(`input[name=mode][value=${p?.mode==='end'?'end':'daily'}]`).checked=true;
+  const rest=new Set(p?p.restDays:[0]);
+  $('#rest').innerHTML=WD.map((w,i)=>`<label><input type="checkbox" data-rd="${i}" ${rest.has(i)?'checked':''}>${w}</label>`).join('');
+  $('#units').innerHTML='';(p?p.units:[{name:'',count:''}]).forEach(u=>$('#units').append(unitRow(u)));
+  $('#aiBox').hidden=!sample;
+  preview();$('#form').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeForm(){$('#form').hidden=true;editing=null}
+$('#addUnit').addEventListener('click',()=>{$('#units').append(unitRow(null));preview()});
+['#fTitle','#fKind','#fStart','#fPer','#fEnd'].forEach(s=>$(s).addEventListener('input',preview));
+document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('change',preview));
+$('#rest').addEventListener('change',preview);
+$('#cancel').addEventListener('click',closeForm);
+$('#save').addEventListener('click',async()=>{
+  const f=readForm();if(!f.title||!f.units.length)return;
+  let base={...f,color:editing?.color||COLORS[plans.length%COLORS.length],createdAt:editing?.createdAt||new Date().toISOString()};
+  let days;
+  if(editing&&editing.days.some(d=>d.done)){
+    // 이미 한 날은 지키고, 바뀐 설정으로 남은 것만 다시 나눈다
+    const tmp={...editing,...base,days:editing.days};
+    days=rebalance({...tmp,startDate:f.startDate},f.mode==='end'?'end':'daily');
+    if(f.mode==='end'&&f.endDate){const rem=remainingUnits(tmp);const pieces=rem.map(r=>({name:r.name,count:r.count,weight:r.weight,whole:r.whole}));
+      days=[...editing.days.filter(d=>d.done),...split(pieces,studyDates(f.startDate,f.restDays,null,f.endDate)).map(d=>({...d,parts:d.parts.map(pt=>{const r=rem[pt.unit];return {unit:r.orig,from:pt.from+r.offset,to:pt.to+r.offset}})}))]}
+  }else days=planDays(base);
+  const id=editing?.id||db?.collection('plans').doc().id;
+  if(!id){setStatus('저장소에 연결되지 않아 저장할 수 없어요.',true);return}
+  if(await save({id,...base,days},'저장하고 나눴어요')){sel=id;closeForm()}
+});
+
+/* 사진·글로 단원 채우기 (Claude) */
+$('#aiGo').addEventListener('click',async()=>{
+  if(!sample)return;
+  const files=[...($('#aiFiles').files||[])],text=$('#aiText').value.trim();
+  if(!files.length&&!text){$('#aiMsg').textContent='사진을 고르거나 글을 붙여 넣어 주세요.';return}
+  $('#aiGo').disabled=true;$('#aiMsg').textContent='읽는 중… (30초~1분)';
+  const prompt=`고등학생이 공부 분량을 나누려고 문제집이나 인강의 ${files.length?'사진(목차·빠른 정답·강의 목록)':'글'}을 줬어. 단원(또는 강의 묶음)별 개수를 뽑아 줘.
+규칙:
+- 문제집 빠른 정답이면 단원 머리글(A, B, 1단원…)마다 마지막 문제 번호가 그 단원의 문제 수야. 페이지를 넘어 이어지는 단원은 합쳐.
+- "단원별 모의고사"나 "실전 모의고사"처럼 시험지 형태는 단원마다 따로, whole:true 로 해.
+- 인강이면 강 수를 count로 하고 kind는 "lecture". 강 제목이 단원별로 묶이면 그 단원별로.
+- 보이지 않거나 확실하지 않은 숫자는 지어내지 말고 그 단원을 빼고 notes에 적어.
+${text?'\n글:\n'+text.slice(0,20000)+'\n':''}
+오직 이 JSON 하나로만 답해:
+{"title":"교재 이름(모르면 빈 문자열)","kind":"book 또는 lecture","units":[{"name":"A 지수","count":152,"whole":false}],"notes":"확인이 필요한 점(없으면 빈 문자열)"}`;
+  try{
+    const opts={modelTier:'default'};if(files.length)opts.images=files.slice(0,10);
+    const r=await sample.json(prompt,opts);
+    const units=Array.isArray(r.units)?r.units.filter(u=>u&&u.name&&Number(u.count)>0):[];
+    if(!units.length){$('#aiMsg').textContent='단원을 찾지 못했어요. 직접 넣어 주세요.';}
+    else{
+      if(r.title&&!$('#fTitle').value)$('#fTitle').value=String(r.title).slice(0,40);
+      if(r.kind==='lecture')$('#fKind').value='lecture';
+      $('#units').innerHTML='';units.forEach(u=>$('#units').append(unitRow({name:String(u.name).slice(0,60),count:Math.min(2000,Math.round(Number(u.count))),whole:!!u.whole,weight:u.whole?2.5:1})));
+      $('#aiMsg').textContent=`${units.length}단원을 채웠어요. 숫자를 한 번 확인해 주세요.`+(r.notes?' 참고: '+String(r.notes).slice(0,200):'');
+      preview();
+    }
+  }catch(e){
+    const c=e&&e.code;
+    $('#aiMsg').textContent=c==='not_granted'||c==='sampling_disabled'?'이 화면에서는 Claude에게 물을 수 없어요. 직접 넣어 주세요.'
+      :c==='images_unavailable'?'이 화면에서는 사진을 보낼 수 없어요. 글로 붙여 넣어 주세요.'
+      :c==='rate_limited'?'요청이 많아요. 잠시 뒤 다시 눌러 주세요.':'읽지 못했어요. 직접 넣거나 다시 시도해 주세요.';
+  }
+  $('#aiGo').disabled=false;
+});
+
+render();
+
+(async()=>{
+  const [d,s]=await Promise.all(['db','sample'].map(n=>window.claude?.use?.(n)??null));
+  db=d;sample=s;
+  if(!db){setStatus('저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);return}
+  db.collection('plans').onSnapshot(sn=>{
+    plans=sn.docs.map(x=>({id:x.id,...x.data()})).filter(p=>Array.isArray(p.units)&&Array.isArray(p.days)).sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));
+    if(!sel&&plans.length)sel=plans[0].id;
+    if(sel&&!plans.some(p=>p.id===sel))sel=plans[0]?.id||null;
+    setStatus(plans.length?`계획 ${plans.length}개`:'첫 교재를 넣어 보세요');render();
+  },()=>setStatus('불러오지 못했어요. 새로고침해 주세요.',true));
+})();
+})();
+</script>

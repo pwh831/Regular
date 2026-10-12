@@ -148,6 +148,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <h2 id="h-apps">앱 바로가기</h2>
     <nav class="apps" aria-label="공부 앱">
       <a class="main" href="https://claude.ai/artifact/AGrdmtMU9agaqqtpoBbqkV" target="_blank" rel="noopener">복습 플래너</a>
+      <a class="main" href="https://claude.ai/artifact/QErpysS6X7mswxgv57EzeV" target="_blank" rel="noopener">분량 나누기</a>
       <a href="https://claude.ai/artifact/StK4zvRCC7kfHcVPJtjmHD" target="_blank" rel="noopener">영단어 시험</a>
       <a href="https://claude.ai/artifact/ER7W1Mv79CCcMd9s6qR4f4" target="_blank" rel="noopener">오답 코치</a>
       <a href="https://claude.ai/code/artifact/d48ddac4-e922-44a7-a34f-f9dbf4927a3a" target="_blank" rel="noopener">지역이해 퀴즈</a>
@@ -163,7 +164,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 const $=s=>document.querySelector(s);
 const WD=['일','월','화','수','목','금','토'];
 const TRIGGER='trig_01JNii7tnN8YygWcVK9weiAi';   // 홈 요약 루틴 id (발행 때 채움)
-const GROUPS=[['first','새로 외울 것'],['review','오늘 복습'],['mistake','오답 다시 풀기'],['overdue','밀린 것']];
+const GROUPS=[['plan','오늘 분량'],['first','새로 외울 것'],['review','오늘 복습'],['mistake','오답 다시 풀기'],['overdue','밀린 것']];
 function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function fmt(s){const d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')'}

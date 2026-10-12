@@ -3,13 +3,14 @@
 루틴이 복습 플래너·영단어 시험·오답 코치의 db를 ArtifactData `out_dir`로 내려받은 뒤
   python3 aggregate.py <내려받은 폴더> <오늘 YYYY-MM-DD> <지금 HH:MM> > snapshot.json
 으로 실행한다. 폴더 구조: planner/subjects, planner/items, vocab/sessions, vocab/settings,
-vocab/progress, coach/mistakes (각 문서 = <id>.json, 내용은 문서 본문).
+vocab/progress, coach/mistakes, split/plans (각 문서 = <id>.json, 내용은 문서 본문).
 """
 import json, os, sys, datetime as dt
 
 PLANNER = "https://claude.ai/artifact/AGrdmtMU9agaqqtpoBbqkV"
 VOCAB = "https://claude.ai/artifact/StK4zvRCC7kfHcVPJtjmHD"
 COACH = "https://claude.ai/artifact/ER7W1Mv79CCcMd9s6qR4f4"
+SPLIT = "https://claude.ai/artifact/QErpysS6X7mswxgv57EzeV"
 # 플래너 과목 이름 → 오답 코치 과목 이름(같게 맞춰 둠)
 ORDER = ["확통", "독서", "현윤", "경제", "지역이해", "일본어", "문학과 영상", "영어"]
 
@@ -37,6 +38,7 @@ def main(base, today, now):
     vset = load(base, "vocab", "settings").get("main", {})
     vprog = load(base, "vocab", "progress").get("main", {})
     mistakes = load(base, "coach", "mistakes")
+    plans = load(base, "split", "plans")
 
     subj_by_id = {k: v for k, v in subjects.items()}
     todo, done_today, planned_today = [], 0, 0
@@ -141,6 +143,33 @@ def main(base, today, now):
                         "detail": "60문제" if best is None else f"오늘 최고 {best}점 · 90점 필요",
                         "url": VOCAB, "app": "영단어"})
 
+    # 분량 나누기: 오늘 몫과 밀린 날
+    plan_out = []
+    for pid, p in plans.items():
+        units, days = p.get("units") or [], p.get("days") or []
+        unit_word = "강" if p.get("kind") == "lecture" else "번"
+
+        def part_text(pt):
+            u = units[pt["unit"]] if 0 <= pt.get("unit", -1) < len(units) else None
+            if not u:
+                return ""
+            return u["name"] if u.get("whole") else f"{u['name']} {pt['from']}–{pt['to']}{unit_word}"
+
+        tday = next((d for d in days if d.get("date") == today), None)
+        late = [d for d in days if not d.get("done") and d.get("date", "9999") < today]
+        done_n = sum(1 for d in days if d.get("done"))
+        if tday and not tday.get("done"):
+            todo.append({"group": "plan", "subject": p.get("title", ""), "color": p.get("color"),
+                         "title": " + ".join(filter(None, (part_text(pt) for pt in tday.get("parts", [])))),
+                         "detail": p.get("title", ""), "url": SPLIT, "app": "분량"})
+        if late:
+            todo.append({"group": "overdue", "subject": p.get("title", ""), "color": p.get("color"),
+                         "title": f"{p.get('title', '')} 밀린 날 {len(late)}일",
+                         "detail": "분량 나누기에서 '다시 나누기'", "url": SPLIT, "app": "분량"})
+        plan_out.append({"title": p.get("title", ""), "done": done_n, "total": len(days),
+                         "end": days[-1]["date"] if days else None, "late": len(late),
+                         "todayDone": bool(tday and tday.get("done")), "hasToday": bool(tday)})
+
     exams, subs = [], []
     names = sorted(subjects.values(), key=lambda s: (ORDER.index(s["name"]) if s.get("name") in ORDER else 99, s.get("order", 0)))
     for sj in names:
@@ -155,7 +184,7 @@ def main(base, today, now):
                      "overdue": st.get("overdue", 0), "mistakesOpen": st.get("mistakesOpen", 0),
                      "mistakesDue": st.get("mistakesDue", 0)})
     exams.sort(key=lambda e: e["dday"])
-    order = {"first": 0, "review": 1, "mistake": 2, "overdue": 3}
+    order = {"plan": 0, "first": 1, "review": 2, "mistake": 3, "overdue": 4}
     todo.sort(key=lambda x: order.get(x["group"], 9))
 
     return {
@@ -167,6 +196,7 @@ def main(base, today, now):
         "vocab": {"today": vt, "todayBest": best, "overall": overall, "sessions7": s7, "url": VOCAB},
         "coach": {"open": m_open, "due": m_due, "topCause": cause_name.get(top_cause), "url": COACH},
         "plannerUrl": PLANNER,
+        "plans": plan_out, "splitUrl": SPLIT,
     }
 
 
