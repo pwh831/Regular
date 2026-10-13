@@ -128,11 +128,6 @@ input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;b
       </div>
     </section>
 
-    <section class="panel" id="revPanel" aria-labelledby="h-rev" hidden>
-      <div class="row"><h2 id="h-rev">오늘 복습</h2><span class="muted" id="revCount"></span></div>
-      <div class="muted" id="revNote"></div>
-      <div class="acts"><button class="btn" id="startRev" type="button">복습 시험 보기</button></div>
-    </section>
     <section class="panel" aria-labelledby="h-days">
       <div class="row"><h2 id="h-days">Day 골라서 보기</h2><span class="muted" id="pickCount">여러 개를 고를 수 있어요</span></div>
       <div class="days" id="days"></div>
@@ -191,9 +186,6 @@ let words=[];                      // {n,w,m,day}
 let stats={};                      // n -> {c:맞힌 수, x:틀린 수, last:1|0}
 let best={};                       // 'd1-2' -> 최고 점수(%)
 let settings={startDate:null};
-let sessions=[];                   // {date,days,right,total,quit}
-const REV=[1,3,7,15,30];           // 첫 학습 뒤 복습하는 날 (플래너와 같은 간격)
-let autoPicked=false;
 let picked=new Set();
 let Q=null;                        // 진행 중인 시험
 
@@ -222,21 +214,6 @@ function todaySet(){
   if(k>=sets())return {k,after:true};
   return {k,days:setDays(k)};
 }
-/* 세트마다 오늘까지 지난 마지막 복습 날을 찾고, 그날 이후 90점 넘긴 시험이 없으면 복습할 세트 */
-function dueReviews(){
-  if(!settings.startDate)return [];
-  const t=today(),out=[];
-  for(let k=0;k<sets();k++){
-    const studied=addDays(settings.startDate,k);
-    const past=REV.map(o=>addDays(studied,o)).filter(d=>d<=t);
-    if(!past.length)continue;
-    const r=past[past.length-1];
-    const days=setDays(k);
-    const done=sessions.some(s=>!s.quit&&s.total&&s.date>=r&&days.every(d=>(s.days||[]).includes(d))&&s.right/s.total>=.9);
-    if(!done)out.push({days,date:r,late:diff(r,t)});
-  }
-  return out;
-}
 function setKey(days){return 'd'+days.join('-')}
 function dayAcc(d){
   const ws=words.filter(w=>w.day===d);let seen=0,ok=0;
@@ -257,15 +234,6 @@ function renderHome(){
   const b=days?best[setKey(days)]:null;
   $('#todayBar').style.width=(b||0)+'%';
   $('#todayBest').textContent=days?(b!=null?'이 세트 최고 점수 '+b+'점':'아직 안 본 세트예요'):'';
-  const due=dueReviews();
-  if(!autoPicked&&words.length&&due.length&&!picked.size){due.forEach(x=>x.days.forEach(d=>picked.add(d)));autoPicked=true}
-  $('#revPanel').hidden=!due.length;
-  if(due.length){
-    const n=due.reduce((a,x)=>a+x.days.length,0);
-    $('#revCount').textContent=n*30+'문제';
-    $('#revNote').textContent=due.map(x=>'Day '+x.days.join('·')+(x.late?` (${x.late}일 밀림)`:'')).join(', ')+' · 아래 Day에 미리 골라 뒀어요. 90점 넘기면 복습 완료예요.';
-    $('#startRev').disabled=!words.length;
-  }
   const todayDays=new Set(days||[]);
   $('#days').innerHTML=Array.from({length:DAYS},(_,i)=>{const d=i+1,a=dayAcc(d);
     return `<button type="button" class="day${todayDays.has(d)?' today-set':''}" data-day="${d}" aria-pressed="${picked.has(d)}"><b>${d}</b><small>${a==null?'Day '+d:a+'%'}</small></button>`}).join('');
@@ -333,9 +301,7 @@ async function finish(quit){
   if(!db){setStatus('저장소에 연결되지 않아 기록을 남기지 못했어요.',true);return}
   try{
     await db.doc('progress/main').set({stats,best,updatedAt:new Date().toISOString()});
-    const rec={at:new Date().toISOString(),date:today(),label:Q.label,days:Q.days,right:Q.right,total,quit:!!quit};
-    sessions.push(rec);
-    await db.collection('sessions').add(rec);
+    await db.collection('sessions').add({at:new Date().toISOString(),date:today(),label:Q.label,days:Q.days,right:Q.right,total,quit:!!quit});
     setStatus('기록을 저장했어요');
   }catch(e){setStatus('기록을 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.',true)}
 }
@@ -345,7 +311,6 @@ $('#days').addEventListener('click',e=>{const b=e.target.closest('[data-day]');i
 $('#clearPick').addEventListener('click',()=>{picked.clear();renderHome()});
 $('#startToday').addEventListener('click',()=>{const t=todaySet();const days=t.days||[1,2];start(words.filter(w=>days.includes(w.day)),'Day '+days.join(' · '),setKey(days),days)});
 $('#startPicked').addEventListener('click',()=>{const days=[...picked].sort((a,b)=>a-b);start(words.filter(w=>picked.has(w.day)),'Day '+days.join(' · '),days.length===2&&days[1]===days[0]+1&&days[0]%2===1?setKey(days):null,days)});
-$('#startRev').addEventListener('click',()=>{const days=dueReviews().flatMap(x=>x.days).sort((a,b)=>a-b);start(words.filter(w=>days.includes(w.day)),'복습 Day '+days.join(' · '),days.length===2?setKey(days):null,days)});
 $('#startWrong').addEventListener('click',()=>start(wrongList(),'오답 노트',null));
 $('#choices').addEventListener('click',e=>{const b=e.target.closest('.choice');if(b)answer(Number(b.dataset.j))});
 $('#next').addEventListener('click',next);
@@ -374,8 +339,7 @@ renderHome();
   db=await (window.claude?.use?.('db')??null);
   if(!db){setStatus('저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);return}
   try{
-    const [ws,pg,st,ss]=await Promise.all([db.collection('words').get(),db.doc('progress/main').get(),db.doc('settings/main').get(),db.collection('sessions').get().catch(()=>null)]);
-    if(ss)sessions=ss.docs.map(d=>d.data());
+    const [ws,pg,st]=await Promise.all([db.collection('words').get(),db.doc('progress/main').get(),db.doc('settings/main').get()]);
     words=ws.docs.flatMap(d=>{const x=d.data();return (x.words||[]).map(w=>({...w,day:x.day}))}).sort((a,b)=>a.n-b.n);
     if(pg.exists){const p=pg.data();stats=p.stats||{};best=p.best||{}}
     if(st.exists)settings={...settings,...st.data()};
