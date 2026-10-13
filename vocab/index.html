@@ -34,6 +34,7 @@ h2{font-size:20px;color:var(--ink)}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+[hidden]{display:none!important}
 .panel{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--glass-edge);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 16px 40px rgba(44,55,135,.22)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .muted{color:var(--muted);font-size:14px}
@@ -61,6 +62,7 @@ button{cursor:pointer}
 .day[aria-pressed="true"]{background:var(--pen);border-color:var(--pen)}
 .day[aria-pressed="true"] b,.day[aria-pressed="true"] small{color:#fff}
 .day.today-set{box-shadow:0 0 0 3px #F4C9DD}
+.day.cleared{background:#EEF7F0;border-color:#BFE3C8}
 
 /* 시험 */
 .qtop{display:flex;align-items:center;gap:12px}
@@ -114,12 +116,12 @@ input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;b
     <section class="panel" aria-labelledby="h-today">
       <div class="today">
         <div class="card" aria-hidden="true">
-          <span class="lab">today</span>
+          <span class="lab">next</span>
           <span class="big" id="todayDays">Day –</span>
           <span class="small" id="todayDate"></span>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
-          <h2 id="h-today">오늘의 세트</h2>
+          <h2 id="h-today">다음 세트</h2>
           <div class="muted" id="todayNote"></div>
           <div class="bar" aria-hidden="true"><i id="todayBar" style="width:0%"></i></div>
           <div class="muted" id="todayBest"></div>
@@ -140,12 +142,6 @@ input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;b
       <div class="acts"><button class="btn" id="startWrong" type="button" disabled>오답만 다시 보기</button></div>
     </section>
 
-    <section class="panel">
-      <label class="inline" for="startDate">하루 2 Day씩, 시작한 날
-        <input type="date" id="startDate">
-      </label>
-      <div class="muted" id="planLine"></div>
-    </section>
   </div>
 
   <!-- 시험 화면 -->
@@ -169,7 +165,7 @@ input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;b
     <div class="score" id="dScore"></div>
     <div class="muted" id="dNote" style="text-align:center"></div>
     <ul class="wrongs" id="dWrongs"></ul>
-    <div class="acts"><button class="btn" id="retryWrong" type="button">틀린 것만 다시</button><button class="ghost" id="toHome" type="button">처음으로</button></div>
+    <div class="acts"><button class="btn" id="nextSet" type="button" hidden>다음 세트 바로 시작</button><button class="btn" id="retryWrong" type="button">틀린 것만 다시</button><button class="ghost" id="toHome" type="button">처음으로</button></div>
   </section>
 </div>
 
@@ -177,7 +173,7 @@ input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;b
 (function(){
 const $=s=>document.querySelector(s);
 const WD=['일','월','화','수','목','금','토'];
-const PER_DAY=2;                   // 하루 2 Day씩
+const PER_DAY=2;                   // 한 세트 = Day 2개
 let DAYS=14;                       // 들어 있는 마지막 Day (단어를 불러오면 갱신)
 const sets=()=>Math.ceil(DAYS/PER_DAY);
 const setDays=k=>[k*PER_DAY+1,k*PER_DAY+2].filter(d=>d<=DAYS);
@@ -185,14 +181,12 @@ let db=null;
 let words=[];                      // {n,w,m,day}
 let stats={};                      // n -> {c:맞힌 수, x:틀린 수, last:1|0}
 let best={};                       // 'd1-2' -> 최고 점수(%)
-let settings={startDate:null};
+let cleared={};                    // Day -> 끝낸 날짜 (세트를 틀린 것까지 다 맞히면)
 let picked=new Set();
 let Q=null;                        // 진행 중인 시험
 
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
-function diff(a,b){return Math.round((parse(b)-parse(a))/864e5)}
-function addDays(s,n){const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)}
 function fmt(s){const d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')'}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -207,12 +201,12 @@ function kind(m){
   return 'n';
 }
 
-function todaySet(){
-  if(!settings.startDate)return null;
-  const k=diff(settings.startDate,today());
-  if(k<0)return {k,before:true};
-  if(k>=sets())return {k,after:true};
-  return {k,days:setDays(k)};
+/* 마지막으로 끝낸 Day 다음 세트. 날짜와 상관없이 끝내는 대로 넘어간다 */
+function nextSet(){
+  const last=Math.max(0,...Object.keys(cleared).map(Number));
+  let k=Math.floor(Math.max(0,last-1)/PER_DAY);
+  if(setDays(k).every(d=>cleared[d]))k++;
+  return k<sets()?{k,days:setDays(k)}:null;
 }
 function setKey(days){return 'd'+days.join('-')}
 function dayAcc(d){
@@ -224,37 +218,31 @@ function wrongList(){return words.filter(w=>stats[w.n]&&stats[w.n].last===0)}
 
 /* ---------- 처음 화면 ---------- */
 function renderHome(){
-  const t=todaySet();
-  if(!t){$('#todayDays').textContent='Day –';$('#todayNote').textContent='아래에서 시작한 날을 정해 주세요.';$('#startToday').disabled=true}
-  else if(t.before){$('#todayDays').textContent='Day 1 · 2';$('#todayNote').textContent=fmt(settings.startDate)+'에 시작해요. 미리 봐도 돼요.';$('#startToday').disabled=!words.length}
-  else if(t.after){$('#todayDays').textContent='전체 복습';$('#todayNote').textContent='Day 1–'+DAYS+'를 모두 한 번씩 봤어요. 오답 노트나 Day를 골라 복습해 보세요.';$('#startToday').disabled=true}
-  else{$('#todayDays').textContent='Day '+t.days.join(' · ');$('#startToday').textContent=t.days.length*30+'문제 시험 보기';$('#todayNote').textContent=(t.k+1)+'일째 · 30단어 × '+t.days.length+' = '+t.days.length*30+'문제';$('#startToday').disabled=!words.length}
+  const t=nextSet(), doneAll=Object.keys(cleared).length, doneToday=Object.values(cleared).filter(d=>d===today()).length;
+  if(!t){$('#todayDays').textContent='끝!';$('#todayNote').textContent='Day 1–'+DAYS+'를 모두 끝냈어요. 오답 노트나 Day를 골라 다시 보세요.';$('#startToday').disabled=true}
+  else{$('#todayDays').textContent='Day '+t.days.join(' · ');$('#startToday').textContent=t.days.length*30+'문제 시험 보기';$('#todayNote').textContent=`오늘 ${doneToday} Day 끝냄 · 전체 ${doneAll}/${DAYS} Day`;$('#startToday').disabled=!words.length}
   $('#todayDate').textContent=fmt(today());
-  const days=t&&t.days?t.days:(t&&t.before?[1,2]:null);
+  const days=t?t.days:null;
   const b=days?best[setKey(days)]:null;
-  $('#todayBar').style.width=(b||0)+'%';
-  $('#todayBest').textContent=days?(b!=null?'이 세트 최고 점수 '+b+'점':'아직 안 본 세트예요'):'';
+  $('#todayBar').style.width=(DAYS?doneAll/DAYS*100:0)+'%';
+  $('#todayBest').textContent=days?(b!=null?'이 세트 최고 점수 '+b+'점 · ':'')+'틀린 것까지 다시 풀어 다 맞히면 다음 세트로 넘어가요':'';
   const todayDays=new Set(days||[]);
   $('#days').innerHTML=Array.from({length:DAYS},(_,i)=>{const d=i+1,a=dayAcc(d);
-    return `<button type="button" class="day${todayDays.has(d)?' today-set':''}" data-day="${d}" aria-pressed="${picked.has(d)}"><b>${d}</b><small>${a==null?'Day '+d:a+'%'}</small></button>`}).join('');
+    return `<button type="button" class="day${todayDays.has(d)?' today-set':''}${cleared[d]?' cleared':''}" data-day="${d}" aria-pressed="${picked.has(d)}"><b>${d}</b><small>${cleared[d]?'✓ ':''}${a==null?'Day '+d:a+'%'}</small></button>`}).join('');
   $('#pickCount').textContent=picked.size?`Day ${[...picked].sort((a,b)=>a-b).join(', ')} · ${picked.size*30}문제`:'여러 개를 고를 수 있어요';
   $('#startPicked').disabled=!picked.size||!words.length;
   const wl=wrongList();
   $('#wrongCount').textContent=wl.length+'단어';
   $('#startWrong').disabled=!wl.length;
-  $('#startDate').value=settings.startDate||'';
-  if(settings.startDate){
-    const end=addDays(settings.startDate,sets()-1);
-    $('#planLine').textContent=`${fmt(settings.startDate)} Day 1·2부터 ${fmt(end)} Day ${setDays(sets()-1).join('·')}까지, ${sets()}일 동안 봐요.`;
-  }else $('#planLine').textContent='';
 }
 function show(id){['#home','#quiz','#done'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)}
 
 /* ---------- 시험 ---------- */
-function start(list,label,key,days){
+// goal: 이 시험으로 끝내려는 Day들(틀린 것 다시 풀기에도 이어진다)
+function start(list,label,key,days,goal){
   if(!list.length)return;
   const pool=list.length>=12?list:words;   // 보기 뽑을 뜻 모음
-  Q={label,key,days:days||null,items:shuffle(list).map(w=>({w,choices:makeChoices(w,pool)})),i:0,right:0,wrong:[],answers:{}};
+  Q={label,key,days:days||null,setDays:goal||days||null,items:shuffle(list).map(w=>({w,choices:makeChoices(w,pool)})),i:0,right:0,wrong:[],answers:{}};
   show('#quiz');renderQ();
 }
 function makeChoices(w,pool){
@@ -294,13 +282,23 @@ async function finish(quit){
   $('#dNote').textContent=total?(quit?'중간에 그만둔 시험이에요. 푼 문제만 기록했어요.':`${pct}점 · ${Q.label}`):'푼 문제가 없어요.';
   $('#dWrongs').innerHTML=Q.wrong.length?Q.wrong.map(w=>`<li><b lang="en">${esc(w.w)}</b><span>${esc(w.m)}</span></li>`).join(''):(total?'<li><b>모두 맞혔어요</b><span>틀린 단어가 없어요.</span></li>':'');
   $('#retryWrong').hidden=!Q.wrong.length;
+  $('#nextSet').hidden=true;
+  const sd=Q.setDays&&Q.setDays.join('·');
+  if(!quit&&Q.setDays&&!Q.wrong.length){
+    Q.setDays.forEach(d=>{if(!cleared[d])cleared[d]=today()});
+    const n=nextSet();
+    $('#dNote').textContent=`Day ${sd} 끝! `+(n?`다음은 Day ${n.days.join('·')}`:'모든 Day를 끝냈어요');
+    $('#nextSet').hidden=!n;
+  }else if(!quit&&Q.setDays&&Q.wrong.length){
+    $('#dNote').textContent+=` · 틀린 ${Q.wrong.length}개를 다시 풀어 다 맞히면 Day ${sd} 끝`;
+  }
   if(!answered)return;
   // 기록: 단어별 결과 한 번에, 세트 최고 점수, 시험 기록
   Object.entries(Q.answers).forEach(([n,ok])=>{const s=stats[n]||{c:0,x:0,last:null};stats[n]={c:s.c+(ok?1:0),x:s.x+(ok?0:1),last:ok}});
   if(!quit&&Q.key&&(best[Q.key]==null||pct>best[Q.key]))best[Q.key]=pct;
   if(!db){setStatus('저장소에 연결되지 않아 기록을 남기지 못했어요.',true);return}
   try{
-    await db.doc('progress/main').set({stats,best,updatedAt:new Date().toISOString()});
+    await db.doc('progress/main').set({stats,best,cleared,updatedAt:new Date().toISOString()});
     await db.collection('sessions').add({at:new Date().toISOString(),date:today(),label:Q.label,days:Q.days,right:Q.right,total,quit:!!quit});
     setStatus('기록을 저장했어요');
   }catch(e){setStatus('기록을 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.',true)}
@@ -309,24 +307,21 @@ async function finish(quit){
 /* ---------- 이벤트 ---------- */
 $('#days').addEventListener('click',e=>{const b=e.target.closest('[data-day]');if(!b)return;const d=Number(b.dataset.day);picked.has(d)?picked.delete(d):picked.add(d);renderHome()});
 $('#clearPick').addEventListener('click',()=>{picked.clear();renderHome()});
-$('#startToday').addEventListener('click',()=>{const t=todaySet();const days=t.days||[1,2];start(words.filter(w=>days.includes(w.day)),'Day '+days.join(' · '),setKey(days),days)});
+function startNext(){const t=nextSet();if(!t)return;start(words.filter(w=>t.days.includes(w.day)),'Day '+t.days.join(' · '),setKey(t.days),t.days)}
+$('#startToday').addEventListener('click',startNext);
+$('#nextSet').addEventListener('click',startNext);
 $('#startPicked').addEventListener('click',()=>{const days=[...picked].sort((a,b)=>a-b);start(words.filter(w=>picked.has(w.day)),'Day '+days.join(' · '),days.length===2&&days[1]===days[0]+1&&days[0]%2===1?setKey(days):null,days)});
 $('#startWrong').addEventListener('click',()=>start(wrongList(),'오답 노트',null));
 $('#choices').addEventListener('click',e=>{const b=e.target.closest('.choice');if(b)answer(Number(b.dataset.j))});
 $('#next').addEventListener('click',next);
 $('#quit').addEventListener('click',()=>{clearTimeout(advanceTimer);finish(true)});
-$('#retryWrong').addEventListener('click',()=>{const w=Q.wrong.slice();start(w,'틀린 것 다시',null)});
+$('#retryWrong').addEventListener('click',()=>{const w=Q.wrong.slice();start(w,'틀린 것 다시',null,null,Q.setDays)});
 $('#toHome').addEventListener('click',()=>{show('#home');renderHome()});
 document.addEventListener('keydown',e=>{
   if($('#quiz').hidden||e.target.closest('input'))return;
   if(/^[1-5]$/.test(e.key)){const b=document.querySelectorAll('.choice')[Number(e.key)-1];if(b&&!b.disabled)b.click()}
   else if(e.key==='Enter'&&!$('#next').hidden){e.preventDefault();next()}
 });
-$('#startDate').addEventListener('change',async e=>{
-  const v=e.target.value;if(!v)return;settings.startDate=v;renderHome();
-  if(db){try{await db.doc('settings/main').set({startDate:v});setStatus('시작한 날을 저장했어요')}catch(err){setStatus('시작한 날을 저장하지 못했어요.',true)}}
-});
-
 /* 별 */
 (function(){let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;let h='';
   for(let i=0;i<50;i++){const x=(r()*100).toFixed(1),y=(r()*42).toFixed(1),z=r()<.15?3:(r()<.5?2:1.4),o=(.45+r()*.55).toFixed(2);
@@ -339,10 +334,9 @@ renderHome();
   db=await (window.claude?.use?.('db')??null);
   if(!db){setStatus('저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);return}
   try{
-    const [ws,pg,st]=await Promise.all([db.collection('words').get(),db.doc('progress/main').get(),db.doc('settings/main').get()]);
+    const [ws,pg]=await Promise.all([db.collection('words').get(),db.doc('progress/main').get()]);
     words=ws.docs.flatMap(d=>{const x=d.data();return (x.words||[]).map(w=>({...w,day:x.day}))}).sort((a,b)=>a.n-b.n);
-    if(pg.exists){const p=pg.data();stats=p.stats||{};best=p.best||{}}
-    if(st.exists)settings={...settings,...st.data()};
+    if(pg.exists){const p=pg.data();stats=p.stats||{};best=p.best||{};cleared=p.cleared||{}}
     if(words.length)DAYS=Math.max(...words.map(w=>w.day));
     $('#subLine').textContent=`단어를 보고 알맞은 뜻을 골라요 · Day 1–${DAYS} · ${words.length}단어`;
     setStatus(words.length?`${words.length}단어를 불러왔어요`:'단어가 아직 없어요.',!words.length);

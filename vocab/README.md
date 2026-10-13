@@ -3,7 +3,7 @@
 Word Master 하이스트 Day 1–31(930단어)을 보고 뜻을 고르는 5지선다 시험.
 
 - 앱: https://claude.ai/artifact/StK4zvRCC7kfHcVPJtjmHD (본인만 열 수 있음)
-- 하루 2 Day씩(60문제), 시작일은 앱에서 바꿀 수 있음
+- 날짜와 상관없이 진도대로: 다음 세트(Day 2개, 60문제)를 보고, 틀린 것만 다시 풀기를 반복해 다 맞히면 그 Day들이 끝나고 바로 다음 세트로 넘어감. 하루에 몇 세트든 가능
 - 오답 보기는 같은 품사(뜻의 어미로 추정)에서 먼저 뽑음
 - 오답 노트: 마지막으로 틀린 단어만 모음
 
@@ -12,10 +12,9 @@ Word Master 하이스트 Day 1–31(930단어)을 보고 뜻을 고르는 5지�
 단어와 뜻은 시판 단어장 내용이라 **이 공개 저장소에 넣지 않고** 앱의 비공개 db에만 둔다.
 
 - `words/dayNN`: `{day, words: [{n, w, m}]}`
-- `progress/main`: `{stats: {n: {c, x, last}}, best: {d1-2: 점수}}`
+- `progress/main`: `{stats: {n: {c, x, last}}, best: {d1-2: 점수}, cleared: {Day: 끝낸 날짜}}` — 다음 세트는 `cleared`의 가장 큰 Day 다음
 - `sessions/*`: 시험 기록
-- `settings/main`: `{startDate, totalDays}` — `totalDays`가 들어 있는 마지막 Day(지금 31). 마지막 날 Day 31은 혼자 30문제
+- `settings/main`: `{totalDays}` — 들어 있는 마지막 Day(지금 31). 마지막 세트 Day 31은 혼자 30문제 (`startDate`는 옛 날짜 일정의 흔적, 안 씀)
 
-복습 플래너에는 과목 "영어 단어"와 Day 두 개 묶음마다(Day 31은 혼자) 첫 학습 날만 잡혀 있다(복습 일정은 없앰).
+영단어는 복습 플래너에 넣지 않는다. 공부 홈이 `progress/main.cleared`로 다음 세트와 오늘 끝낸 Day 수를 보여 준다.
 
-루틴 "영단어 시험 → 플래너 자동 체크"(19:50, 23:50 KST)가 그날 `sessions` 중 해당 두 Day를 모두 포함하고 90점 이상인 시험이 있으면 플래너의 그 항목에서 오늘까지 남은 칸을 완료로 바꾼다. 오답 노트 시험(`days: null`)은 세지 않는다.

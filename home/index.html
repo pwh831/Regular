@@ -224,6 +224,7 @@ function render(s){
   });
   const v=s.vocab||{},co=s.coach||{};
   const bits=[];
+  if(v.total)bits.push(`영단어 ${v.cleared||0}/${v.total} Day 끝냄`+(v.doneToday?` (오늘 ${v.doneToday})`:''));
   if(v.overall!=null)bits.push(`영단어 마지막 정답률 ${v.overall}%`);
   bits.push(`영단어 시험 최근 7일 ${v.sessions7||0}번`);
   bits.push(`남은 오답 ${co.open||0}개`+(co.topCause?` · 최근 2주 가장 많은 이유: ${co.topCause}`:''));

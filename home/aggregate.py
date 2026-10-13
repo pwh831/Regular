@@ -115,33 +115,22 @@ def main(base, today, now):
     cause_name = {"concept": "개념을 몰라서", "confuse": "헷갈려서", "careless": "계산·실수", "time": "시간 부족", "misread": "문제를 잘못 읽음"}
     top_cause = max(causes, key=causes.get) if causes else None
 
-    # 영단어
-    vt = None
-    if vset.get("startDate"):
-        k = (t - D(vset["startDate"])).days
-        total = vset.get("totalDays", 14)
-        if 0 <= k < (total + 1) // 2:
-            vt = [d for d in (2 * k + 1, 2 * k + 2) if d <= total]
-    best = None
-    s7 = 0
-    for s in sessions.values():
-        if s.get("date") and D(s["date"]) > t - dt.timedelta(days=7):
-            s7 += 1
-        if vt and s.get("date") == today and not s.get("quit") and s.get("total"):
-            days = s.get("days") or []
-            if all(d in days for d in vt):
-                pct = round(s["right"] / s["total"] * 100)
-                best = pct if best is None else max(best, pct)
+    # 영단어: 날짜와 상관없이 마지막으로 끝낸 Day 다음 세트
+    total = vset.get("totalDays", 14)
+    cleared = {int(d): v for d, v in (vprog.get("cleared") or {}).items()}
+    k = max(0, max(cleared, default=0) - 1) // 2
+    if all(d in cleared for d in (2 * k + 1, 2 * k + 2) if d <= total):
+        k += 1
+    vt = [d for d in (2 * k + 1, 2 * k + 2) if d <= total] if 2 * k + 1 <= total else None
+    vdone_today = sum(1 for v in cleared.values() if v == today)
+    s7 = sum(1 for s in sessions.values() if s.get("date") and D(s["date"]) > t - dt.timedelta(days=7))
     stats = vprog.get("stats") or {}
     seen = [v for v in stats.values() if v.get("last") is not None]
     overall = round(sum(1 for v in seen if v.get("last")) / len(seen) * 100) if seen else None
-    if vt:  # 오늘 영단어 첫 학습은 시험 앱 항목 하나로 보여 준다
-        tag = "Day " + "–".join(map(str, vt))
-        todo[:] = [x for x in todo if not (x["group"] == "first" and x["title"].endswith(tag))]
-    if vt and (best is None or best < 90):
+    if vt:
         todo.insert(0, {"group": "first", "subject": "영어", "color": color_by_name.get("영어"),
-                        "title": "영단어 시험 Day " + " · ".join(map(str, vt)),
-                        "detail": f"{len(vt) * 30}문제" if best is None else f"오늘 최고 {best}점 · 90점 필요",
+                        "title": "영단어 다음 세트 Day " + " · ".join(map(str, vt)),
+                        "detail": f"오늘 {vdone_today} Day 끝냄 · 전체 {len(cleared)}/{total}",
                         "url": VOCAB, "app": "영단어"})
 
     # 분량 나누기: 오늘 몫과 밀린 날
@@ -194,7 +183,8 @@ def main(base, today, now):
         "todo": todo, "doneToday": done_today, "plannedToday": planned_today,
         "exams": exams, "subjects": subs,
         "week": [{"date": k, **v} for k, v in week.items()],
-        "vocab": {"today": vt, "todayBest": best, "overall": overall, "sessions7": s7, "url": VOCAB},
+        "vocab": {"next": vt, "doneToday": vdone_today, "cleared": len(cleared), "total": total,
+                  "overall": overall, "sessions7": s7, "url": VOCAB},
         "coach": {"open": m_open, "due": m_due, "topCause": cause_name.get(top_cause), "url": COACH},
         "plannerUrl": PLANNER,
         "plans": plan_out, "splitUrl": SPLIT,
