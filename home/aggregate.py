@@ -119,8 +119,9 @@ def main(base, today, now):
     vt = None
     if vset.get("startDate"):
         k = (t - D(vset["startDate"])).days
-        if 0 <= k < 7:
-            vt = [2 * k + 1, 2 * k + 2]
+        total = vset.get("totalDays", 14)
+        if 0 <= k < (total + 1) // 2:
+            vt = [d for d in (2 * k + 1, 2 * k + 2) if d <= total]
     best = None
     s7 = 0
     for s in sessions.values():
@@ -135,12 +136,12 @@ def main(base, today, now):
     seen = [v for v in stats.values() if v.get("last") is not None]
     overall = round(sum(1 for v in seen if v.get("last")) / len(seen) * 100) if seen else None
     if vt:  # 오늘 영단어 첫 학습은 시험 앱 항목 하나로 보여 준다
-        tag = f"Day {vt[0]}–{vt[1]}"
+        tag = "Day " + "–".join(map(str, vt))
         todo[:] = [x for x in todo if not (x["group"] == "first" and x["title"].endswith(tag))]
     if vt and (best is None or best < 90):
         todo.insert(0, {"group": "first", "subject": "영어", "color": color_by_name.get("영어"),
-                        "title": f"영단어 시험 Day {vt[0]} · {vt[1]}",
-                        "detail": "60문제" if best is None else f"오늘 최고 {best}점 · 90점 필요",
+                        "title": "영단어 시험 Day " + " · ".join(map(str, vt)),
+                        "detail": f"{len(vt) * 30}문제" if best is None else f"오늘 최고 {best}점 · 90점 필요",
                         "url": VOCAB, "app": "영단어"})
 
     # 분량 나누기: 오늘 몫과 밀린 날

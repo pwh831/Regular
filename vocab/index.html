@@ -105,7 +105,7 @@ input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;b
   <header>
     <div class="script">word master</div>
     <h1>영단어 시험</h1>
-    <div class="sub">단어를 보고 알맞은 뜻을 골라요 · Day 1–14 · 420단어</div>
+    <div class="sub" id="subLine">단어를 보고 알맞은 뜻을 골라요</div>
     <div class="status" id="status" role="status">단어를 불러오는 중…</div>
   </header>
 
@@ -182,7 +182,10 @@ input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;b
 (function(){
 const $=s=>document.querySelector(s);
 const WD=['일','월','화','수','목','금','토'];
-const SETS=7, PER_DAY=2;           // Day 1–14를 하루 2 Day씩
+const PER_DAY=2;                   // 하루 2 Day씩
+let DAYS=14;                       // 들어 있는 마지막 Day (단어를 불러오면 갱신)
+const sets=()=>Math.ceil(DAYS/PER_DAY);
+const setDays=k=>[k*PER_DAY+1,k*PER_DAY+2].filter(d=>d<=DAYS);
 let db=null;
 let words=[];                      // {n,w,m,day}
 let stats={};                      // n -> {c:맞힌 수, x:틀린 수, last:1|0}
@@ -216,20 +219,20 @@ function todaySet(){
   if(!settings.startDate)return null;
   const k=diff(settings.startDate,today());
   if(k<0)return {k,before:true};
-  if(k>=SETS)return {k,after:true};
-  return {k,days:[k*PER_DAY+1,k*PER_DAY+2]};
+  if(k>=sets())return {k,after:true};
+  return {k,days:setDays(k)};
 }
 /* 세트마다 오늘까지 지난 마지막 복습 날을 찾고, 그날 이후 90점 넘긴 시험이 없으면 복습할 세트 */
 function dueReviews(){
   if(!settings.startDate)return [];
   const t=today(),out=[];
-  for(let k=0;k<SETS;k++){
+  for(let k=0;k<sets();k++){
     const studied=addDays(settings.startDate,k);
     const past=REV.map(o=>addDays(studied,o)).filter(d=>d<=t);
     if(!past.length)continue;
     const r=past[past.length-1];
-    const days=[k*PER_DAY+1,k*PER_DAY+2];
-    const done=sessions.some(s=>!s.quit&&s.total&&s.date>=r&&(s.days||[]).includes(days[0])&&(s.days||[]).includes(days[1])&&s.right/s.total>=.9);
+    const days=setDays(k);
+    const done=sessions.some(s=>!s.quit&&s.total&&s.date>=r&&days.every(d=>(s.days||[]).includes(d))&&s.right/s.total>=.9);
     if(!done)out.push({days,date:r,late:diff(r,t)});
   }
   return out;
@@ -247,8 +250,8 @@ function renderHome(){
   const t=todaySet();
   if(!t){$('#todayDays').textContent='Day –';$('#todayNote').textContent='아래에서 시작한 날을 정해 주세요.';$('#startToday').disabled=true}
   else if(t.before){$('#todayDays').textContent='Day 1 · 2';$('#todayNote').textContent=fmt(settings.startDate)+'에 시작해요. 미리 봐도 돼요.';$('#startToday').disabled=!words.length}
-  else if(t.after){$('#todayDays').textContent='전체 복습';$('#todayNote').textContent='Day 1–14를 모두 한 번씩 봤어요. 오답 노트나 Day를 골라 복습해 보세요.';$('#startToday').disabled=true}
-  else{$('#todayDays').textContent='Day '+t.days[0]+' · '+t.days[1];$('#todayNote').textContent=(t.k+1)+'일째 · 30단어 × 2 = 60문제';$('#startToday').disabled=!words.length}
+  else if(t.after){$('#todayDays').textContent='전체 복습';$('#todayNote').textContent='Day 1–'+DAYS+'를 모두 한 번씩 봤어요. 오답 노트나 Day를 골라 복습해 보세요.';$('#startToday').disabled=true}
+  else{$('#todayDays').textContent='Day '+t.days.join(' · ');$('#startToday').textContent=t.days.length*30+'문제 시험 보기';$('#todayNote').textContent=(t.k+1)+'일째 · 30단어 × '+t.days.length+' = '+t.days.length*30+'문제';$('#startToday').disabled=!words.length}
   $('#todayDate').textContent=fmt(today());
   const days=t&&t.days?t.days:(t&&t.before?[1,2]:null);
   const b=days?best[setKey(days)]:null;
@@ -264,7 +267,7 @@ function renderHome(){
     $('#startRev').disabled=!words.length;
   }
   const todayDays=new Set(days||[]);
-  $('#days').innerHTML=Array.from({length:14},(_,i)=>{const d=i+1,a=dayAcc(d);
+  $('#days').innerHTML=Array.from({length:DAYS},(_,i)=>{const d=i+1,a=dayAcc(d);
     return `<button type="button" class="day${todayDays.has(d)?' today-set':''}" data-day="${d}" aria-pressed="${picked.has(d)}"><b>${d}</b><small>${a==null?'Day '+d:a+'%'}</small></button>`}).join('');
   $('#pickCount').textContent=picked.size?`Day ${[...picked].sort((a,b)=>a-b).join(', ')} · ${picked.size*30}문제`:'여러 개를 고를 수 있어요';
   $('#startPicked').disabled=!picked.size||!words.length;
@@ -273,8 +276,8 @@ function renderHome(){
   $('#startWrong').disabled=!wl.length;
   $('#startDate').value=settings.startDate||'';
   if(settings.startDate){
-    const end=addDays(settings.startDate,SETS-1);
-    $('#planLine').textContent=`${fmt(settings.startDate)} Day 1·2부터 ${fmt(end)} Day 13·14까지, 7일 동안 봐요.`;
+    const end=addDays(settings.startDate,sets()-1);
+    $('#planLine').textContent=`${fmt(settings.startDate)} Day 1·2부터 ${fmt(end)} Day ${setDays(sets()-1).join('·')}까지, ${sets()}일 동안 봐요.`;
   }else $('#planLine').textContent='';
 }
 function show(id){['#home','#quiz','#done'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)}
@@ -376,6 +379,8 @@ renderHome();
     words=ws.docs.flatMap(d=>{const x=d.data();return (x.words||[]).map(w=>({...w,day:x.day}))}).sort((a,b)=>a.n-b.n);
     if(pg.exists){const p=pg.data();stats=p.stats||{};best=p.best||{}}
     if(st.exists)settings={...settings,...st.data()};
+    if(words.length)DAYS=Math.max(...words.map(w=>w.day));
+    $('#subLine').textContent=`단어를 보고 알맞은 뜻을 골라요 · Day 1–${DAYS} · ${words.length}단어`;
     setStatus(words.length?`${words.length}단어를 불러왔어요`:'단어가 아직 없어요.',!words.length);
     renderHome();
   }catch(e){setStatus('단어를 불러오지 못했어요. 새로고침해 주세요.',true)}
