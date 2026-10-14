@@ -1,0 +1,266 @@
+<title>내신 단어 시험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* 영단어 시험과 같은 깔끔한 카드형. 뜻을 보고 영어로 쓰는 입력칸이 화면의 중심 */
+:root{
+  color-scheme:light;
+  --bg:#F4F5F8; --card:#FFFFFF; --ink:#171A23; --text:#4B5263; --muted:#6B7280; --faint:#9AA0AC;
+  --line:#E6E8EE; --soft:#F4F5F8; --track:#EDEFF3;
+  --accent:#3D4BD1; --accent-soft:#ECEEFC; --ring:#E6E8FB;
+  --ok:#1F7A4D; --ok-soft:#EAF7F0; --bad:#B42318; --bad-soft:#FDECEC;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0F1117; --card:#1A1D26; --ink:#F2F3F7; --text:#C5C9D3; --muted:#9AA0AC; --faint:#6B7280;
+  --line:#2C303C; --soft:#232733; --track:#2C303C;
+  --accent:#7C87F0; --accent-soft:#262B4D; --ring:#262B4D;
+  --ok:#5BD08F; --ok-soft:#173326; --bad:#FF8A80; --bad-soft:#3A1E1E;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1117; --card:#1A1D26; --ink:#F2F3F7; --text:#C5C9D3; --muted:#9AA0AC; --faint:#6B7280;
+  --line:#2C303C; --soft:#232733; --track:#2C303C;
+  --accent:#7C87F0; --accent-soft:#262B4D; --ring:#262B4D;
+  --ok:#5BD08F; --ok-soft:#173326; --bad:#FF8A80; --bad-soft:#3A1E1E;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);padding-inline:16px;padding-block:20px 40px;-webkit-font-smoothing:antialiased}
+.wrap{width:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+h1,h2{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:26px;letter-spacing:-.5px}
+h2{font-size:17px;font-weight:700}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.top{display:flex;flex-direction:column;gap:2px;padding:16px 4px 4px}
+.eyebrow{font-size:13px;color:var(--muted);font-weight:500}
+.status{font-size:13px;color:var(--muted);min-height:18px;padding:0 4px}
+.status.err{color:var(--bad)}
+.panel{background:var(--card);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.muted{color:var(--muted);font-size:14px;line-height:1.55}
+.btn{height:54px;border:0;border-radius:14px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;padding:0 18px}
+.btn:disabled{opacity:.4;cursor:default}
+.ghost{height:54px;border:0;border-radius:14px;background:var(--soft);color:var(--text);font-size:15px;font-weight:600;padding:0 16px}
+.ghost:disabled{opacity:.5;cursor:default}
+.plain{height:50px;border:0;border-radius:14px;background:transparent;color:var(--text);font-size:15px;font-weight:500}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.acts>*{flex:1 1 140px}
+.bar{height:8px;border-radius:99px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .25s}
+label.check{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--ink);cursor:pointer;min-height:44px}
+label.check input{width:20px;height:20px;accent-color:var(--accent)}
+
+/* 단원 */
+.unit .meta{display:flex;gap:6px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.unit .meta span{font-size:13px;font-weight:600;color:var(--muted);background:var(--soft);padding:4px 10px;border-radius:999px}
+.unit .meta span:empty{display:none}
+
+/* 시험 */
+.sheet{background:var(--card);border-radius:24px;padding:16px 20px 20px;display:flex;flex-direction:column;gap:16px;min-height:calc(100vh - 60px)}
+.qtop{display:flex;align-items:center;gap:12px}
+.qtop .bar{flex:1}
+.icon-btn{width:44px;height:44px;border:0;background:transparent;border-radius:12px;display:grid;place-items:center;flex:none}
+.qcount{font-size:14px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+.qhead{padding:36px 0 8px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.pill{font-size:13px;font-weight:600;color:var(--muted);background:var(--soft);padding:5px 12px;border-radius:999px}
+.mean{font-size:30px;font-weight:700;letter-spacing:-.5px;line-height:1.3;text-align:center;overflow-wrap:anywhere;text-wrap:balance}
+.hint{font-size:15px;color:var(--muted);letter-spacing:.18em;min-height:22px;text-align:center}
+.field{display:flex;flex-direction:column;gap:8px}
+.field label{font-size:13px;font-weight:600;color:var(--text)}
+.answer{width:100%;height:60px;border:2px solid var(--line);border-radius:14px;padding:0 18px;font-size:22px;font-weight:500;color:var(--ink);background:var(--card)}
+.answer:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+.keys{font-size:13px;color:var(--muted)}
+.last{border-radius:14px;padding:12px 16px;font-size:15px;display:flex;gap:6px 8px;align-items:baseline;flex-wrap:wrap;min-height:48px}
+.last:empty{visibility:hidden}
+.last.ok{background:var(--ok-soft);color:var(--ok)}
+.last.bad{background:var(--bad-soft);color:var(--bad)}
+.last b{color:var(--ink)}
+.last.ok b{color:var(--ok)}
+
+/* 결과 */
+.result-top{background:var(--card);border-radius:24px;padding:40px 24px 28px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.score{font-size:56px;font-weight:700;letter-spacing:-2px;line-height:1.1;font-variant-numeric:tabular-nums}
+.score small{font-size:24px;color:var(--faint);font-weight:600;letter-spacing:0}
+.wrongs{list-style:none;margin:0;padding:0;background:var(--card);border-radius:20px;overflow:hidden}
+.wrongs li{padding:14px 20px;display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--track)}
+.wrongs li:last-child{border-bottom:0}
+.wrongs .w{font-size:17px;font-weight:600}
+.wrongs .mine{font-size:13px;color:var(--bad)}
+.stack{display:flex;flex-direction:column;gap:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">뜻을 보고 영어로 쓰기 · Enter로 다음 단어</span>
+    <h1>내신 단어</h1>
+  </header>
+  <div class="status" id="status" role="status">단어를 불러오는 중…</div>
+
+  <!-- 처음 화면 -->
+  <div id="home" class="wrap" style="max-width:none">
+    <div id="units" class="wrap" style="max-width:none"></div>
+    <section class="panel" aria-label="시험 설정" style="gap:6px">
+      <label class="check" for="optHint"><input type="checkbox" id="optHint">첫 글자와 글자 수 힌트 보기</label>
+      <div class="muted" style="font-size:13px">대소문자는 구분하지 않아요. 뜻이 같은 단어가 여럿이면 그중 아무거나 맞아요.</div>
+    </section>
+  </div>
+
+  <!-- 시험 화면 -->
+  <section id="quiz" class="sheet" hidden aria-label="시험">
+    <div class="qtop">
+      <button class="icon-btn" id="quit" type="button" aria-label="그만하기"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="bar" aria-hidden="true"><i id="qBar" style="width:0%"></i></div>
+      <span class="qcount" id="qCount"></span>
+    </div>
+    <div class="qhead">
+      <span class="pill" id="qUnit"></span>
+      <div class="mean" id="qMean"></div>
+      <div class="hint" id="qHint" aria-live="polite"></div>
+    </div>
+    <form id="qForm" class="field" autocomplete="off">
+      <label for="answer">영어로 쓰기</label>
+      <input class="answer" id="answer" type="text" inputmode="latin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" lang="en" enterkeyhint="next">
+      <span class="keys">Enter를 누르면 채점하고 바로 다음 단어로 넘어가요</span>
+    </form>
+    <div class="last" id="qLast" aria-live="polite"></div>
+  </section>
+
+  <!-- 결과 화면 -->
+  <div id="done" class="wrap" hidden style="max-width:none">
+    <section class="result-top" aria-labelledby="h-done">
+      <h2 id="h-done" style="color:var(--muted);font-size:14px;font-weight:600">시험 결과</h2>
+      <div class="score" id="dScore"></div>
+      <div class="muted" id="dNote"></div>
+    </section>
+    <ul class="wrongs" id="dWrongs"></ul>
+    <div class="stack"><button class="btn" id="retryWrong" type="button">틀린 것만 다시 풀기</button><button class="plain" id="toHome" type="button">처음으로</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+let db=null;
+let units=[];                      // {id,title,order,words:[{n,w,m}]}
+let stats={};                      // 'unit:n' -> {c,x,last}
+let best={};                       // unitId -> 최고 점수(%)
+let Q=null;
+
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function setStatus(t,err){const el=$('#status');el.textContent=t;el.className='status'+(err?' err':'')}
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+
+/* 채점: 대소문자·공백·물결표·끝 문장부호·앞의 the는 따지지 않는다 */
+function norm(s){
+  return String(s).toLowerCase().replace(/[’‘`]/g,"'").replace(/~/g,' ').replace(/[.,;!?]+$/,'').replace(/\s+/g,' ').trim().replace(/^the /,'');
+}
+function key(u,w){return u+':'+w.n}
+function wrongWords(u){return u.words.filter(w=>stats[key(u.id,w)]&&stats[key(u.id,w)].last===0)}
+function hintFor(w){
+  return w.w.split(' ').map(p=>/^[A-Za-z]/.test(p)&&p.length>1?p[0]+'_'.repeat(p.length-1):p).join('  ');
+}
+
+/* ---------- 처음 화면 ---------- */
+function renderHome(){
+  const box=$('#units');box.innerHTML='';
+  if(!units.length){
+    const p=el('section','panel');p.append(el('h2',null,'아직 단원이 없어요'),el('div','muted','단어장 PDF를 Claude에게 보내면 여기에 단원이 생겨요.'));
+    box.append(p);return;
+  }
+  units.forEach(u=>{
+    const p=el('section','panel unit');
+    p.append(el('h2',null,u.title));
+    const seen=u.words.filter(w=>stats[key(u.id,w)]).length, wl=wrongWords(u);
+    const meta=el('div','meta');
+    meta.append(el('span',null,u.words.length+'단어'),el('span',null,best[u.id]!=null?'최고 '+best[u.id]+'점':'아직 안 봄'),el('span',null,seen?'남은 오답 '+wl.length+'개':''));
+    p.append(meta);
+    const acts=el('div','acts');
+    const a=el('button','btn','전체 시험 · '+u.words.length+'문제');a.type='button';a.onclick=()=>start(u,u.words,u.title,true);
+    const b=el('button','ghost','오답만 '+wl.length+'개');b.type='button';b.disabled=!wl.length;b.onclick=()=>start(u,wrongWords(u),u.title+' 오답',false);
+    acts.append(a,b);p.append(acts);box.append(p);
+  });
+}
+function show(id){['#home','#quiz','#done'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)}
+
+/* ---------- 시험 ---------- */
+function start(u,list,label,full){
+  if(!list.length)return;
+  Q={u,label,full,items:shuffle(list),i:0,right:0,wrong:[],answers:{}};
+  show('#quiz');$('#qLast').textContent='';$('#qLast').className='last';
+  renderQ();
+}
+function renderQ(){
+  const w=Q.items[Q.i];
+  $('#qUnit').textContent=Q.u.title;
+  $('#qMean').textContent=w.m;
+  $('#qHint').textContent=$('#optHint').checked?hintFor(w):'';
+  $('#qCount').textContent=(Q.i+1)+' / '+Q.items.length;
+  $('#qBar').style.width=(Q.i/Q.items.length*100)+'%';
+  const inp=$('#answer');inp.value='';inp.focus();
+}
+function submit(){
+  const w=Q.items[Q.i], typed=$('#answer').value;
+  // 같은 뜻의 다른 단어도 정답
+  const ok=!!norm(typed)&&Q.u.words.some(x=>norm(x.m)===norm(w.m)&&norm(x.w)===norm(typed));
+  Q.answers[w.n]=ok?1:0;
+  const last=$('#qLast');last.innerHTML='';
+  if(ok){Q.right++;last.className='last ok';last.append(el('span',null,'맞았어요'),el('b',null,w.w))}
+  else{Q.wrong.push({w,typed});last.className='last bad';last.append(el('span',null,'정답'),el('b',null,w.w),el('span',null,'· '+w.m+(typed.trim()?' · 내 답: '+typed.trim():' · 비워 둠')))}
+  Q.i++;
+  if(Q.i>=Q.items.length)finish(false);else renderQ();
+}
+async function finish(quit){
+  const answered=Object.keys(Q.answers).length;
+  const total=quit?answered:Q.items.length;
+  show('#done');
+  const pct=total?Math.round(Q.right/total*100):0;
+  $('#dScore').innerHTML='';$('#dScore').append(document.createTextNode(Q.right),el('small',null,' / '+total));
+  $('#dNote').textContent=total?(quit?'중간에 그만둔 시험이에요. 푼 문제만 기록했어요.':pct+'점 · '+Q.label):'푼 문제가 없어요.';
+  const ul=$('#dWrongs');ul.innerHTML='';
+  if(Q.wrong.length)Q.wrong.forEach(({w,typed})=>{const li=el('li');li.append(el('span','w',w.w),el('span',null,w.m),el('span','mine',typed.trim()?'내 답: '+typed.trim():'비워 둠'));ul.append(li)});
+  else if(total){const li=el('li');li.append(el('span','w','모두 맞혔어요'),el('span',null,'틀린 단어가 없어요.'));ul.append(li)}
+  $('#retryWrong').hidden=!Q.wrong.length;
+  ($('#retryWrong').hidden?$('#toHome'):$('#retryWrong')).focus();
+  if(!answered)return;
+  Object.entries(Q.answers).forEach(([n,ok])=>{const k=Q.u.id+':'+n,s=stats[k]||{c:0,x:0,last:null};stats[k]={c:s.c+(ok?1:0),x:s.x+(ok?0:1),last:ok}});
+  if(!quit&&Q.full&&(best[Q.u.id]==null||pct>best[Q.u.id]))best[Q.u.id]=pct;
+  if(!db){setStatus('저장소에 연결되지 않아 기록을 남기지 못했어요.',true);return}
+  try{
+    await db.doc('progress/main').set({stats,best,updatedAt:new Date().toISOString()});
+    await db.collection('sessions').add({at:new Date().toISOString(),date:ymd(new Date()),unit:Q.u.id,label:Q.label,right:Q.right,total,quit:!!quit});
+    setStatus('기록을 저장했어요');
+  }catch(e){setStatus('기록을 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.',true)}
+}
+
+/* ---------- 이벤트 ---------- */
+$('#qForm').addEventListener('submit',e=>{e.preventDefault();if(Q&&!$('#quiz').hidden)submit()});
+$('#answer').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.isComposing)e.preventDefault()});
+$('#quit').addEventListener('click',()=>finish(true));
+$('#retryWrong').addEventListener('click',()=>{const w=Q.wrong.map(x=>x.w);start(Q.u,w,Q.u.title+' 틀린 것 다시',false)});
+$('#toHome').addEventListener('click',()=>{show('#home');renderHome()});
+$('#optHint').addEventListener('change',e=>{try{localStorage.setItem('naesin.hint',e.target.checked?'1':'')}catch(err){}});
+try{$('#optHint').checked=localStorage.getItem('naesin.hint')==='1'}catch(e){}
+
+renderHome();
+
+/* ---------- 데이터 ---------- */
+(async()=>{
+  db=await (window.claude?.use?.('db')??null);
+  if(!db){setStatus('저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);return}
+  try{
+    const [us,pg]=await Promise.all([db.collection('units').get(),db.doc('progress/main').get()]);
+    units=us.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+    if(pg.exists){const p=pg.data();stats=p.stats||{};best=p.best||{}}
+    const n=units.reduce((a,u)=>a+u.words.length,0);
+    setStatus(units.length?`${units.length}개 단원 · ${n}단어를 불러왔어요`:'단원이 아직 없어요.',!units.length);
+    renderHome();
+  }catch(e){setStatus('단어를 불러오지 못했어요. 새로고침해 주세요.',true)}
+})();
+})();
+</script>
