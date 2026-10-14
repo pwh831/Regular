@@ -1,172 +1,189 @@
 <title>영단어 시험</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Dancing+Script:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
-/* 복습 플래너와 같은 노을 밤하늘. 한 가지 풍경으로 고정한 디자인이라 다크 모드를 따로 두지 않는다 */
+/* 밝은 회색 바탕에 흰 카드, 강조색은 남색 하나. 학습 앱처럼 큰 버튼·큰 숫자 */
 :root{
   color-scheme:light;
-  --ink:#2E2A5A; --text:#332F5C; --muted:#625E8C; --line:#E1DDF6;
-  --glass:rgba(255,255,255,.82); --glass-edge:rgba(255,255,255,.72);
-  --pen:#4A4FB0; --pen-soft:#ECEAFB; --row:#F4F2FD;
-  --ok:#23845A; --ok-soft:#E1F3EA; --bad:#A33A5E; --bad-soft:#FBE1EA; --gold:#F2C35B;
-  --serif:"Gowun Batang","AppleMyungjo",serif;
-  --sans:"Gowun Dodum",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  --script:"Dancing Script",cursive;
-  --sky:linear-gradient(180deg,#2C3787 0%,#5566C9 22%,#9C93DE 40%,#E7B6D8 52%,#F4C9DD 55%,#B9AEE6 56%,#A89CE0 75%,#9A8FD8 100%);
+  --bg:#F4F5F8; --card:#FFFFFF; --ink:#171A23; --text:#4B5263; --muted:#6B7280; --faint:#9AA0AC;
+  --line:#E6E8EE; --soft:#F4F5F8; --track:#EDEFF3;
+  --accent:#3D4BD1; --accent-soft:#ECEEFC; --dark:#171A23;
+  --ok:#1F7A4D; --ok-line:#2E9E64; --ok-soft:#EAF7F0; --done-soft:#E3F4EA;
+  --bad:#B42318; --bad-line:#D14343; --bad-soft:#FDECEC;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0F1117; --card:#1A1D26; --ink:#F2F3F7; --text:#C5C9D3; --muted:#9AA0AC; --faint:#6B7280;
+  --line:#2C303C; --soft:#232733; --track:#2C303C;
+  --accent:#7C87F0; --accent-soft:#262B4D; --dark:#F2F3F7;
+  --ok:#5BD08F; --ok-line:#3DAA6C; --ok-soft:#173326; --done-soft:#173326;
+  --bad:#FF8A80; --bad-line:#E06060; --bad-soft:#3A1E1E;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1117; --card:#1A1D26; --ink:#F2F3F7; --text:#C5C9D3; --muted:#9AA0AC; --faint:#6B7280;
+  --line:#2C303C; --soft:#232733; --track:#2C303C;
+  --accent:#7C87F0; --accent-soft:#262B4D; --dark:#F2F3F7;
+  --ok:#5BD08F; --ok-line:#3DAA6C; --ok-soft:#173326; --done-soft:#173326;
+  --bad:#FF8A80; --bad-line:#E06060; --bad-soft:#3A1E1E;
 }
 *{box-sizing:border-box}
-html{background:#2C3787}
-body{background:var(--sky);background-attachment:fixed;min-height:100vh;color:var(--text);font:16px/1.55 var(--sans);padding-inline:16px;padding-block:28px 56px;overflow-x:hidden}
-.sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.sky .sea{position:absolute;left:0;right:0;top:56%;bottom:0;background:repeating-linear-gradient(180deg,transparent 0 9px,rgba(255,255,255,.13) 10px,transparent 12px)}
-.sky .cloud{position:absolute;border-radius:50%;filter:blur(28px)}
-.sky .st{position:absolute;border-radius:50%;background:#fff}
-.sky .moon{position:absolute;right:12%;top:56px;width:56px;height:56px}
-.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px;position:relative;z-index:1}
-h1,h2,h3{margin:0;font-family:var(--serif);font-weight:700;text-wrap:balance}
-h1{font-size:32px;line-height:1.2;color:#fff}
-h2{font-size:20px;color:var(--ink)}
-.script{font-family:var(--script);font-size:26px;line-height:1;color:#FFE9F3}
-.sub{color:#E4E3FF;font-size:14px;margin-top:4px}
-.status{font-size:13px;color:#E4E3FF;min-height:20px}
-.status.err{color:#fff;background:rgba(163,58,94,.8);padding:4px 10px;border-radius:99px;display:inline-block}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);padding-inline:16px;padding-block:20px 40px;-webkit-font-smoothing:antialiased}
+.wrap{width:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+h1,h2{margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:26px;letter-spacing:-.5px}
+h2{font-size:15px;font-weight:600}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
-.panel{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--glass-edge);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 16px 40px rgba(44,55,135,.22)}
-.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.muted{color:var(--muted);font-size:14px}
-.btn{background:var(--pen);color:#fff;border:0;border-radius:14px;padding:12px 20px;font-weight:700;min-height:48px;font-size:16px}
-.btn:disabled{opacity:.45;cursor:default}
-.ghost{background:#fff;border:1px solid #DAD5F5;border-radius:12px;padding:8px 14px;min-height:44px;color:var(--ink)}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:16px 4px 4px}
+.eyebrow{font-size:13px;color:var(--muted);font-weight:500}
+.chip{font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:6px 12px;border-radius:999px;white-space:nowrap}
+.status{font-size:13px;color:var(--muted);min-height:18px;padding:0 4px}
+.status.err{color:var(--bad)}
+.card{background:var(--card);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:14px;line-height:1.55}
+.btn{height:54px;border:0;border-radius:14px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;padding:0 20px;width:100%}
+.btn.dark{background:var(--dark);color:var(--bg)}
+.btn:disabled{opacity:.4;cursor:default}
+.ghost{height:50px;border:0;border-radius:14px;background:transparent;color:var(--text);font-size:15px;font-weight:500;padding:0 16px}
+.sub-btn{height:46px;border:0;border-radius:12px;background:var(--soft);color:var(--text);font-size:15px;font-weight:600;padding:0 16px}
+.acts{display:flex;gap:8px}
+.acts>*{flex:1}
+.bar{height:8px;border-radius:999px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--accent);transition:width .25s}
 
-/* 오늘의 세트: 엽서 */
-.today{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
-@media (max-width:520px){.today{grid-template-columns:minmax(0,1fr)}}
-.card{width:150px;min-height:150px;border-radius:6px;padding:14px;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;background:linear-gradient(180deg,#4F5BC0 0%,#8C8BDD 60%,#F2BCD6 100%);box-shadow:0 10px 24px rgba(30,36,100,.35),inset 0 0 0 4px rgba(255,255,255,.35);transform:rotate(-2deg);position:relative}
-.card::before{content:"";position:absolute;top:14px;right:18px;width:16px;height:16px;border-radius:50%;box-shadow:-4px 3px 0 0 #FFF6D8}
-.card .lab{font-family:var(--script);font-size:17px;opacity:.9}
-.card .big{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.15;text-align:center}
-.card .small{font-size:12px;opacity:.9}
-.bar{height:8px;border-radius:99px;background:#E9E6F8;overflow:hidden}
-.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8E9BEA,#F0A9CB)}
+/* 다음 세트 */
+.big{font-size:34px;font-weight:700;letter-spacing:-1px;line-height:1.1;font-variant-numeric:tabular-nums}
+
+/* 오답 노트 줄 */
+.listrow{background:var(--card);border:0;border-radius:20px;padding:16px 20px;display:flex;align-items:center;gap:14px;text-align:left;width:100%}
+.listrow:disabled{cursor:default}
+.listrow .ico{width:40px;height:40px;border-radius:12px;background:var(--bad-soft);display:grid;place-items:center;flex:none}
+.listrow .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+.listrow .tx b{font-size:15px;font-weight:600;color:var(--ink)}
+.listrow .tx span{font-size:13px;color:var(--muted)}
 
 /* Day 고르기 */
-.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
-@media (max-width:520px){.days{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.day{border:1.5px solid #DAD5F5;background:#fff;border-radius:14px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:64px}
-.day b{font-family:var(--serif);font-size:18px;color:var(--ink)}
-.day small{font-size:11px;color:var(--muted)}
-.day[aria-pressed="true"]{background:var(--pen);border-color:var(--pen)}
+.days{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+@media (max-width:360px){.days{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.day{border:0;background:var(--soft);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:0;min-height:48px;justify-content:center}
+.day b{font-size:15px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.day small{font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+.day.cleared{background:var(--done-soft)}
+.day.cleared b,.day.cleared small{color:var(--ok)}
+.day.today-set{box-shadow:inset 0 0 0 2px var(--accent)}
+.day[aria-pressed="true"]{background:var(--accent)}
 .day[aria-pressed="true"] b,.day[aria-pressed="true"] small{color:#fff}
-.day.today-set{box-shadow:0 0 0 3px #F4C9DD}
-.day.cleared{background:#EEF7F0;border-color:#BFE3C8}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
 
 /* 시험 */
+.sheet{background:var(--card);border-radius:24px;padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px;min-height:calc(100vh - 60px)}
 .qtop{display:flex;align-items:center;gap:12px}
 .qtop .bar{flex:1}
-.qcount{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.word{font-family:var(--serif);font-weight:700;font-size:40px;color:var(--ink);text-align:center;padding:18px 8px 6px;overflow-wrap:anywhere}
-.wmeta{text-align:center;font-size:13px;color:var(--muted)}
+.icon-btn{width:44px;height:44px;border:0;background:transparent;border-radius:12px;display:grid;place-items:center;flex:none}
+.qcount{font-size:14px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+.qhead{padding:40px 0 32px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.pill{font-size:13px;font-weight:600;color:var(--muted);background:var(--soft);padding:5px 12px;border-radius:999px}
+.word{font-size:40px;font-weight:700;letter-spacing:-1px;text-align:center;overflow-wrap:anywhere;line-height:1.15}
 .choices{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
-.choice{width:100%;text-align:left;display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:center;background:var(--row);border:1.5px solid transparent;border-radius:16px;padding:12px 14px;min-height:56px;color:var(--text);font-size:16px}
-.choice .k{width:28px;height:28px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:13px;color:var(--pen);font-weight:700}
-.choice:hover:not(:disabled){border-color:#CFC9EE}
-.choice.right{background:var(--ok-soft);border-color:var(--ok)}
-.choice.right .k{background:var(--ok);color:#fff}
-.choice.wrong{background:var(--bad-soft);border-color:var(--bad)}
-.choice.wrong .k{background:var(--bad);color:#fff}
+.choice{width:100%;min-height:58px;padding:12px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);display:flex;align-items:center;gap:14px;text-align:left;font-size:16px;color:var(--ink)}
+.choice .k{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;background:var(--soft);color:var(--muted)}
+.choice:hover:not(:disabled){border-color:var(--faint)}
+.choice.right{border-color:var(--ok-line);background:var(--ok-soft);font-weight:600}
+.choice.right .k{background:var(--ok-line);color:#fff}
+.choice.wrong{border-color:var(--bad-line);background:var(--bad-soft)}
+.choice.wrong .k{background:var(--bad-line);color:#fff}
 .choice:disabled{cursor:default}
-.feedback{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.feedback .msg{font-size:15px}
+.feedback{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;gap:10px;min-height:118px;justify-content:flex-end}
+.feedback .msg{font-size:15px;font-weight:600}
 .feedback .msg.ok{color:var(--ok)}
 .feedback .msg.bad{color:var(--bad)}
 
 /* 결과 */
-.score{font-family:var(--serif);font-weight:700;font-size:48px;color:var(--ink);text-align:center;line-height:1.1}
-.score small{font-size:20px;color:var(--muted)}
-.wrongs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.wrongs li{display:grid;grid-template-columns:minmax(110px,.8fr) minmax(0,2fr);gap:12px;padding:10px 12px;border-radius:12px;background:var(--row)}
-.wrongs b{font-family:var(--serif);color:var(--ink)}
-.acts{display:flex;gap:10px;flex-wrap:wrap}
-label.inline{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);flex-wrap:wrap}
-input[type=date]{background:#fff;border:0;box-shadow:inset 0 0 0 1.5px #DAD5F5;border-radius:12px;padding:8px 10px;min-height:44px}
+.result-top{background:var(--card);border-radius:24px;padding:40px 24px 28px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.score{font-size:56px;font-weight:700;letter-spacing:-2px;line-height:1.1;font-variant-numeric:tabular-nums}
+.score small{font-size:24px;color:var(--faint);font-weight:600;letter-spacing:0}
+.wrongs{list-style:none;margin:0;padding:0;background:var(--card);border-radius:20px;overflow:hidden}
+.wrongs li{padding:14px 20px;display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--track)}
+.wrongs li:last-child{border-bottom:0}
+.wrongs b{font-size:17px;font-weight:600}
+.wrongs span{font-size:14px;color:var(--text)}
+.stack{display:flex;flex-direction:column;gap:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
-<div class="sky" aria-hidden="true">
-  <div class="sea"></div>
-  <div class="cloud" style="left:-6%;top:40%;width:46%;height:150px;background:rgba(255,236,246,.5)"></div>
-  <div class="cloud" style="right:-8%;top:24%;width:40%;height:130px;background:rgba(238,226,255,.45)"></div>
-  <svg class="moon" viewBox="0 0 64 64"><defs><mask id="cres"><rect width="64" height="64" fill="#fff"/><circle cx="42" cy="24" r="22" fill="#000"/></mask></defs><circle cx="30" cy="32" r="22" fill="#FFF6D8" mask="url(#cres)"/></svg>
-  <div id="stars"></div>
-</div>
-
 <div class="wrap">
-  <header>
-    <div class="script">word master</div>
-    <h1>영단어 시험</h1>
-    <div class="sub" id="subLine">단어를 보고 알맞은 뜻을 골라요</div>
-    <div class="status" id="status" role="status">단어를 불러오는 중…</div>
+  <header class="top">
+    <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+      <span class="eyebrow" id="subLine">Word Master 하이스트</span>
+      <h1>영단어</h1>
+    </div>
+    <span class="chip" id="todayDate"></span>
   </header>
+  <div class="status" id="status" role="status">단어를 불러오는 중…</div>
 
   <!-- 처음 화면 -->
-  <div id="home" class="wrap" style="max-width:none;gap:18px">
-    <section class="panel" aria-labelledby="h-today">
-      <div class="today">
-        <div class="card" aria-hidden="true">
-          <span class="lab">next</span>
-          <span class="big" id="todayDays">Day –</span>
-          <span class="small" id="todayDate"></span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
-          <h2 id="h-today">다음 세트</h2>
-          <div class="muted" id="todayNote"></div>
-          <div class="bar" aria-hidden="true"><i id="todayBar" style="width:0%"></i></div>
-          <div class="muted" id="todayBest"></div>
-          <div class="acts"><button class="btn" id="startToday" type="button" disabled>60문제 시험 보기</button></div>
-        </div>
-      </div>
+  <div id="home" class="wrap" style="max-width:none">
+    <section class="card" aria-labelledby="h-today">
+      <div class="row"><h2 id="h-today" style="color:var(--muted);font-weight:500;font-size:14px">다음 세트</h2></div>
+      <div class="big" id="todayDays">Day –</div>
+      <div class="muted" id="todayNote"></div>
+      <div class="muted" id="todayBest"></div>
+      <button class="btn" id="startToday" type="button" disabled>시작하기</button>
     </section>
 
-    <section class="panel" aria-labelledby="h-days">
-      <div class="row"><h2 id="h-days">Day 골라서 보기</h2><span class="muted" id="pickCount">여러 개를 고를 수 있어요</span></div>
+    <section class="card" aria-label="전체 진도" style="padding:18px 20px;gap:12px">
+      <div class="row"><h2>전체 진도</h2><span class="muted" id="progLine" style="font-variant-numeric:tabular-nums"></span></div>
+      <div class="bar" aria-hidden="true"><i id="todayBar" style="width:0%"></i></div>
+    </section>
+
+    <button class="listrow" id="startWrong" type="button" disabled>
+      <span class="ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D14343" stroke-width="2" stroke-linecap="round"><path d="M4 5h16M4 12h10M4 19h7"/></svg></span>
+      <span class="tx"><b>오답 노트</b><span>틀린 단어 <span id="wrongCount" style="font-size:inherit">0단어</span> · 다시 맞히면 빠져요</span></span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA0AC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+
+    <section class="card" aria-labelledby="h-days">
+      <div class="row"><h2 id="h-days">Day 골라서 보기</h2><span class="muted" id="pickCount" style="font-size:13px">여러 개를 고를 수 있어요</span></div>
       <div class="days" id="days"></div>
-      <div class="acts"><button class="btn" id="startPicked" type="button" disabled>선택한 Day로 시험</button><button class="ghost" id="clearPick" type="button">선택 해제</button></div>
+      <div class="legend"><span><i style="background:var(--done-soft)"></i>끝낸 Day</span><span><i style="box-shadow:inset 0 0 0 2px var(--accent)"></i>다음 세트</span></div>
+      <div class="acts"><button class="btn" id="startPicked" type="button" disabled>선택한 Day로 시험</button><button class="sub-btn" id="clearPick" type="button" style="flex:0 0 auto;height:54px">선택 해제</button></div>
     </section>
-
-    <section class="panel" aria-labelledby="h-wrong">
-      <div class="row"><h2 id="h-wrong">오답 노트</h2><span class="muted" id="wrongCount"></span></div>
-      <div class="muted">마지막으로 틀린 단어만 모아요. 다시 맞히면 오답 노트에서 빠져요.</div>
-      <div class="acts"><button class="btn" id="startWrong" type="button" disabled>오답만 다시 보기</button></div>
-    </section>
-
   </div>
 
   <!-- 시험 화면 -->
-  <section id="quiz" class="panel" hidden aria-label="시험">
+  <section id="quiz" class="sheet" hidden aria-label="시험">
     <div class="qtop">
-      <button class="ghost" id="quit" type="button">그만하기</button>
+      <button class="icon-btn" id="quit" type="button" aria-label="그만하기"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       <div class="bar" aria-hidden="true"><i id="qBar" style="width:0%"></i></div>
       <span class="qcount" id="qCount"></span>
     </div>
-    <div>
+    <div class="qhead">
+      <span class="pill" id="qMeta"></span>
       <div class="word" id="qWord" lang="en"></div>
-      <div class="wmeta" id="qMeta"></div>
+      <span class="muted">알맞은 뜻을 고르세요</span>
     </div>
     <ol class="choices" id="choices"></ol>
-    <div class="feedback"><span class="msg" id="qMsg" aria-live="polite"></span><button class="btn" id="next" type="button" hidden>다음</button></div>
+    <div class="feedback"><span class="msg" id="qMsg" aria-live="polite"></span><button class="btn dark" id="next" type="button" hidden>다음</button></div>
   </section>
 
   <!-- 결과 화면 -->
-  <section id="done" class="panel" hidden aria-labelledby="h-done">
-    <h2 id="h-done">시험 결과</h2>
-    <div class="score" id="dScore"></div>
-    <div class="muted" id="dNote" style="text-align:center"></div>
+  <div id="done" class="wrap" hidden style="max-width:none">
+    <section class="result-top" aria-labelledby="h-done">
+      <h2 id="h-done" style="color:var(--muted);font-size:14px">시험 결과</h2>
+      <div class="score" id="dScore"></div>
+      <div class="muted" id="dNote"></div>
+    </section>
     <ul class="wrongs" id="dWrongs"></ul>
-    <div class="acts"><button class="btn" id="nextSet" type="button" hidden>다음 세트 바로 시작</button><button class="btn" id="retryWrong" type="button">틀린 것만 다시</button><button class="ghost" id="toHome" type="button">처음으로</button></div>
-  </section>
+    <div class="stack"><button class="btn" id="nextSet" type="button" hidden>다음 세트 바로 시작</button><button class="btn" id="retryWrong" type="button">틀린 것만 다시 풀기</button><button class="ghost" id="toHome" type="button">처음으로</button></div>
+  </div>
 </div>
 
 <script>
@@ -220,15 +237,16 @@ function wrongList(){return words.filter(w=>stats[w.n]&&stats[w.n].last===0)}
 function renderHome(){
   const t=nextSet(), doneAll=Object.keys(cleared).length, doneToday=Object.values(cleared).filter(d=>d===today()).length;
   if(!t){$('#todayDays').textContent='끝!';$('#todayNote').textContent='Day 1–'+DAYS+'를 모두 끝냈어요. 오답 노트나 Day를 골라 다시 보세요.';$('#startToday').disabled=true}
-  else{$('#todayDays').textContent='Day '+t.days.join(' · ');$('#startToday').textContent=t.days.length*30+'문제 시험 보기';$('#todayNote').textContent=`오늘 ${doneToday} Day 끝냄 · 전체 ${doneAll}/${DAYS} Day`;$('#startToday').disabled=!words.length}
-  $('#todayDate').textContent=fmt(today());
+  else{$('#todayDays').textContent='Day '+t.days.join(' · ');$('#startToday').textContent='시작하기 · '+t.days.length*30+'문제';$('#todayNote').textContent='틀린 단어까지 다시 풀어 다 맞히면 바로 다음 세트로 넘어가요.';$('#startToday').disabled=!words.length}
+  $('#todayDate').textContent=`오늘 ${doneToday} Day 끝냄`;
   const days=t?t.days:null;
   const b=days?best[setKey(days)]:null;
   $('#todayBar').style.width=(DAYS?doneAll/DAYS*100:0)+'%';
-  $('#todayBest').textContent=days?(b!=null?'이 세트 최고 점수 '+b+'점 · ':'')+'틀린 것까지 다시 풀어 다 맞히면 다음 세트로 넘어가요':'';
+  $('#progLine').textContent=doneAll+' / '+DAYS+' Day';
+  $('#todayBest').textContent=days&&b!=null?'이 세트 최고 점수 '+b+'점':'';
   const todayDays=new Set(days||[]);
   $('#days').innerHTML=Array.from({length:DAYS},(_,i)=>{const d=i+1,a=dayAcc(d);
-    return `<button type="button" class="day${todayDays.has(d)?' today-set':''}${cleared[d]?' cleared':''}" data-day="${d}" aria-pressed="${picked.has(d)}"><b>${d}</b><small>${cleared[d]?'✓ ':''}${a==null?'Day '+d:a+'%'}</small></button>`}).join('');
+    return `<button type="button" class="day${todayDays.has(d)?' today-set':''}${cleared[d]?' cleared':''}" data-day="${d}" aria-pressed="${picked.has(d)}"><b>${d}</b><small>${cleared[d]?'✓':''}${a==null?'':(cleared[d]?' ':'')+a+'%'}</small></button>`}).join('');
   $('#pickCount').textContent=picked.size?`Day ${[...picked].sort((a,b)=>a-b).join(', ')} · ${picked.size*30}문제`:'여러 개를 고를 수 있어요';
   $('#startPicked').disabled=!picked.size||!words.length;
   const wl=wrongList();
@@ -256,7 +274,7 @@ function makeChoices(w,pool){
 function renderQ(){
   const it=Q.items[Q.i];
   $('#qWord').textContent=it.w.w;
-  $('#qMeta').textContent='Day '+it.w.day+' · '+Q.label;
+  $('#qMeta').textContent='Day '+it.w.day;
   $('#qCount').textContent=(Q.i+1)+' / '+Q.items.length;
   $('#qBar').style.width=(Q.i/Q.items.length*100)+'%';
   $('#choices').innerHTML=it.choices.map((m,j)=>`<li><button type="button" class="choice" data-j="${j}"><span class="k">${j+1}</span><span>${esc(m)}</span></button></li>`).join('');
@@ -322,11 +340,6 @@ document.addEventListener('keydown',e=>{
   if(/^[1-5]$/.test(e.key)){const b=document.querySelectorAll('.choice')[Number(e.key)-1];if(b&&!b.disabled)b.click()}
   else if(e.key==='Enter'&&!$('#next').hidden){e.preventDefault();next()}
 });
-/* 별 */
-(function(){let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;let h='';
-  for(let i=0;i<50;i++){const x=(r()*100).toFixed(1),y=(r()*42).toFixed(1),z=r()<.15?3:(r()<.5?2:1.4),o=(.45+r()*.55).toFixed(2);
-    h+=`<span class="st" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px;opacity:${o}${z===3?';box-shadow:0 0 6px #fff':''}"></span>`}
-  $('#stars').innerHTML=h;})();
 renderHome();
 
 /* ---------- 데이터 ---------- */
@@ -338,7 +351,7 @@ renderHome();
     words=ws.docs.flatMap(d=>{const x=d.data();return (x.words||[]).map(w=>({...w,day:x.day}))}).sort((a,b)=>a.n-b.n);
     if(pg.exists){const p=pg.data();stats=p.stats||{};best=p.best||{};cleared=p.cleared||{}}
     if(words.length)DAYS=Math.max(...words.map(w=>w.day));
-    $('#subLine').textContent=`단어를 보고 알맞은 뜻을 골라요 · Day 1–${DAYS} · ${words.length}단어`;
+    $('#subLine').textContent=`Word Master 하이스트 · ${words.length}단어`;
     setStatus(words.length?`${words.length}단어를 불러왔어요`:'단어가 아직 없어요.',!words.length);
     renderHome();
   }catch(e){setStatus('단어를 불러오지 못했어요. 새로고침해 주세요.',true)}
