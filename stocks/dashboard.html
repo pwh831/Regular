@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>내 주식</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--ink:#191f28;--sub:#6b7684;--line:#e5e8eb;--up:#f04452;--down:#3182f6;--accent:#3182f6;--warn:#fff4e5;--warn-ink:#8a4b00}
+@media (prefers-color-scheme:dark){:root{--bg:#101012;--card:#1c1c20;--ink:#ececf0;--sub:#9a9aa5;--line:#2c2c33;--up:#ff6b76;--down:#5b9dff;--accent:#5b9dff;--warn:#3a2a12;--warn-ink:#ffcb80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;margin:4px 0 2px}
+.meta{color:var(--sub);font-size:13px;margin-bottom:16px}
+.card{background:var(--card);border-radius:16px;padding:18px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+.card h2 small{color:var(--sub);font-weight:400;font-size:12px}
+.total{font-size:26px;font-weight:700;margin:2px 0}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.row .nm{flex:1;min-width:0}
+.row .nm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm span{color:var(--sub);font-size:12px}
+.row .px{text-align:right;font-variant-numeric:tabular-nums}
+.row .px b{display:block}
+.up{color:var(--up)}.down{color:var(--down)}.flat{color:var(--sub)}
+.x{border:0;background:none;color:var(--sub);font-size:18px;cursor:pointer;padding:4px 6px}
+form{display:flex;gap:8px;margin-top:12px}
+input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+button.p{padding:10px 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.err{background:var(--warn);color:var(--warn-ink);border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:14px}
+.err:empty{display:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:14px;margin-top:10px}
+.grid span{color:var(--sub)}
+.grid b{text-align:right;font-variant-numeric:tabular-nums}
+.empty{color:var(--sub);font-size:14px;padding:6px 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>내 주식</h1>
+  <div class="meta" id="meta">불러오는 중…</div>
+  <div class="err" id="err"></div>
+
+  <section class="card">
+    <h2>내 계좌 <small>토스증권</small></h2>
+    <div id="hold"><div class="empty">불러오는 중…</div></div>
+  </section>
+
+  <section class="card">
+    <h2>관심 종목 <small>등락은 전일 종가 대비</small></h2>
+    <div id="watch"><div class="empty">불러오는 중…</div></div>
+    <form id="add">
+      <input id="sym" placeholder="종목 코드 (005930, AAPL)" autocomplete="off">
+      <button class="p">추가</button>
+    </form>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const num = (v, cur) => v == null ? '-' : Number(v).toLocaleString('ko-KR', {maximumFractionDigits: cur === 'USD' ? 2 : 0});
+const money = (v, cur) => v == null ? '-' : (cur === 'USD' ? '$' + num(v, cur) : num(v, cur) + '원');
+const cls = v => v == null || Number(v) === 0 ? 'flat' : Number(v) > 0 ? 'up' : 'down';
+const sign = v => Number(v) > 0 ? '+' : '';
+const pct = r => r == null ? '-' : sign(r) + (Number(r) * 100).toFixed(2) + '%';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const errors = {};
+
+function showErr(key, e) {
+  if (e) errors[key] = (e.message || e.code) + (e.hint ? ' — ' + e.hint : '');
+  else delete errors[key];
+  $('err').textContent = Object.values(errors).join('\n');
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw j.error || {message: '서버 오류 ' + r.status};
+  return j;
+}
+
+async function loadQuotes() {
+  try {
+    const j = await api('/api/quotes');
+    $('watch').innerHTML = j.quotes.length ? j.quotes.map(q => `
+      <div class="row">
+        <div class="nm"><b>${esc(q.name)}</b><span>${esc(q.symbol)} · ${esc(q.market)}</span></div>
+        <div class="px"><b>${money(q.price, q.currency)}</b>
+          <span class="${cls(q.change)}">${q.change == null ? '-' : sign(q.change) + num(q.change, q.currency)} (${pct(q.rate)})</span></div>
+        <button class="x" title="삭제" data-sym="${esc(q.symbol)}">×</button>
+      </div>`).join('') : '<div class="empty">관심 종목을 추가하세요.</div>';
+    $('meta').textContent = '마지막 갱신 ' + j.fetchedAt.replace('T', ' ') + ' · 30초마다 자동 갱신';
+    showErr('quotes');
+  } catch (e) { showErr('quotes', e); }
+}
+
+async function loadHoldings() {
+  try {
+    const h = (await api('/api/holdings'));
+    const items = h.items || [];
+    const krw = o => o && o.krw;
+    $('hold').innerHTML = `
+      <div style="color:var(--sub);font-size:13px">총 평가금액(원화)</div>
+      <div class="total">${money(krw(h.marketValue && h.marketValue.amount), 'KRW')}</div>
+      <div class="${cls(krw(h.profitLoss && h.profitLoss.amount))}">
+        ${sign(krw(h.profitLoss.amount))}${money(krw(h.profitLoss.amount), 'KRW')} (${pct(h.profitLoss.rate)}) ·
+        오늘 ${sign(krw(h.dailyProfitLoss.amount))}${money(krw(h.dailyProfitLoss.amount), 'KRW')}</div>
+      <div class="grid"><span>총 매수금액</span><b>${money(krw(h.totalPurchaseAmount), 'KRW')}</b>
+        <span>수수료·세금 뺀 손익</span><b class="${cls(krw(h.profitLoss.amountAfterCost))}">${money(krw(h.profitLoss.amountAfterCost), 'KRW')} (${pct(h.profitLoss.rateAfterCost)})</b></div>
+      <div style="margin-top:12px">${items.length ? items.map(i => `
+        <div class="row">
+          <div class="nm"><b>${esc(i.name)}</b><span>${Number(i.quantity).toLocaleString('ko-KR', {maximumFractionDigits: 6})}주 · 평균 ${money(i.averagePurchasePrice, i.currency)}</span></div>
+          <div class="px"><b>${money(i.marketValue.amount, i.currency)}</b>
+            <span class="${cls(i.profitLoss.amount)}">${sign(i.profitLoss.amount)}${money(i.profitLoss.amount, i.currency)} (${pct(i.profitLoss.rate)})</span></div>
+        </div>`).join('') : '<div class="empty">보유 종목이 없습니다.</div>'}</div>`;
+    showErr('holdings');
+  } catch (e) {
+    $('hold').innerHTML = '<div class="empty">계좌를 불러오지 못했습니다.</div>';
+    showErr('holdings', e);
+  }
+}
+
+async function editWatch(action, symbol) {
+  try {
+    await api('/api/watchlist', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action, symbol})});
+    showErr('edit');
+    loadQuotes();
+  } catch (e) { showErr('edit', e); }
+}
+
+$('add').addEventListener('submit', e => {
+  e.preventDefault();
+  const s = $('sym').value.trim();
+  if (s) { editWatch('add', s); $('sym').value = ''; }
+});
+$('watch').addEventListener('click', e => {
+  const b = e.target.closest('.x');
+  if (b) editWatch('remove', b.dataset.sym);
+});
+
+loadHoldings().then(loadQuotes);
+setInterval(loadQuotes, 30000);
+setInterval(loadHoldings, 120000);
+</script>
+</body>
+</html>

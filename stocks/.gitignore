@@ -1,0 +1,5 @@
+config.local.json
+.token.json
+watchlist.json
+*.tmp
+__pycache__/
