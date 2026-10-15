@@ -1,0 +1,380 @@
+<title>수행평가 알림장</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Nanum+Pen+Script&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 줄 쳐진 알림장 한 권. 왼쪽 페이지는 마감 목록, 오른쪽 페이지는 2주 달력과 메모. 빨간 펜이 급한 것을 표시한다 */
+:root{
+  --paper:#FBFAF6; --page:#FFFFFF; --rule:#DCE3EE; --margin:#E9A3A3;
+  --ink:#1F2A44; --muted:#5D6880; --faint:#8A93A8;
+  --blue:#2F5DA8; --blue-soft:#E7EEFA;
+  --red:#C4342D; --red-soft:#FBE7E5; --amber:#B86E00; --amber-soft:#FFF1D9;
+  --green:#2E7D4F; --green-soft:#E3F3E9;
+  --tape:rgba(255,214,102,.55); --shadow:0 1px 0 rgba(31,42,68,.06),0 8px 24px rgba(31,42,68,.08);
+  --display:"Do Hyeon","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --body:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --pen:"Nanum Pen Script","Apple SD Gothic Neo",cursive;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#12161F; --page:#1A202C; --rule:#2A3242; --margin:#6E3A3A;
+  --ink:#E6EAF2; --muted:#A3ADC2; --faint:#7B869C;
+  --blue:#8AB0F0; --blue-soft:#22314C;
+  --red:#FF8A80; --red-soft:#3C2224; --amber:#F0B65A; --amber-soft:#3A2E17;
+  --green:#7FD3A0; --green-soft:#1C3527;
+  --tape:rgba(240,182,90,.28); --shadow:0 1px 0 rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#12161F; --page:#1A202C; --rule:#2A3242; --margin:#6E3A3A;
+  --ink:#E6EAF2; --muted:#A3ADC2; --faint:#7B869C;
+  --blue:#8AB0F0; --blue-soft:#22314C;
+  --red:#FF8A80; --red-soft:#3C2224; --amber:#F0B65A; --amber-soft:#3A2E17;
+  --green:#7FD3A0; --green-soft:#1C3527;
+  --tape:rgba(240,182,90,.28); --shadow:0 1px 0 rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2{margin:0;font-family:var(--display);font-weight:400;text-wrap:balance}
+h1{font-size:36px;line-height:1.1}
+h2{font-size:22px}
+.pen{font-family:var(--pen);font-size:22px;line-height:1;color:var(--red)}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.today{color:var(--muted);font-size:14px;margin-top:4px}
+.status{font-size:12px;color:var(--faint)}
+.status.err{color:var(--red);background:var(--red-soft);padding:4px 10px;border-radius:99px}
+
+/* 요약 띠 */
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sum{background:var(--page);border:1px solid var(--rule);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.sum .k{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.sum .v{font-family:var(--display);font-size:28px;line-height:1.1}
+.sum.late .v{color:var(--red)} .sum.soon .v{color:var(--amber)}
+@media (max-width:560px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+
+/* 공책 페이지: 왼쪽 빨간 여백선 + 가로줄 */
+.sheet{position:relative;background:var(--page);border-radius:4px 12px 12px 4px;box-shadow:var(--shadow);padding:20px 18px 18px 34px;display:flex;flex-direction:column;gap:14px;min-width:0;
+  background-image:linear-gradient(90deg,transparent 22px,var(--margin) 22px,var(--margin) 23.5px,transparent 23.5px)}
+.sheet-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+
+/* 입력 */
+form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.f.s2{grid-column:span 2}.f.s3{grid-column:span 3}.f.s4{grid-column:span 4}.f.s6{grid-column:span 6}
+@media (max-width:560px){.f.s2,.f.s3,.f.s4{grid-column:span 6}.f.half{grid-column:span 3}}
+input,select,textarea{width:100%;min-width:0;background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:40px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--rule);background:var(--page);border-radius:99px;padding:3px 11px;font-size:13px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--blue-soft);border-color:var(--blue);color:var(--blue);font-weight:500}
+.actions{grid-column:span 6;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:0;border-radius:8px;padding:9px 16px;background:var(--blue);color:var(--page);font-weight:500}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--rule)}
+.btn.danger{background:var(--red);color:var(--page)}
+.hint{font-size:12px;color:var(--faint)}
+
+/* 마감 목록 */
+.group{display:flex;flex-direction:column;gap:0}
+.group-h{display:flex;align-items:baseline;gap:8px;padding:6px 0 4px;border-bottom:1.5px solid var(--rule)}
+.group-h h3{margin:0;font-size:14px;font-weight:700;letter-spacing:.02em}
+.group-h .n{font-size:12px;color:var(--faint)}
+.group.late .group-h h3{color:var(--red)} .group.soon .group-h h3{color:var(--amber)}
+.task{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--rule)}
+.tick{width:22px;height:22px;margin-top:2px;border:1.5px solid var(--faint);border-radius:6px;background:transparent;display:grid;place-items:center;padding:0}
+.tick svg{width:14px;height:14px;opacity:0}
+.task.done .tick{border-color:var(--green);background:var(--green-soft)}
+.task.done .tick svg{opacity:1}
+.tbody{min-width:0;display:flex;flex-direction:column;gap:2px}
+.tline{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px}
+.subj{font-size:12px;font-weight:700;color:var(--blue);background:var(--blue-soft);border-radius:4px;padding:1px 7px}
+.ttitle{font-weight:500;overflow-wrap:anywhere}
+.task.done .ttitle{text-decoration:line-through;color:var(--faint)}
+.tnote{font-size:13px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.tmeta{font-size:12px;color:var(--faint)}
+.tright{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.dd{font-family:var(--display);font-size:20px;line-height:1;white-space:nowrap}
+.dd.late{color:var(--red)} .dd.today{color:var(--page);background:var(--red);padding:3px 8px;border-radius:6px;font-size:17px}
+.dd.soon{color:var(--amber)} .dd.later{color:var(--muted)} .dd.done{color:var(--green);font-size:15px}
+.mini{display:flex;gap:4px}
+.mini button{border:0;background:transparent;color:var(--faint);font-size:12px;padding:2px 4px;border-radius:4px}
+.mini button:hover{color:var(--ink);background:var(--paper)}
+.mini button.really{color:var(--page);background:var(--red)}
+.empty{padding:18px 0;color:var(--muted);font-size:14px}
+.empty .pen{display:block;margin-bottom:4px}
+.toggle-done{align-self:flex-start;border:0;background:transparent;color:var(--muted);font-size:13px;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
+
+/* 2주 달력 */
+.weeks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wd{font-size:11px;color:var(--faint);text-align:center;letter-spacing:.04em}
+.day{min-height:62px;border:1px solid var(--rule);border-radius:8px;padding:4px 5px;display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--page)}
+.day .d{font-size:12px;color:var(--muted)}
+.day.is-today{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
+.day.is-today .d{color:var(--red);font-weight:700}
+.day.sun .d{color:var(--red)} .day.sat .d{color:var(--blue)}
+.dot{font-size:11px;line-height:1.3;border-radius:4px;padding:1px 4px;background:var(--amber-soft);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot.done{background:transparent;color:var(--faint);text-decoration:line-through}
+.dot.memo{background:var(--blue-soft)}
+
+/* 메모: 테이프 붙인 쪽지 */
+.memo-form{display:flex;flex-direction:column;gap:8px}
+.memo-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.memo-row .f{flex:1 1 140px}
+.notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding-top:6px}
+.note{position:relative;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:16px 12px 10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.note::before{content:"";position:absolute;top:-8px;left:50%;width:58px;height:16px;margin-left:-29px;background:var(--tape);transform:rotate(-3deg)}
+.note.pinned{border-color:var(--amber)}
+.note .txt{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.note .when{font-size:12px;color:var(--faint);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.note .when .due{color:var(--amber);font-weight:500}
+.note .when .due.late{color:var(--red)}
+.note .mini{justify-content:flex-end}
+
+.alarm{background:var(--page);border:1px dashed var(--rule);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--muted)}
+.alarm b{color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.task,.note{transition:background .15s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="pen">잊지 말자!</div>
+      <h1>수행평가 알림장</h1>
+      <div class="today num" id="todayLabel"></div>
+    </div>
+    <div class="status" id="status" role="status">불러오는 중…</div>
+  </header>
+
+  <section class="summary" aria-label="요약">
+    <div class="sum late"><span class="k">마감 지남</span><span class="v num" id="sLate">0</span></div>
+    <div class="sum soon"><span class="k">3일 안에 마감</span><span class="v num" id="sSoon">0</span></div>
+    <div class="sum"><span class="k">남은 수행평가</span><span class="v num" id="sLeft">0</span></div>
+    <div class="sum"><span class="k">메모</span><span class="v num" id="sMemo">0</span></div>
+  </section>
+
+  <div class="grid">
+    <div class="col">
+      <section class="sheet" aria-labelledby="addH">
+        <div class="sheet-head"><h2 id="addH">수행평가 적기</h2><span class="hint" id="editHint" hidden>수정 중</span></div>
+        <form id="taskForm" autocomplete="off">
+          <div class="f s2 half"><label for="tSubject">과목</label><input id="tSubject" list="subjList" placeholder="국어" required maxlength="20"><datalist id="subjList"></datalist></div>
+          <div class="f s4"><label for="tTitle">무엇을</label><input id="tTitle" placeholder="독서 감상문 제출" required maxlength="80"></div>
+          <div class="f s3 half"><label for="tDue">마감일</label><input id="tDue" type="date" required></div>
+          <div class="f s3 half"><label for="tTime">시간 (선택)</label><input id="tTime" type="time"></div>
+          <div class="f s6"><label for="tNote">준비물·조건 (선택)</label><textarea id="tNote" rows="2" maxlength="400" placeholder="A4 2장 이상, 손글씨, 5교시 전까지"></textarea></div>
+          <div class="f s6"><label>바로 고르기</label>
+            <div class="chips" id="quick">
+              <button type="button" class="chip" data-add="1">내일</button>
+              <button type="button" class="chip" data-add="3">3일 뒤</button>
+              <button type="button" class="chip" data-add="7">1주 뒤</button>
+              <button type="button" class="chip" data-add="14">2주 뒤</button>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn" id="tSubmit" type="submit">알림장에 적기</button>
+            <button class="btn ghost" id="tCancel" type="button" hidden>취소</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="sheet" aria-labelledby="listH">
+        <div class="sheet-head"><h2 id="listH">마감 순서</h2></div>
+        <div class="chips" id="filter" aria-label="과목 거르기"></div>
+        <div id="taskList"></div>
+        <button class="toggle-done" id="toggleDone" type="button" hidden></button>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="sheet" aria-labelledby="calH">
+        <div class="sheet-head"><h2 id="calH">앞으로 2주</h2><span class="hint">수행평가 · <span style="color:var(--blue)">메모 알림</span></span></div>
+        <div class="weeks" id="weeks"></div>
+      </section>
+
+      <section class="sheet" aria-labelledby="memoH">
+        <div class="sheet-head"><h2 id="memoH">메모</h2></div>
+        <form class="memo-form" id="memoForm" autocomplete="off">
+          <div class="f"><label for="mText">내용</label><textarea id="mText" rows="2" maxlength="500" placeholder="체육복 챙기기, 모둠 자료 카톡방에 올리기" required></textarea></div>
+          <div class="memo-row">
+            <div class="f"><label for="mOn">알려 줄 날 (선택)</label><input id="mOn" type="date"></div>
+            <label class="hint" style="display:flex;gap:6px;align-items:center;margin-top:18px"><input id="mPin" type="checkbox" style="width:auto"> 맨 위에 고정</label>
+            <button class="btn" type="submit" id="mSubmit" style="margin-top:18px">메모 붙이기</button>
+            <button class="btn ghost" type="button" id="mCancel" style="margin-top:18px" hidden>취소</button>
+          </div>
+        </form>
+        <div class="notes" id="notes"></div>
+      </section>
+
+      <div class="alarm"><b>알림</b> · 이 화면은 열었을 때 급한 순서로 보여 줘요. 휴대폰 푸시로 받으려면 Claude에게 "알림장 아침 알림 만들어 줘"라고 하면 매일 정해진 시간에 마감 임박 항목을 보내 줘요.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)};
+const diff=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+const WD=['일','월','화','수','목','금','토'];
+const fmt=s=>{const d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+' ('+WD[d.getDay()]+')'};
+
+let today=ymd(new Date());
+let db=null, tasks=[], memos=[], filter='전체', showDone=false, editing=null, editingMemo=null, armed=null;
+
+function setStatus(t,err){const el=$('#status');el.textContent=t;el.classList.toggle('err',!!err)}
+async function write(fn,ok){
+  if(!db){setStatus('저장소에 연결되지 않아 저장하지 못했어요. claude.ai에서 열어 주세요.',true);return false}
+  try{await fn();if(ok)setStatus(ok);return true}
+  catch(e){setStatus('저장하지 못했어요. 잠시 뒤 다시 해 보세요.',true);return false}
+}
+function dd(t){
+  if(t.done)return{cls:'done',txt:'완료'};
+  const n=diff(today,t.due);
+  if(n<0)return{cls:'late',txt:'D+'+(-n)};
+  if(n===0)return{cls:'today',txt:'오늘'};
+  if(n<=3)return{cls:'soon',txt:'D-'+n};
+  return{cls:'later',txt:'D-'+n};
+}
+const sortKey=t=>t.due+' '+(t.time||'99:99');
+
+function renderSummary(){
+  const open=tasks.filter(t=>!t.done);
+  $('#sLate').textContent=open.filter(t=>diff(today,t.due)<0).length;
+  $('#sSoon').textContent=open.filter(t=>{const n=diff(today,t.due);return n>=0&&n<=3}).length;
+  $('#sLeft').textContent=open.length;
+  $('#sMemo').textContent=memos.length;
+  $('#todayLabel').textContent='오늘 '+fmt(today);
+}
+function renderFilter(){
+  const subs=[...new Set(tasks.map(t=>t.subject))].sort((a,b)=>a.localeCompare(b,'ko'));
+  if(filter!=='전체'&&!subs.includes(filter))filter='전체';
+  $('#filter').innerHTML=['전체',...subs].map(s=>`<button type="button" class="chip" aria-pressed="${s===filter}" data-f="${esc(s)}">${esc(s)}</button>`).join('');
+  $('#filter').hidden=subs.length<2;
+  $('#subjList').innerHTML=subs.map(s=>`<option value="${esc(s)}">`).join('');
+}
+function taskRow(t){
+  const d=dd(t), a=armed==='t:'+t.id;
+  return `<div class="task${t.done?' done':''}" data-id="${t.id}">
+    <button class="tick" data-tick aria-label="${t.done?'완료 취소':'완료로 표시'}" aria-pressed="${!!t.done}"><svg viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg></button>
+    <div class="tbody">
+      <div class="tline"><span class="subj">${esc(t.subject)}</span><span class="ttitle">${esc(t.title)}</span></div>
+      ${t.note?`<div class="tnote">${esc(t.note)}</div>`:''}
+      <div class="tmeta num">${fmt(t.due)}${t.time?' '+esc(t.time)+'까지':' 마감'}</div>
+    </div>
+    <div class="tright"><span class="dd num ${d.cls}">${d.txt}</span>
+      <div class="mini"><button data-edit>고치기</button><button data-del class="${a?'really':''}">${a?'정말 지우기':'지우기'}</button></div></div>
+  </div>`;
+}
+function renderTasks(){
+  const list=tasks.filter(t=>filter==='전체'||t.subject===filter).sort((a,b)=>sortKey(a).localeCompare(sortKey(b)));
+  const open=list.filter(t=>!t.done), done=list.filter(t=>t.done);
+  const groups=[
+    ['late','마감 지남',open.filter(t=>diff(today,t.due)<0)],
+    ['soon','오늘 · 3일 안',open.filter(t=>{const n=diff(today,t.due);return n>=0&&n<=3})],
+    ['','이번 주 넘어서',open.filter(t=>diff(today,t.due)>3)],
+  ].filter(g=>g[2].length);
+  let h=groups.map(([c,name,arr])=>`<div class="group ${c}"><div class="group-h"><h3>${name}</h3><span class="n num">${arr.length}개</span></div>${arr.map(taskRow).join('')}</div>`).join('');
+  if(!open.length)h=`<div class="empty"><span class="pen">${tasks.length?'남은 수행평가가 없어요!':'아직 비어 있어요'}</span>${tasks.length?'새 과제가 나오면 위에 적어 두세요.':'위 칸에 과목·할 일·마감일을 적으면 마감이 가까운 순서로 여기 정리돼요.'}</div>`;
+  if(showDone&&done.length)h+=`<div class="group"><div class="group-h"><h3>끝낸 것</h3><span class="n num">${done.length}개</span></div>${done.slice().reverse().map(taskRow).join('')}</div>`;
+  $('#taskList').innerHTML=h;
+  const tg=$('#toggleDone');tg.hidden=!done.length;tg.textContent=showDone?'끝낸 것 숨기기':`끝낸 것 ${done.length}개 보기`;
+}
+function renderWeeks(){
+  const start=addDays(today,-parse(today).getDay());
+  let h=WD.map(w=>`<div class="wd">${w}</div>`).join('');
+  for(let i=0;i<14;i++){
+    const day=addDays(start,i), dw=parse(day).getDay();
+    const ts=tasks.filter(t=>t.due===day).sort((a,b)=>sortKey(a).localeCompare(sortKey(b)));
+    const ms=memos.filter(m=>m.remindOn===day);
+    h+=`<div class="day${day===today?' is-today':''}${dw===0?' sun':''}${dw===6?' sat':''}" title="${fmt(day)}">
+      <span class="d num">${parse(day).getDate()}</span>
+      ${ts.map(t=>`<span class="dot${t.done?' done':''}">${esc(t.subject)} ${esc(t.title)}</span>`).join('')}
+      ${ms.map(m=>`<span class="dot memo">${esc(m.text.split('\n')[0])}</span>`).join('')}
+    </div>`;
+  }
+  $('#weeks').innerHTML=h;
+}
+function renderMemos(){
+  const list=memos.slice().sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||String(b.createdAt).localeCompare(String(a.createdAt)));
+  if(!list.length){$('#notes').innerHTML=`<div class="empty"><span class="pen">쪽지가 없어요</span>준비물이나 할 말을 적어 붙여 두세요. 날짜를 정하면 달력에도 표시돼요.</div>`;return}
+  $('#notes').innerHTML=list.map(m=>{
+    const a=armed==='m:'+m.id;let when='';
+    if(m.remindOn){const n=diff(today,m.remindOn);when=`<span class="due num${n<0?' late':''}">${n===0?'오늘':n>0?fmt(m.remindOn):fmt(m.remindOn)+' 지남'}</span>`}
+    return `<div class="note${m.pinned?' pinned':''}" data-mid="${m.id}">
+      <div class="txt">${esc(m.text)}</div>
+      <div class="when">${m.pinned?'<span>고정됨</span>':''}${when}</div>
+      <div class="mini"><button data-mpin>${m.pinned?'고정 풀기':'고정'}</button><button data-medit>고치기</button><button data-mdel class="${a?'really':''}">${a?'정말 지우기':'지우기'}</button></div>
+    </div>`}).join('');
+}
+function renderAll(){today=ymd(new Date());renderSummary();renderFilter();renderTasks();renderWeeks();renderMemos()}
+
+/* ---------- 수행평가 ---------- */
+function resetTaskForm(){editing=null;$('#taskForm').reset();$('#tDue').value=addDays(today,7);$('#tSubmit').textContent='알림장에 적기';$('#tCancel').hidden=true;$('#editHint').hidden=true}
+$('#taskForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const data={subject:$('#tSubject').value.trim(),title:$('#tTitle').value.trim(),due:$('#tDue').value,time:$('#tTime').value||null,note:$('#tNote').value.trim()};
+  if(!data.subject||!data.title||!data.due)return;
+  if(editing){const id=editing;if(await write(()=>db.doc('tasks/'+id).update(data),'고쳤어요'))resetTaskForm()}
+  else if(await write(()=>db.collection('tasks').add({...data,done:false,doneAt:null,createdAt:new Date().toISOString()}),`'${data.title}' 적었어요 · ${fmt(data.due)} 마감`)){const s=data.subject;resetTaskForm();$('#tSubject').value=s;$('#tTitle').focus()}
+});
+$('#tCancel').addEventListener('click',resetTaskForm);
+$('#quick').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(b)$('#tDue').value=addDays(today,+b.dataset.add)});
+$('#filter').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(b){filter=b.dataset.f;renderFilter();renderTasks()}});
+$('#toggleDone').addEventListener('click',()=>{showDone=!showDone;renderTasks()});
+$('#taskList').addEventListener('click',async e=>{
+  const row=e.target.closest('.task');if(!row)return;const id=row.dataset.id;const t=tasks.find(x=>x.id===id);if(!t)return;
+  if(e.target.closest('[data-tick]')){const done=!t.done;t.done=done;renderAll();await write(()=>db.doc('tasks/'+id).update({done,doneAt:done?new Date().toISOString():null}),done?'잘했어요! 완료로 표시했어요':'다시 할 일로 돌렸어요');return}
+  if(e.target.closest('[data-edit]')){editing=id;$('#tSubject').value=t.subject;$('#tTitle').value=t.title;$('#tDue').value=t.due;$('#tTime').value=t.time||'';$('#tNote').value=t.note||'';$('#tSubmit').textContent='고친 내용 저장';$('#tCancel').hidden=false;$('#editHint').hidden=false;$('#taskForm').scrollIntoView({behavior:'smooth',block:'start'});$('#tTitle').focus();return}
+  if(e.target.closest('[data-del]')){
+    if(armed!=='t:'+id){armed='t:'+id;renderTasks();setTimeout(()=>{if(armed==='t:'+id){armed=null;renderTasks()}},4000);return}
+    armed=null;tasks=tasks.filter(x=>x.id!==id);if(editing===id)resetTaskForm();renderAll();await write(()=>db.doc('tasks/'+id).delete(),'지웠어요');
+  }
+});
+
+/* ---------- 메모 ---------- */
+function resetMemoForm(){editingMemo=null;$('#memoForm').reset();$('#mSubmit').textContent='메모 붙이기';$('#mCancel').hidden=true}
+$('#memoForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const data={text:$('#mText').value.trim(),remindOn:$('#mOn').value||null,pinned:$('#mPin').checked};
+  if(!data.text)return;
+  if(editingMemo){const id=editingMemo;if(await write(()=>db.doc('memos/'+id).update(data),'메모를 고쳤어요'))resetMemoForm()}
+  else if(await write(()=>db.collection('memos').add({...data,createdAt:new Date().toISOString()}),'메모를 붙였어요'))resetMemoForm();
+});
+$('#mCancel').addEventListener('click',resetMemoForm);
+$('#notes').addEventListener('click',async e=>{
+  const n=e.target.closest('.note');if(!n)return;const id=n.dataset.mid;const m=memos.find(x=>x.id===id);if(!m)return;
+  if(e.target.closest('[data-mpin]')){m.pinned=!m.pinned;renderMemos();await write(()=>db.doc('memos/'+id).update({pinned:m.pinned}));return}
+  if(e.target.closest('[data-medit]')){editingMemo=id;$('#mText').value=m.text;$('#mOn').value=m.remindOn||'';$('#mPin').checked=!!m.pinned;$('#mSubmit').textContent='고친 메모 저장';$('#mCancel').hidden=false;$('#mText').focus();return}
+  if(e.target.closest('[data-mdel]')){
+    if(armed!=='m:'+id){armed='m:'+id;renderMemos();setTimeout(()=>{if(armed==='m:'+id){armed=null;renderMemos()}},4000);return}
+    armed=null;memos=memos.filter(x=>x.id!==id);if(editingMemo===id)resetMemoForm();renderAll();await write(()=>db.doc('memos/'+id).delete(),'메모를 지웠어요');
+  }
+});
+
+resetTaskForm();
+renderAll();
+
+/* ---------- 데이터 ---------- */
+(async()=>{
+  db=await (window.claude?.use?.('db')??null);
+  if(!db){setStatus('저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);return}
+  const fail=()=>setStatus('데이터를 불러오지 못했어요. 새로고침해 주세요.',true);
+  db.collection('tasks').onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.due&&t.title);renderAll();setStatus('동기화됨')},fail);
+  db.collection('memos').onSnapshot(s=>{memos=s.docs.map(d=>({id:d.id,...d.data()})).filter(m=>m.text);renderAll();setStatus('동기화됨')},fail);
+})();
+setInterval(()=>{if(ymd(new Date())!==today)renderAll()},60000);
+})();
+</script>
