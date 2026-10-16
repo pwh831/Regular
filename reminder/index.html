@@ -166,7 +166,7 @@ textarea{resize:vertical;min-height:40px}
       <section class="sheet" aria-labelledby="addH">
         <div class="sheet-head"><h2 id="addH">수행평가 적기</h2><span class="hint" id="editHint" hidden>수정 중</span></div>
         <form id="taskForm" autocomplete="off">
-          <div class="f s2 half"><label for="tSubject">과목</label><input id="tSubject" list="subjList" placeholder="국어" required maxlength="20"><datalist id="subjList"></datalist></div>
+          <div class="f s2 half"><label for="tSubject">과목</label><input id="tSubject" type="text" placeholder="과목 이름 입력 (예: 국어)" required maxlength="20"></div>
           <div class="f s4"><label for="tTitle">무엇을</label><input id="tTitle" placeholder="독서 감상문 제출" required maxlength="80"></div>
           <div class="f s3 half"><label for="tDue">마감일</label><input id="tDue" type="date" required></div>
           <div class="f s3 half"><label for="tTime">시간 (선택)</label><input id="tTime" type="time"></div>
@@ -196,7 +196,7 @@ textarea{resize:vertical;min-height:40px}
 
     <div class="col">
       <section class="sheet" aria-labelledby="calH">
-        <div class="sheet-head"><h2 id="calH">앞으로 2주</h2><span class="hint">수행평가 · <span style="color:var(--blue)">메모 알림</span></span></div>
+        <div class="sheet-head"><h2 id="calH">앞으로 2주</h2><span class="hint">수행평가 · <span style="color:var(--blue)">메모</span></span></div>
         <div class="weeks" id="weeks"></div>
       </section>
 
@@ -205,7 +205,7 @@ textarea{resize:vertical;min-height:40px}
         <form class="memo-form" id="memoForm" autocomplete="off">
           <div class="f"><label for="mText">내용</label><textarea id="mText" rows="2" maxlength="500" placeholder="체육복 챙기기, 모둠 자료 카톡방에 올리기" required></textarea></div>
           <div class="memo-row">
-            <div class="f"><label for="mOn">알려 줄 날 (선택)</label><input id="mOn" type="date"></div>
+            <div class="f"><label for="mOn">날짜 (선택)</label><input id="mOn" type="date"></div>
             <label class="hint" style="display:flex;gap:6px;align-items:center;margin-top:18px"><input id="mPin" type="checkbox" style="width:auto"> 맨 위에 고정</label>
             <button class="btn" type="submit" id="mSubmit" style="margin-top:18px">메모 붙이기</button>
             <button class="btn ghost" type="button" id="mCancel" style="margin-top:18px" hidden>취소</button>
@@ -214,7 +214,7 @@ textarea{resize:vertical;min-height:40px}
         <div class="notes" id="notes"></div>
       </section>
 
-      <div class="alarm"><b>알림</b> · 이 화면은 열었을 때 급한 순서로 보여 줘요. 휴대폰 푸시로 받으려면 Claude에게 "알림장 아침 알림 만들어 줘"라고 하면 매일 정해진 시간에 마감 임박 항목을 보내 줘요.</div>
+      <div class="alarm"><b>알림</b> · 마감 하루 전 아침 6시에 Claude 앱으로 푸시가 와요. 날짜를 정한 메모도 그 날짜 하루 전에 같이 알려 줘요. 완료로 체크한 것은 빠져요.</div>
     </div>
   </div>
 </div>
@@ -263,7 +263,6 @@ function renderFilter(){
   if(filter!=='전체'&&!subs.includes(filter))filter='전체';
   $('#filter').innerHTML=['전체',...subs].map(s=>`<button type="button" class="chip" aria-pressed="${s===filter}" data-f="${esc(s)}">${esc(s)}</button>`).join('');
   $('#filter').hidden=subs.length<2;
-  $('#subjList').innerHTML=subs.map(s=>`<option value="${esc(s)}">`).join('');
 }
 function taskRow(t){
   const d=dd(t), a=armed==='t:'+t.id;
