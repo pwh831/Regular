@@ -146,6 +146,57 @@ textarea.passage{font-family:var(--serif);font-size:15.5px;min-height:220px}
 .live{font-size:13.5px;color:var(--text);font-variant-numeric:tabular-nums}
 .log{margin:0;padding-left:18px;font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
 
+/* 탭 */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;min-height:44px;font-size:15px;font-weight:600;color:var(--muted);margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .chip{margin-left:6px}
+
+/* 공부 */
+.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.tools{grid-template-columns:minmax(0,1fr)}}
+.tool{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;text-align:left;min-height:150px}
+.tool:hover{border-color:var(--line-strong)}
+.tool .why{display:block;font-size:12.5px;color:var(--muted);line-height:1.5}
+.tool h3{display:flex;align-items:center;gap:8px}
+.tool .stat{margin-top:auto;font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}
+.tool .stat b{color:var(--ink)}
+.tool.due{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.stage{font-family:var(--serif);font-size:17px;line-height:1.95;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px 18px;min-height:120px}
+.stage.covered{color:transparent;text-shadow:0 0 9px var(--faint);user-select:none}
+.bar{height:4px;border-radius:99px;background:var(--sunken);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.ox-card{font-family:var(--serif);font-size:19px;line-height:1.75;color:var(--ink);text-align:center;padding:28px 12px;min-height:150px;display:flex;align-items:center;justify-content:center;text-wrap:balance}
+.ox-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ox-btn{min-height:64px;border-radius:var(--r);border:1px solid var(--line-strong);background:var(--surface);font-family:var(--serif);font-size:28px;color:var(--ink)}
+.ox-btn:hover:not(:disabled){background:var(--surface-2)}
+.ox-btn.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.ox-btn.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.unsure{display:flex;justify-content:center}
+.unsure button{background:none;border:1px dashed var(--line-strong);border-radius:99px;padding:4px 14px;min-height:36px;font-size:13px;color:var(--muted)}
+.unsure button[aria-pressed="true"]{border-style:solid;border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.cited{font-family:var(--serif);font-size:14.5px;line-height:1.8;color:var(--text);border-left:2px solid var(--line-strong);padding-left:12px}
+.cited b{font-family:var(--sans);font-size:11px;color:var(--accent);margin-right:4px}
+.u.got{text-decoration:underline;text-decoration-color:var(--ok);text-decoration-thickness:2px;text-underline-offset:4px}
+.u.miss{background:var(--bad-soft)}
+.u.miss sup{color:var(--bad)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.legend .lg-got::before{border-bottom:2px solid var(--ok)}
+.legend .lg-miss::before{background:var(--bad-soft)}
+.fb{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.fb li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;font-size:13.5px;line-height:1.6}
+.fb li .chip{align-self:start}
+.fb .orig{font-family:var(--serif);color:var(--muted);grid-column:2}
+.causes{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.causes button{background:var(--surface);border:1px solid var(--line-strong);border-radius:99px;padding:3px 12px;min-height:32px;font-size:12.5px;color:var(--text)}
+.causes button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.today{display:flex;flex-direction:column}
+.today li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;flex-wrap:wrap}
+.today li+li{border-top:1px solid var(--line)}
+.today .t{font-family:var(--serif);font-weight:700;color:var(--ink)}
+.dday{font-family:var(--serif);font-weight:700;color:var(--bad);font-size:20px;font-variant-numeric:tabular-nums}
+
 /* PDF 내보내기 */
 .export{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
 .export .opts{display:flex;gap:4px 18px;flex-wrap:wrap}
@@ -221,6 +272,12 @@ textarea.passage{font-family:var(--serif);font-size:15.5px;min-height:220px}
       </ol>
       <p class="muted">필기가 있으면 필기 해석을 따라요. 필기에 없는 해석이 필요한 문항에는 <span class="chip warn">필기 확인</span>이 붙어요.</p>
     </section>
+    <section class="panel" aria-labelledby="h-today">
+      <div class="row"><h2 id="h-today">오늘 할 복습</h2>
+        <label class="check" for="examDate">시험일 <input type="date" id="examDate" style="width:auto;min-height:36px;padding:4px 8px"></label>
+        <span class="dday" id="dday"></span></div>
+      <ul class="today" id="todayList" style="list-style:none;margin:0;padding:0"></ul>
+    </section>
     <section class="panel" aria-labelledby="h-lib">
       <div class="row"><h2 id="h-lib">자료함</h2><span class="muted" id="libCount"></span></div>
       <div class="drop" id="drop">
@@ -286,7 +343,7 @@ textarea.passage{font-family:var(--serif);font-size:15.5px;min-height:220px}
     <label class="field" for="fMust"><span>꼭 넣을 유형 <small>예: &lt;보기&gt; 적용 1개, 문맥적 의미 1개</small></span><input type="text" id="fMust" placeholder="비워 두면 골고루"></label>
     <div class="meter" id="meter"></div>
     <div class="err-box" id="edErr" hidden></div>
-    <div class="acts"><button class="btn" id="edGo" type="submit">문제 만들기</button><span class="muted" id="etaInfo">출제와 검수까지 보통 3~8분 걸려요.</span></div>
+    <div class="acts"><button class="btn" id="edGo" type="submit">문제 만들기</button><button class="ghost" id="edStudy" type="button">공부용으로만 저장</button><span class="muted" id="etaInfo">출제와 검수까지 보통 3~8분 걸려요.</span></div>
   </form>
 
   <!-- 문제 세트 -->
@@ -320,7 +377,16 @@ textarea.passage{font-family:var(--serif);font-size:15.5px;min-height:220px}
         <p class="muted">아이폰·아이패드의 Claude 앱에서는 공유 메뉴가 떠요. 굿노트를 고르면 바로 들어가요. 컴퓨터에서는 받은 파일을 굿노트로 옮기면 돼요.</p>
       </div>
     </section>
-    <div class="split" id="split">
+    <div class="tabs" role="tablist" aria-label="세트 화면">
+      <button class="tab" role="tab" id="tabStudy" aria-selected="true" aria-controls="studyPane" type="button">공부</button>
+      <button class="tab" role="tab" id="tabSolve" aria-selected="false" aria-controls="split" type="button">문제 풀기</button>
+    </div>
+    <div id="studyPane" role="tabpanel" aria-labelledby="tabStudy" style="display:flex;flex-direction:column;gap:16px">
+      <div class="tools" id="tools"></div>
+      <section class="panel" id="toolPanel" hidden></section>
+      <section class="panel" id="causePanel" hidden></section>
+    </div>
+    <div class="split" id="split" role="tabpanel" aria-labelledby="tabSolve" hidden>
       <section class="panel ptext" id="ptext" aria-labelledby="h-p"><div class="row"><h3 id="h-p">지문</h3><span class="muted" id="pInfo"></span></div><div class="body" id="pBody"></div></section>
       <div class="qs">
         <div class="panel" style="padding:14px 16px">
@@ -329,6 +395,7 @@ textarea.passage{font-family:var(--serif);font-size:15.5px;min-height:220px}
             <span class="muted" id="solveInfo"></span>
           </div>
         </div>
+        <div class="panel" id="makeQs" hidden><p class="muted">공부용으로만 저장한 지문이에요. 변형 문제를 만들려면 아래를 눌러요.</p><div class="acts"><button class="btn" id="makeQsBtn" type="button">이 지문으로 문제 만들기</button></div></div>
         <div class="qs" id="qs"></div>
         <section class="panel sticky-bar" id="gradeBar">
           <div class="result">
@@ -764,6 +831,7 @@ async function save(set){
 /* ---------- 화면: 목록 ---------- */
 function show(id){['#home','#editor','#view'].forEach(s=>$(s).hidden=s!==id);$('#root').classList.toggle('wide',id==='#view');window.scrollTo(0,0)}
 function setSummary(s){
+  if(s.stage==='study')return '<span class="chip">공부용</span>';
   if(s.stage!=='done'){
     if(running&&runningId()===s.id)return '<span class="chip">만드는 중</span>';
     return s.questions&&s.questions.length?'<span class="chip warn">검수 멈춤</span>':'<span class="chip warn">출제 멈춤</span>';
@@ -772,6 +840,7 @@ function setSummary(s){
   return chk?`<span class="chip warn">직접 확인 ${chk}</span>`:'<span class="chip ok">검수 완료</span>';
 }
 function renderHome(){
+  renderToday();
   const list=sets.slice().sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
   $('#setCount').textContent=list.length?list.length+'세트':'';
   if(!list.length){$('#sets').innerHTML='<li class="empty">아직 만든 문제가 없어요. 위의 “새 지문으로 문제 만들기”로 첫 지문을 넣어 보세요.</li>';return}
@@ -832,24 +901,26 @@ function renderThumbs(){
   $('#thumbs').innerHTML=images.map((f,i)=>`<figure><img alt="필기 사진 ${i+1}" src="${URL.createObjectURL(f)}"><button type="button" data-i="${i}" aria-label="사진 ${i+1} 빼기">×</button></figure>`).join('');
   $('#imgInfo').textContent=images.length?images.length+'장':(canImages?`최대 ${canImages.maxCount}장`:'');
 }
-async function submitEditor(e){
-  e.preventDefault();
+async function submitEditor(e,studyOnly){
+  if(e)e.preventDefault();
   const d=readEditor();
   const err=m=>{$('#edErr').textContent=m;$('#edErr').hidden=false};
-  if(!sample)return err('claude.ai에서 이 앱을 열어야 문제를 만들 수 있어요.');
+  if(!sample&&!studyOnly)return err('claude.ai에서 이 앱을 열어야 문제를 만들 수 있어요.');
   if(!db)return err('저장소에 연결되지 않았어요. claude.ai에서 열어 주세요.');
-  if(running)return err('다른 세트를 만드는 중이에요. 끝난 뒤에 시작해 주세요.');
+  if(running&&!studyOnly)return err('다른 세트를 만드는 중이에요. 끝난 뒤에 시작해 주세요.');
   const units=splitUnits(d.passage,d.byLine);
   if(units.length<3)return err('지문을 붙여 넣어 주세요. 번호를 붙일 문장이 3개 이상 필요해요.');
   if(!d.title)d.title=units[0].t.slice(0,24)+(units[0].t.length>24?'…':'');
   const probe={...d,units};
   if(bytes(materials(probe,images.length>0))>MAT_MAX)return err('지문·해석·OX 분량이 100%를 넘었어요. 해석 자료에서 이 지문과 관계없는 부분을 지워 주세요.');
   if(bytes(genPrompt(probe,images.length>0))>GEN_MAX)return err('전체 분량이 100%를 넘었어요. 예시 문제를 2~3개로 줄여 주세요.');
-  const set={...d,units,id:db.collection('sets').doc().id,stage:'new',questions:[],attempts:[],hadImages:images.length>0,createdAt:new Date().toISOString()};
+  const set={...d,units,id:db.collection('sets').doc().id,stage:studyOnly?'study':'new',questions:[],attempts:[],hadImages:images.length>0,createdAt:new Date().toISOString()};
   if(images.length)imagesFor[set.id]=images.slice();
   sets.push(set);await save(set);
   store('draft',null);
   openSet(set.id);
+  if(studyOnly){renderHome();return}
+  setTab('solve');
   runPipeline(set);
 }
 
@@ -860,7 +931,8 @@ function openSet(id){
   $('#reveal').checked=false;
   if(!(running&&runningId()===id))$('#log').innerHTML='';
   $('#export').hidden=true;
-  show('#view');renderSet();
+  tool=null;
+  show('#view');renderSet();setTab('study');
 }
 function setLive(t){$('#live').textContent=t}
 function addLog(t){const li=document.createElement('li');li.textContent=t;$('#log').append(li)}
@@ -877,7 +949,7 @@ function renderProgress(){
     if(i===idx&&on)li.classList.add('on');
     if(i>=2&&flaggedNone&&idx>=2)li.className='skip';
   });
-  const stalled=!running&&s.stage!=='done';
+  const stalled=!running&&s.stage!=='done'&&s.stage!=='study';
   $('#resume').hidden=!stalled;
   if(stalled){
     const where={new:s.questions.length?`${s.questions.length}/${s.cond.mc+s.cond.essay}문항까지 만들었어요. 나머지 출제와 검수가 남았어요.`:'아직 문제를 만들지 못했어요.',generated:'문제는 만들었고 검수가 남았어요.',reviewed:'검수에서 걸린 문항을 고치는 단계가 남았어요.',revised:'고친 문항의 재검수가 남았어요.'}[s.stage];
@@ -913,7 +985,10 @@ function renderSet(){
   });
   if(lastP!==-1)html+='</p>';
   $('#pBody').innerHTML=html;
+  $('#makeQs').hidden=s.stage!=='study';
+  $('#makeQsBtn').disabled=!!running||!sample;
   renderQs();
+  if(tab==='study')renderStudy();
 }
 function stChip(q){
   if(q.excluded)return '<span class="chip bad">뺀 문항</span>';
@@ -952,6 +1027,11 @@ function renderQs(){
         if(sample&&!q.excluded)body+=`<div><button type="button" class="small-btn" data-gradeq="${q.id}" ${g&&g.busy?'disabled':''}>${g&&g.busy?'채점하는 중…':'AI에게 채점받기'}</button></div>`;
       }
     }
+    if(solve.graded&&!q.excluded&&q.format==='객관식'&&a!==q.answer){
+      const c=solve.causes[q.id]||{};
+      body+=`<div class="causes"><span class="muted">틀린 원인</span>${CAUSES.map(x=>`<button type="button" data-cause="${q.id}" data-c="${x}" aria-pressed="${c.cause===x}">${x}</button>`).join('')}</div>
+        <label class="field" for="att-${q.id}"><span class="muted" style="font-weight:400">태도 노트: 시험장에서 이 선지를 바로 판단하려면 지문을 읽을 때 무엇을 했어야 했나</span><input type="text" id="att-${q.id}" data-att="${q.id}" value="${esc(c.note||'')}" maxlength="200"></label>`;
+    }
     if(show&&q.defense)body+=`<div class="note">출제자 해명: ${esc(q.defense)}</div>`;
     if(show&&q.st==='check'&&q.issues&&q.issues.length)body+=`<div class="note warn"><b>재검수에서도 남은 지적</b> · 필기와 지문으로 직접 확인해 주세요<ul>${q.issues.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
     if(show&&(q.st==='flag'||q.st==='revised')&&q.issues&&q.issues.length)body+=`<div class="note warn"><b>검수 지적</b><ul>${q.issues.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
@@ -975,8 +1055,10 @@ function highlight(refs,one){
 async function grade(){
   const s=cur;const mc=s.questions.filter(q=>q.format==='객관식'&&!q.excluded);
   const right=mc.filter(q=>solve.answers[q.id]===q.answer).length;
-  solve.graded=true;renderQs();
-  $('#scoreBox').innerHTML=`<div class="big-score">${right}<small> / ${mc.length}</small></div><span class="muted">객관식 기준 · 틀린 문항은 근거 번호를 눌러 지문에서 확인해 보세요</span>`;
+  solve.graded=true;solve.at=new Date().toISOString();solve.causes={};
+  const added=wrongToOx(s);
+  renderQs();
+  $('#scoreBox').innerHTML=`<div class="big-score">${right}<small> / ${mc.length}</small></div><span class="muted">객관식 기준 · 틀린 문항에 원인을 골라 두세요${added?` · 틀린 문항의 선지 ${added}개를 OX 복습에 넣었어요`:''}</span>`;
   s.attempts=[...(s.attempts||[]),{at:new Date().toISOString(),right,total:mc.length,answers:{...solve.answers}}].slice(-20);
   await save(s);renderHome();
 }
@@ -990,6 +1072,371 @@ async function aiGrade(id){
     solve.grades[id]={met:arr(r&&r.met).map(Boolean),grade:String(r&&r.grade||'-'),feedback:String(r&&r.feedback||'')};
   }catch(e){solve.grades[id]={err:errCopy(e).replace(' 이어서 하기를 눌러',' 다시 눌러')}}
   renderQs();
+}
+
+/* ---------- 공부 모드 ---------- */
+// 근거: korean/study-science.md. 다시 읽기 대신 인출(가림 읽기·백지 인출·OX)을 하고,
+// OX는 맞힐 때까지 다시 내는 연속 재학습 + 1·3·7·14일 간격 복습으로 돌린다.
+const INTERVALS=[0,1,3,7,14];   // 상자 번호별 다음 복습까지 날짜
+let settings={examDate:''};
+let tab='study';
+let tool=null;                   // {kind:'read'|'recall'|'ox', ...}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function today(){return ymd(new Date())}
+function addDays(s,n){const [y,m,d]=s.split('-').map(Number);const t=new Date(y,m-1,d);t.setDate(t.getDate()+n);return ymd(t)}
+// 다음 복습일. 시험일이 있으면 시험 전날을 넘기지 않는다
+function dueAfter(days){
+  let d=addDays(today(),days);
+  const ex=settings.examDate;
+  if(ex){const last=addDays(ex,-1);if(d>last&&today()<last)d=last}
+  return d;
+}
+function study(s){if(!s.study)s.study={read:null,recall:[],recallDue:null,ox:[],causes:[]};const st=s.study;st.recall=st.recall||[];st.ox=st.ox||[];st.causes=st.causes||[];return st}
+function oxDue(s){const t=today();return study(s).ox.filter(o=>!o.due||o.due<=t)}
+function recallIsDue(s){const st=study(s);return !!(st.recallDue&&st.recallDue<=today())}
+function unitsText(s,refs){return (refs||[]).filter(n=>n>=1&&n<=s.units.length).map(n=>`<div><b>${n}</b>${esc(s.units[n-1].t)}</div>`).join('')}
+
+/* 세트 화면 탭 */
+function setTab(t){
+  tab=t;
+  $('#tabStudy').setAttribute('aria-selected',String(t==='study'));
+  $('#tabSolve').setAttribute('aria-selected',String(t==='solve'));
+  $('#studyPane').hidden=t!=='study';$('#split').hidden=t!=='solve';
+  if(t==='study')renderStudy();
+}
+function renderStudy(){
+  const s=cur;if(!s)return;
+  const st=study(s);
+  const due=oxDue(s).length;
+  const lastR=st.recall[st.recall.length-1];
+  const readN=st.read&&st.read.notes?st.read.notes.length:0;
+  $('#tools').innerHTML=`
+    <button type="button" class="tool${!st.read?' due':''}" data-tool="read">
+      <h3>가림 읽기${st.read?'<span class="chip ok">완료</span>':''}</h3>
+      <span class="why">2~3문장씩 읽고 가린 뒤 문장 사이 관계를 내 말로 정리해요. 처음 공부할 때 한 번.</span>
+      <span class="stat">${st.read?`${fmtDate(st.read.at)} · ${readN}구간 정리`:'아직 안 했어요'}</span>
+    </button>
+    <button type="button" class="tool${recallIsDue(s)||(st.read&&!lastR)?' due':''}" data-tool="recall">
+      <h3>백지 인출${recallIsDue(s)?'<span class="chip">오늘</span>':''}</h3>
+      <span class="why">지문을 덮고 기억나는 대로 적으면, 빠진 문장을 지문 위에 표시해 줘요.</span>
+      <span class="stat">${lastR?`마지막 <b>${lastR.cover}%</b> · ${st.recall.length}회${st.recallDue?' · 다음 '+fmtShort(st.recallDue):''}`:'아직 안 했어요'}</span>
+    </button>
+    <button type="button" class="tool${due?' due':''}" data-tool="ox">
+      <h3>OX 연속 재학습${due?`<span class="chip">오늘 ${due}</span>`:''}</h3>
+      <span class="why">1초 안에 판단해요. 틀리거나 애매하면 맞힐 때까지 다시 나오고, 맞힌 건 간격을 늘려 다시 나와요.</span>
+      <span class="stat">${st.ox.length?`${st.ox.length}문장 · 익힘 <b>${st.ox.filter(o=>o.box>=3).length}</b>`:'아직 OX가 없어요'}</span>
+    </button>`;
+  renderCauses();
+}
+function fmtShort(d){const [,m,dd]=d.split('-').map(Number);return `${m}/${dd}`}
+
+/* 1) 가림 읽기 */
+function chunksOf(s){
+  const out=[];let curC=null;
+  s.units.forEach((u,i)=>{
+    const n=i+1;
+    if(!curC||curC.p!==u.p||(s.byLine?curC.to-curC.from>=3:(curC.to-curC.from>=2||curC.len>=180&&curC.to-curC.from>=1))){curC={from:n,to:n,p:u.p,len:u.t.length};out.push(curC)}
+    else{curC.to=n;curC.len+=u.t.length}
+  });
+  return out;
+}
+function startRead(){
+  tool={kind:'read',chunks:chunksOf(cur),i:0,covered:false,notes:[]};
+  renderTool();
+}
+function readPrompt(s,items){
+  return `고등학생이 독서 지문을 2~3문장씩 읽고, 가린 뒤 문장 사이의 관계(원인-결과, 비교, 전제-결론 등)를 자기 말로 정리했다. 각 정리가 원문과 맞는지 확인한다.
+
+# 해석 자료 (선생님 필기 등)
+${s.note?.trim()||'없음'}
+
+# 정리 목록
+${items.map((it,k)=>`[구간 ${k+1}] 원문: ${it.orig}\n학생 정리: ${it.text||'(빈칸)'}`).join('\n\n')}
+
+# 판정
+- verdict: "정확"(핵심 내용과 관계를 맞게 잡음), "부분"(맞지만 빠진 핵심이 있음), "틀림"(원문과 다른 내용이 있음), "빈칸" 중 하나.
+- comment: 빠지거나 틀린 점을 한 문장으로. 정확이면 빈 문자열.
+JSON 하나만 출력한다.
+{"items":[{"i":1,"verdict":"정확","comment":""}]}`;
+}
+async function finishRead(withAI){
+  const s=cur,st=study(s);
+  const items=tool.notes.map(n=>({...n,orig:s.units.slice(n.from-1,n.to).map(u=>u.t).join(' ')}));
+  st.read={at:new Date().toISOString(),notes:items.map(({from,to,text})=>({from,to,text}))};
+  if(!st.recallDue)st.recallDue=today();
+  await save(s);
+  if(withAI&&sample){
+    tool.busy=true;renderTool();
+    try{
+      const r=await sample.json(readPrompt(s,items),{modelTier:'default',cache:false});
+      const fb=arr(r&&r.items);
+      tool.result=items.map((it,k)=>{const f=fb.find(x=>Number(x&&x.i)===k+1)||{};return {...it,verdict:String(f.verdict||''),comment:String(f.comment||'')}});
+      st.read.notes=tool.result.map(({from,to,text,verdict,comment})=>({from,to,text,verdict,comment}));
+      await save(s);
+    }catch(e){tool.err=errCopy(e).replace(' 이어서 하기를 눌러',' 다시 눌러')}
+    tool.busy=false;
+  }else tool.result=items;
+  tool.done=true;renderTool();renderStudy();renderHome();
+}
+
+/* 2) 백지 인출 */
+function startRecall(){tool={kind:'recall',text:load('recall-'+cur.id)||''};renderTool()}
+function recallPrompt(s,text){
+  return `고등학생이 독서 지문을 보지 않고 기억나는 대로 내용을 적었다(백지 인출). 지문과 대조해 채점한다.
+
+${materials(s,false)}
+
+# 학생이 적은 글
+"""
+${text}
+"""
+
+# 채점 방법
+- covered: 학생 글에 그 문장의 핵심 내용이 들어 있는 지문 번호. 표현이 달라도 뜻이 같으면 포함한다. 예시나 부연 문장은 그 핵심이 담겨 있으면 포함한다.
+- missing: 빠진 내용 가운데 시험에 나올 만한 것. 관련 번호와 빠진 핵심을 한 줄로. 중요한 순서로 최대 8개.
+- wrong: 지문과 다르게 적은 부분. 학생 글 인용(quote), 지문에 따른 바른 내용(fix), 관련 번호.
+- comment: 다음 인출 때 신경 쓸 점 한두 문장.
+JSON 하나만 출력한다.
+{"covered":[1,2],"missing":[{"units":[5],"point":""}],"wrong":[{"quote":"","fix":"","units":[3]}],"comment":""}`;
+}
+async function submitRecall(){
+  const s=cur,st=study(s);
+  const text=$('#recallText').value.trim();
+  if(text.length<20){tool.err='조금 더 적어 주세요. 기억나는 대로 문단 순서대로 쓰면 돼요.';renderTool();return}
+  if(!sample){tool.err='claude.ai에서 열어야 채점할 수 있어요.';renderTool();return}
+  tool.text=text;tool.busy=true;tool.err='';renderTool();
+  try{
+    const r=await sample.json(recallPrompt(s,text),{modelTier:'default',cache:false});
+    const N=s.units.length,ok=n=>Number.isInteger(n)&&n>=1&&n<=N;
+    const covered=[...new Set(nums(r&&r.covered).filter(ok))].sort((a,b)=>a-b);
+    const missing=arr(r&&r.missing).map(m=>({units:nums(m&&m.units).filter(ok),point:String(m&&m.point||'')})).filter(m=>m.point);
+    const wrong=arr(r&&r.wrong).map(w=>({quote:String(w&&w.quote||''),fix:String(w&&w.fix||''),units:nums(w&&w.units).filter(ok)})).filter(w=>w.fix);
+    const cover=Math.round(covered.length/N*100);
+    const att={at:new Date().toISOString(),cover,covered,missing,wrong,comment:String(r&&r.comment||''),text:text.slice(0,4000)};
+    st.recall=[...st.recall,att].slice(-12);
+    // 다음 인출일: 1·3·7·14일. 두 번 연속 90% 이상이면 한 칸 건너뛴다
+    const k=st.recall.length;const prev=st.recall[k-2];
+    let step=Math.min(k,4);if(cover>=90&&prev&&prev.cover>=90)step=Math.min(step+1,4);
+    st.recallDue=dueAfter(INTERVALS[step]);
+    try{localStorage.removeItem('recall-'+s.id)}catch(e){}
+    await save(s);
+    tool.result=att;
+  }catch(e){tool.err=errCopy(e).replace(' 이어서 하기를 눌러',' 다시 눌러')}
+  tool.busy=false;renderTool();renderStudy();renderHome();
+}
+
+/* 3) OX 연속 재학습 */
+function oxPrompt(s,n){
+  return `너는 고등학교 국어 내신 출제 위원이다. 학생이 이 지문 내용을 정확히 기억하는지 확인할 OX 문장 ${n}개를 만든다.
+
+${materials(s,false)}
+
+# 규칙
+1. 판단 근거는 지문과 해석 자료 안에서만 찾는다.
+2. 지문 전체를 고르게 다룬다. 특히 수식어·조건·예외·인과·비교·정의가 있는 문장, 해석 자료에서 강조한 내용을 빠뜨리지 않는다.
+3. 절반 정도는 X로 만든다. X 문장은 내신 선지처럼 비튼다: 인과 뒤집기, 범위 과장·축소, 주체·대상 바꾸기, 조건 빼기, 개념 혼동, 지문에 없는 내용.
+4. O 문장도 지문을 그대로 베끼지 말고 바꿔 말한다.
+5. 한 문장은 한 가지만 묻는다. 해석에 따라 O도 X도 될 수 있으면 버린다.
+6. 학생이 준 OX 문제(위 OX 문제 칸) 가운데 정답이 표시된 것은 문장 그대로 포함하고 src를 "mine"으로 한다. 이것도 개수에 넣는다.
+
+# 답 형식
+JSON 하나만 출력한다.
+{"items":[{"s":"문장","a":true,"refs":[3],"why":"[3]에서 ~라고 했다","trap":"","src":"ai"}]}
+- a: O면 true, X면 false.
+- refs: 근거 지문 번호(하나 이상).
+- why: 왜 O 또는 X인지 지문 근거로 한 문장.
+- trap: X 문장을 어떻게 비틀었는지(예: 인과 뒤집기). O면 빈 문자열.`;
+}
+function oxCheckPrompt(s,items){
+  return `고등학교 국어 내신 OX 문장이다. 지문과 해석 자료만 근거로 각 문장이 맞으면 O, 틀리면 X로 판단한다. 해석에 따라 갈리거나 지문만으로 판단할 수 없으면 unsure를 true로 한다.
+
+${materials(s,false)}
+
+# 문장
+${items.map((o,i)=>`${i+1}. ${o.s}`).join('\n')}
+
+JSON 하나만 출력한다.
+{"answers":[{"i":1,"a":true,"unsure":false}]}`;
+}
+async function genOx(){
+  const s=cur,st=study(s);
+  if(!sample){tool={kind:'ox',err:'claude.ai에서 열어야 OX를 만들 수 있어요.'};renderTool();return}
+  const n=Math.max(15,Math.min(40,Math.round(s.units.length*1.3)));
+  tool={kind:'ox',busy:true,msg:`OX ${n}개를 만드는 중이에요 (1~2분)`};renderTool();
+  try{
+    const r=await sample.json(oxPrompt(s,n),{modelTier:'complex',cache:false,onText:({text})=>{tool.msg=`OX 만드는 중 · ${text.length.toLocaleString()}자`;renderTool()}});
+    const N=s.units.length;
+    let items=arr(r&&r.items).map(o=>({s:String(o&&o.s||'').trim(),a:o&&o.a===true,refs:nums(o&&o.refs).filter(x=>x>=1&&x<=N),why:String(o&&o.why||''),trap:String(o&&o.trap||''),src:o&&o.src==='mine'?'mine':'ai'})).filter(o=>o.s);
+    if(!items.length)throw {code:'invalid_json'};
+    // 정답을 가린 채 다시 판단시켜 어긋나거나 애매한 문장은 버린다 (틀린 사실을 외우지 않도록)
+    tool.msg=`${items.length}개를 만들었어요. 정답을 가린 채 다시 확인하는 중이에요`;renderTool();
+    const c=await sample.json(oxCheckPrompt(s,items),{modelTier:'default',cache:false});
+    const ans=arr(c&&c.answers);
+    const kept=[],dropped=[];
+    items.forEach((o,i)=>{const a=ans.find(x=>Number(x&&x.i)===i+1);if(a&&!a.unsure&&(a.a===true)===o.a)kept.push(o);else dropped.push(o)});
+    const have=new Set(st.ox.map(o=>norm(o.s)));
+    const t=today();
+    kept.filter(o=>!have.has(norm(o.s))).forEach(o=>st.ox.push({...o,id:'o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),box:0,due:t,seen:0,miss:0}));
+    await save(s);
+    tool={kind:'ox',msg:`OX ${kept.length}개를 넣었어요.`+(dropped.length?` 다시 확인에서 판단이 갈린 ${dropped.length}개는 뺐어요.`:'')};
+    renderStudy();renderHome();startOx(tool.msg);
+  }catch(e){tool={kind:'ox',err:errCopy(e).replace(' 이어서 하기를 눌러',' 다시 눌러')};renderTool()}
+}
+function startOx(msg){
+  const s=cur,st=study(s);
+  const due=oxDue(s);
+  if(!st.ox.length){tool={kind:'ox',msg:msg||''};renderTool();return}
+  // 새 문장(상자 0)과 오래 안 본 문장을 섞어 한 번에 최대 40개
+  const q=due.slice().sort(()=>Math.random()-.5).slice(0,40).map(o=>({o,streak:0,first:null}));
+  tool={kind:'ox',session:true,queue:q,cur:0,unsure:false,answered:null,msg:msg||'',done:0,total:q.length,firstRight:0,t0:Date.now()};
+  if(!q.length){tool.session=false;tool.msg=(msg?msg+' ':'')+'오늘 복습할 OX를 다 했어요.'}
+  renderTool();
+}
+function oxAnswer(v){
+  const T=tool;if(!T||!T.session||T.answered)return;
+  const it=T.queue[0];const right=v===it.o.a;
+  T.answered={v,right};
+  const solid=right&&!T.unsure;
+  if(it.first===null){it.first=solid;if(solid)T.firstRight++}
+  it.o.seen=(it.o.seen||0)+1;if(!right)it.o.miss=(it.o.miss||0)+1;
+  it.streak=solid?it.streak+1:0;
+  renderTool();
+}
+function oxNext(){
+  const T=tool;if(!T||!T.session||!T.answered)return;
+  const it=T.queue.shift();
+  const need=it.o.box===0?2:1;   // 처음 보는 문장은 연속 2번, 복습 문장은 1번 맞히면 통과
+  if(it.streak>=need){
+    it.o.box=it.first?Math.min((it.o.box||0)+1,4):1;
+    it.o.due=dueAfter(INTERVALS[it.o.box]);
+    T.done++;
+  }else T.queue.splice(Math.min(3,T.queue.length),0,it);   // 몇 장 뒤에 다시
+  T.answered=null;T.unsure=false;
+  if(!T.queue.length){T.session=false;T.summary=true;save(cur).then(()=>{renderStudy();renderHome()})}
+  else if(T.done&&T.done%10===0)save(cur);
+  renderTool();
+}
+
+/* 오답 원인 · 태도 노트 */
+const CAUSES=['지문 내용','선지 독해','해석 차이','시간 부족'];
+function renderCauses(){
+  const s=cur,st=study(s);const p=$('#causePanel');
+  if(!st.causes.length){p.hidden=true;return}
+  p.hidden=false;
+  const cnt=CAUSES.map(c=>[c,st.causes.filter(x=>x.cause===c).length]).filter(x=>x[1]);
+  const notes=st.causes.filter(x=>x.note).slice(-8).reverse();
+  p.innerHTML=`<div class="row"><h3>오답 원인과 태도 노트</h3><span class="muted">${cnt.map(([c,n])=>`${c} ${n}`).join(' · ')}</span></div>
+    ${notes.length?`<ul class="fb">${notes.map(n=>`<li><span class="chip">${esc(n.cause||'원인 미정')}</span><span>${esc(n.note)}</span><span class="orig">${esc(n.stem.slice(0,60))}</span></li>`).join('')}</ul>`:'<p class="muted">문제 풀기에서 틀린 문항에 원인과 태도 노트를 남기면 여기 모여요.</p>'}`;
+}
+// 채점 뒤 틀린 객관식의 두 선지(고른 것, 정답)를 OX로 넣는다
+function wrongToOx(s){
+  const st=study(s);const have=new Set(st.ox.map(o=>norm(o.s)));const t=today();let n=0;
+  s.questions.filter(q=>q.format==='객관식'&&!q.excluded&&solve.answers[q.id]&&solve.answers[q.id]!==q.answer).forEach(q=>{
+    [solve.answers[q.id],q.answer].forEach(k=>{
+      const w=q.why[k-1],c=q.choices[k-1];
+      if(!w||!c||have.has(norm(c)))return;
+      have.add(norm(c));n++;
+      st.ox.push({id:'o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),s:c,a:!!w.fits,refs:w.refs||[],why:w.reason,trap:w.trap||'',src:'wrong',box:0,due:t,seen:0,miss:0});
+    });
+  });
+  return n;
+}
+
+/* 도구 화면 */
+function renderTool(){
+  const p=$('#toolPanel');const s=cur;
+  if(!tool||!s){p.hidden=true;return}
+  p.hidden=false;
+  const close='<button type="button" class="link" data-tclose>닫기</button>';
+  if(tool.kind==='read'){
+    const T=tool;
+    if(T.done){
+      p.innerHTML=`<div class="row"><h3>가림 읽기 결과</h3>${close}</div>
+        ${T.err?`<div class="err-box">${esc(T.err)}</div>`:''}
+        <ul class="fb">${(T.result||[]).map(r=>`<li><span class="chip ${r.verdict==='정확'?'ok':r.verdict==='틀림'||r.verdict==='빈칸'?'bad':r.verdict?'warn':''}">${esc(r.verdict||r.from+'~'+r.to)}</span><span>${esc(r.text||'(빈칸)')}${r.comment?`<br><span class="muted">${esc(r.comment)}</span>`:''}</span><span class="orig">${esc(r.orig)}</span></li>`).join('')}</ul>
+        <div class="acts"><button class="btn" data-tool="recall" type="button">이어서 백지 인출</button></div>`;
+      return;
+    }
+    if(T.busy){p.innerHTML=`<div class="row"><h3>가림 읽기</h3></div><p class="live">정리한 내용을 원문과 비교하는 중이에요…</p>`;return}
+    const c=T.chunks[T.i];
+    const text=s.units.slice(c.from-1,c.to).map(u=>esc(u.t)).join(s.byLine?'<br>':' ');
+    p.innerHTML=`<div class="row"><h3>가림 읽기 <span class="muted">${T.i+1} / ${T.chunks.length}</span></h3>${close}</div>
+      <div class="bar"><i style="width:${Math.round(T.i/T.chunks.length*100)}%"></i></div>
+      <div class="stage${T.covered?' covered':''}" aria-hidden="${T.covered}">${text}</div>
+      ${T.covered?`<label class="field" for="readNote"><span>방금 읽은 문장들의 관계를 내 말로 <small>원인-결과, 비교, 전제-결론처럼. 한두 줄이면 돼요.</small></span><textarea id="readNote" rows="3"></textarea></label>
+      <div class="acts"><button class="btn" id="readNext" type="button">${T.i+1<T.chunks.length?'다음 구간':'끝내기'}</button><button class="ghost" id="readPeek" type="button">다시 보기</button></div>`
+      :`<div class="acts"><button class="btn" id="readCover" type="button">가리고 정리하기</button><span class="muted">충분히 이해했으면 가려요</span></div>`}`;
+    if(T.covered)setTimeout(()=>{const el=$('#readNote');if(el){el.value=T.draft||'';el.focus()}},0);
+    return;
+  }
+  if(tool.kind==='recall'){
+    const T=tool;
+    if(T.result){
+      const R=T.result;const cov=new Set(R.covered);const miss=new Set(R.missing.flatMap(m=>m.units));
+      let html='',lastP=-1;
+      s.units.forEach((u,i)=>{const n=i+1;if(u.p!==lastP){if(lastP!==-1)html+='</p>';html+='<p class="para">';lastP=u.p}
+        html+=`<span class="u${cov.has(n)?' got':miss.has(n)?' miss':''}"><sup>${n}</sup>${esc(u.t)}</span>${s.byLine?'<br>':' '}`});
+      html+='</p>';
+      p.innerHTML=`<div class="row"><h3>백지 인출 결과 <span class="dday" style="font-size:22px">${R.cover}%</span></h3>${close}</div>
+        <div class="legend"><span class="lg-got">적은 내용</span><span class="lg-miss">빠진 핵심</span></div>
+        <div class="stage" style="font-size:15.5px">${html}</div>
+        ${R.missing.length?`<h3>빠진 핵심</h3><ul class="fb">${R.missing.map(m=>`<li><span class="chip bad">${m.units.join(', ')||'-'}</span><span>${esc(m.point)}</span></li>`).join('')}</ul>`:''}
+        ${R.wrong.length?`<h3>잘못 적은 부분</h3><ul class="fb">${R.wrong.map(w=>`<li><span class="chip warn">${w.units.join(', ')||'-'}</span><span>“${esc(w.quote)}” → ${esc(w.fix)}</span></li>`).join('')}</ul>`:''}
+        ${R.comment?`<div class="note">${esc(R.comment)}</div>`:''}
+        <p class="muted">다음 백지 인출: ${fmtShort(study(s).recallDue)}. 빠진 문장은 OX로 다시 확인해 보세요.</p>
+        <div class="acts"><button class="btn" data-tool="ox" type="button">OX로 이어서</button></div>`;
+      return;
+    }
+    p.innerHTML=`<div class="row"><h3>백지 인출</h3>${close}</div>
+      <p class="muted">지문을 보지 말고, 문단 순서대로 핵심 내용과 문장 사이 관계를 적어요. 틀려도 괜찮아요. 꺼내 보는 것 자체가 공부예요.</p>
+      <label class="field" for="recallText"><span class="muted" style="font-weight:400">기억나는 대로</span><textarea id="recallText" rows="10" ${T.busy?'disabled':''}>${esc(T.text||'')}</textarea></label>
+      ${T.err?`<div class="err-box">${esc(T.err)}</div>`:''}
+      <div class="acts"><button class="btn" id="recallGo" type="button" ${T.busy?'disabled':''}>${T.busy?'지문과 대조하는 중…':'지문과 대조하기'}</button></div>`;
+    return;
+  }
+  if(tool.kind==='ox'){
+    const T=tool;const st=study(s);
+    if(T.busy){p.innerHTML=`<div class="row"><h3>OX 연속 재학습</h3></div><p class="live">${esc(T.msg||'')}</p>`;return}
+    if(T.session){
+      const it=T.queue[0];const A=T.answered;
+      p.innerHTML=`<div class="row"><h3>OX 연속 재학습 <span class="muted">익힘 ${T.done} / ${T.total}</span></h3>${close}</div>
+        <div class="bar"><i style="width:${Math.round(T.done/T.total*100)}%"></i></div>
+        <div class="ox-card">${esc(it.o.s)}</div>
+        <div class="unsure"><button type="button" id="oxUnsure" aria-pressed="${T.unsure}" ${A?'disabled':''}>애매해요 (?)</button></div>
+        <div class="ox-btns">
+          <button type="button" class="ox-btn${A&&it.o.a?' right':A&&A.v===true?' wrong':''}" data-ox="1" ${A?'disabled':''}>O</button>
+          <button type="button" class="ox-btn${A&&!it.o.a?' right':A&&A.v===false?' wrong':''}" data-ox="0" ${A?'disabled':''}>X</button>
+        </div>
+        ${A?`<div class="note ${A.right?'':'bad'}"><b>${A.right?(T.unsure?'맞혔지만 애매했으니 한 번 더 나와요':'맞았어요'):'틀렸어요. 몇 장 뒤에 다시 나와요'}</b> · 정답 ${it.o.a?'O':'X'}${it.o.trap?' · '+esc(it.o.trap):''}<br>${esc(it.o.why)}</div>
+          ${it.o.refs.length?`<div class="cited">${unitsText(s,it.o.refs)}</div>`:''}
+          <div class="acts"><button class="btn" id="oxNext" type="button">다음 (Enter)</button></div>`:'<p class="muted" style="text-align:center">키보드: O는 o 또는 1, X는 x 또는 2, 애매는 ?</p>'}`;
+      if(A)setTimeout(()=>{const b=$('#oxNext');if(b)b.focus()},0);
+      return;
+    }
+    const due=oxDue(s).length;
+    const sum=T.summary?`<div class="note"><b>오늘 몫을 끝냈어요.</b> ${T.total}문장 · 처음에 바로 맞힌 문장 ${T.firstRight}개 · ${Math.max(1,Math.round((Date.now()-T.t0)/60000))}분</div>`:'';
+    p.innerHTML=`<div class="row"><h3>OX 연속 재학습</h3>${close}</div>
+      ${sum}${T.msg&&!T.summary?`<div class="note">${esc(T.msg)}</div>`:''}${T.err?`<div class="err-box">${esc(T.err)}</div>`:''}
+      <p class="muted">${st.ox.length?`모두 ${st.ox.length}문장 · 오늘 복습할 문장 ${due}개 · 다음에 다시 볼 날은 맞힌 정도에 따라 1·3·7·14일 뒤로 잡혀요${settings.examDate?' (시험 전날을 넘기지 않아요)':''}.`:'지문과 해석 자료로 OX를 만들고, 정답을 가린 채 한 번 더 확인해서 판단이 갈리는 문장은 빼요.'}</p>
+      <div class="acts">${due?`<button class="btn" id="oxStart" type="button">오늘 복습 ${due}개 시작</button>`:''}<button class="${due?'ghost':'btn'}" id="oxGen" type="button">${st.ox.length?'OX 더 만들기':'OX 만들기'}</button>${st.ox.length&&!due?'<span class="muted">오늘 복습할 OX가 없어요</span>':''}</div>`;
+  }
+}
+function openTool(kind){
+  if(kind==='read')startRead();
+  else if(kind==='recall')startRecall();
+  else if(kind==='ox'){tool={kind:'ox'};renderTool()}
+  $('#toolPanel').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
+
+/* 처음 화면: 오늘 할 복습 */
+function renderToday(){
+  const t=today();
+  const ex=settings.examDate;
+  $('#examDate').value=ex||'';
+  if(ex){const d=Math.round((new Date(ex)-new Date(t))/864e5);$('#dday').textContent=d>0?'D-'+d:d===0?'D-day':''}else $('#dday').textContent='';
+  const rows=sets.map(s=>{const st=study(s);return {s,ox:oxDue(s).length,recall:recallIsDue(s),read:!st.read&&s.units.length}}).filter(r=>r.ox||r.recall);
+  $('#todayList').innerHTML=rows.length?rows.map(r=>`<li><span class="t">${esc(r.s.title||'제목 없음')}</span><span class="acts">${r.recall?'<span class="chip">백지 인출</span>':''}${r.ox?`<span class="chip">OX ${r.ox}</span>`:''}<button type="button" class="small-btn" data-study="${esc(r.s.id)}">공부하기</button></span></li>`).join('')
+    :`<li class="muted">${sets.length?'오늘 복습할 게 없어요. 새 지문을 공부하거나 문제를 풀어 보세요.':'지문을 넣으면 공부 일정이 여기 모여요.'}</li>`;
 }
 
 /* ---------- 자료함 ---------- */
@@ -1633,6 +2080,68 @@ async function exportPdf(){
 $('#vPdf').addEventListener('click',()=>{const x=$('#export');x.hidden=!x.hidden;$('#xMsg').textContent='';if(!x.hidden)x.scrollIntoView({block:'nearest'})});
 $('#xGo').addEventListener('click',exportPdf);
 
+/* ---------- 이벤트: 공부 ---------- */
+$('#tabStudy').addEventListener('click',()=>setTab('study'));
+$('#tabSolve').addEventListener('click',()=>setTab('solve'));
+$('#tools').addEventListener('click',e=>{const b=e.target.closest('[data-tool]');if(b)openTool(b.dataset.tool)});
+$('#toolPanel').addEventListener('click',e=>{
+  const T=tool;if(!T)return;
+  if(e.target.closest('[data-tclose]')){tool=null;renderTool();return}
+  const tb=e.target.closest('[data-tool]');if(tb){openTool(tb.dataset.tool);return}
+  const id=(e.target.closest('button')||{}).id;
+  if(T.kind==='read'){
+    if(id==='readCover'){T.covered=true;renderTool()}
+    else if(id==='readPeek'){T.draft=$('#readNote').value;T.covered=false;renderTool()}
+    else if(id==='readNext'){
+      const c=T.chunks[T.i];T.notes.push({from:c.from,to:c.to,text:$('#readNote').value.trim()});T.draft='';
+      if(T.i+1<T.chunks.length){T.i++;T.covered=false;renderTool()}else finishRead(!!sample);
+    }
+  }else if(T.kind==='recall'){if(id==='recallGo')submitRecall()}
+  else if(T.kind==='ox'){
+    if(id==='oxGen')genOx();
+    else if(id==='oxStart')startOx();
+    else if(id==='oxUnsure'){T.unsure=!T.unsure;renderTool()}
+    else if(id==='oxNext')oxNext();
+    else{const ob=e.target.closest('[data-ox]');if(ob)oxAnswer(ob.dataset.ox==='1')}
+  }
+});
+$('#toolPanel').addEventListener('input',e=>{if(e.target.id==='recallText'&&cur)store('recall-'+cur.id,e.target.value)});
+document.addEventListener('keydown',e=>{
+  if(!tool||tool.kind!=='ox'||!tool.session||$('#view').hidden||tab!=='study')return;
+  if(e.target.closest('input,textarea,select'))return;
+  const k=e.key.toLowerCase();
+  if(!tool.answered){if(k==='o'||k==='1'){e.preventDefault();oxAnswer(true)}else if(k==='x'||k==='2'){e.preventDefault();oxAnswer(false)}else if(k==='?'||k==='3'){e.preventDefault();tool.unsure=!tool.unsure;renderTool()}}
+  else if(k==='enter'){e.preventDefault();oxNext()}
+});
+$('#todayList').addEventListener('click',e=>{const b=e.target.closest('[data-study]');if(b)openSet(b.dataset.study)});
+$('#examDate').addEventListener('change',async e=>{
+  settings.examDate=e.target.value||'';renderToday();
+  if(db){try{await db.doc('settings/main').set({...settings})}catch(err){setStatus('시험일을 저장하지 못했어요.',true)}}
+});
+$('#edStudy').addEventListener('click',()=>submitEditor(null,true));
+$('#makeQsBtn').addEventListener('click',async()=>{if(!cur||running)return;cur.stage='new';cur.questions=[];await save(cur);setTab('solve');renderSet();runPipeline(cur)});
+$('#qs').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-cause]');if(!b)return;
+  const qid=Number(b.dataset.cause);const q=cur.questions.find(x=>x.id===qid);
+  const c=solve.causes[qid]=solve.causes[qid]||{};c.cause=c.cause===b.dataset.c?'':b.dataset.c;
+  $$(`[data-cause="${qid}"]`).forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.c===c.cause)));
+  await saveCause(qid,q);
+});
+let attTimer=null;
+$('#qs').addEventListener('input',e=>{
+  const t=e.target.closest('[data-att]');if(!t)return;
+  const qid=Number(t.dataset.att);const c=solve.causes[qid]=solve.causes[qid]||{};c.note=t.value;
+  clearTimeout(attTimer);attTimer=setTimeout(()=>saveCause(qid,cur.questions.find(x=>x.id===qid)),700);
+});
+async function saveCause(qid,q){
+  const st=study(cur);const c=solve.causes[qid]||{};
+  const i=st.causes.findIndex(x=>x.qid===qid&&x.at===solve.at);
+  const row={at:solve.at,qid,stem:q?q.stem:'',cause:c.cause||'',note:(c.note||'').trim()};
+  if(!row.cause&&!row.note){if(i>=0)st.causes.splice(i,1)}else if(i>=0)st.causes[i]=row;else st.causes.push(row);
+  st.causes=st.causes.slice(-60);
+  await save(cur);
+}
+
 /* ---------- 이벤트 ---------- */
 $('#newSet').addEventListener('click',()=>openEditor());
 $('#edBack').addEventListener('click',()=>{show('#home');renderHome()});
@@ -1687,6 +2196,7 @@ loadLibrary();
   if(sample){try{const lim=await sample.limits();canImages=lim&&lim.images?lim.images:null}catch(e){canImages=null}}
   if(!db){setStatus('저장소를 쓸 수 없는 화면이에요. claude.ai에서 열어 주세요.',true);return}
   try{
+    try{const sd=await db.doc('settings/main').get();if(sd.exists)settings={...settings,...sd.data()}}catch(e){}
     const snap=await db.collection('sets').get();
     sets=snap.docs.map(d=>({id:d.id,...d.data()})).map(s=>({questions:[],attempts:[],units:[],...s}));
     setStatus(sample?(sets.length?`${sets.length}세트를 불러왔어요`:'지문을 넣고 첫 문제를 만들어 보세요'):'문제는 볼 수 있지만, 새로 만들려면 claude.ai에서 열어 주세요.',!sample);
