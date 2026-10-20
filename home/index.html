@@ -87,6 +87,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .sj .dd{font-size:12px;color:var(--pen)}
 .sj a{font-size:13px;margin-top:4px;text-decoration:none}
 
+/* 수행평가 */
+.assess{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.assess li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 12px}
+.assess .ttl{font-size:15px}
+.assess .ad{font-family:var(--serif);font-weight:700;font-size:16px;color:var(--pen);white-space:nowrap;font-variant-numeric:tabular-nums}
+.assess li.hot{background:#FDF0F5;border-color:#F2C6D8}
+.assess li.hot .ad{color:var(--late)}
+
 /* 앱 */
 .apps{display:flex;gap:8px;flex-wrap:wrap}
 .apps a{background:#fff;border:1px solid #DAD5F5;border-radius:12px;padding:10px 14px;text-decoration:none;color:var(--ink);font-size:14px;min-height:44px;display:flex;align-items:center}
@@ -127,6 +135,10 @@ button{font:inherit;color:inherit;cursor:pointer}
     </section>
 
     <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <section class="panel" aria-labelledby="h-assess">
+        <div class="row"><h2 id="h-assess">수행평가 마감</h2><a class="muted" id="assessLink" href="https://claude.ai/artifact/6iJZZVo4yQLSEoDhY3mHhM" target="_blank" rel="noopener">알림장 열기 ›</a></div>
+        <div id="assess"></div>
+      </section>
       <section class="panel" aria-labelledby="h-exam">
         <h2 id="h-exam">시험까지</h2>
         <div class="ddays" id="ddays"></div>
@@ -149,6 +161,11 @@ button{font:inherit;color:inherit;cursor:pointer}
     <nav class="apps" aria-label="공부 앱">
       <a class="main" href="https://claude.ai/artifact/AGrdmtMU9agaqqtpoBbqkV" target="_blank" rel="noopener">복습 플래너</a>
       <a class="main" href="https://claude.ai/artifact/QErpysS6X7mswxgv57EzeV" target="_blank" rel="noopener">분량 나누기</a>
+      <a class="main" href="https://claude.ai/artifact/6iJZZVo4yQLSEoDhY3mHhM" target="_blank" rel="noopener">수행평가 알림장</a>
+      <a class="main" href="https://claude.ai/artifact/AJ4q3tLQxkKpc91Xh7si3K" target="_blank" rel="noopener">수능 필기 플래너</a>
+      <a class="main" href="https://claude.ai/artifact/KFhCXLPh7CpBuEeBvFF4Ah" target="_blank" rel="noopener">생기부 설계 보드</a>
+      <a href="https://claude.ai/artifact/CZwrzzU85EkoHjDSgXuSnk" target="_blank" rel="noopener">영어기출풀이</a>
+      <a href="https://claude.ai/artifact/UuE91kC2DvwEHV1uCEnixR" target="_blank" rel="noopener">비문학 구조 독해</a>
       <a href="https://claude.ai/artifact/StK4zvRCC7kfHcVPJtjmHD" target="_blank" rel="noopener">영단어 시험</a>
       <a href="https://claude.ai/artifact/1cWASszoP25Fq4VzMTiW5L" target="_blank" rel="noopener">내신 단어 시험</a>
       <a href="https://claude.ai/artifact/ER7W1Mv79CCcMd9s6qR4f4" target="_blank" rel="noopener">오답 코치</a>
@@ -165,7 +182,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 const $=s=>document.querySelector(s);
 const WD=['일','월','화','수','목','금','토'];
 const TRIGGER='trig_01JNii7tnN8YygWcVK9weiAi';   // 홈 요약 루틴 id (발행 때 채움)
-const GROUPS=[['plan','오늘 분량'],['first','새로 외울 것'],['review','오늘 복습'],['mistake','오답 다시 풀기'],['overdue','밀린 것']];
+const GROUPS=[['assess','수행평가 마감·메모'],['plan','오늘 분량'],['first','새로 외울 것'],['review','오늘 복습'],['mistake','오답 다시 풀기'],['overdue','밀린 것']];
 function parse(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function fmt(s){const d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')'}
@@ -205,6 +222,22 @@ function render(s){
     });
     wrap.append(ul);box.append(wrap);
   });
+
+  // 수행평가
+  const ab=$('#assess');ab.innerHTML='';
+  const as=Array.isArray(s.assess)?s.assess:[];
+  if(!as.length){ab.append(el('div','muted',Array.isArray(s.assess)?'남은 수행평가가 없어요.':'다음 요약 갱신부터 수행평가가 여기 떠요.'))}
+  else{
+    const ul=el('ul','assess');
+    as.slice(0,6).forEach(x=>{
+      const li=el('li',x.dday<=1?'hot':null);
+      const mid=el('span');mid.append(el('div','ttl',[x.subject,x.title].filter(Boolean).join(' ')),el('div','det',fmt(x.due)+(x.time?' '+x.time+'까지':' 마감')));
+      li.append(mid,el('span','ad',x.dday<0?'D+'+(-x.dday):x.dday===0?'오늘':'D-'+x.dday));
+      ul.append(li);
+    });
+    ab.append(ul);
+    if((s.assessOpen||0)>6)ab.append(el('div','muted',`외 ${s.assessOpen-6}개`));
+  }
 
   // D-day
   const dd=$('#ddays');dd.innerHTML='';
@@ -278,3 +311,4 @@ render(null);
 })();
 })();
 </script>
+

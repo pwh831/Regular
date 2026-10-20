@@ -3,7 +3,7 @@
 루틴이 복습 플래너·영단어 시험·오답 코치의 db를 ArtifactData `out_dir`로 내려받은 뒤
   python3 aggregate.py <내려받은 폴더> <오늘 YYYY-MM-DD> <지금 HH:MM> > snapshot.json
 으로 실행한다. 폴더 구조: planner/subjects, planner/items, vocab/sessions, vocab/settings,
-vocab/progress, coach/mistakes, split/plans (각 문서 = <id>.json, 내용은 문서 본문).
+vocab/progress, coach/mistakes, split/plans, reminder/tasks, reminder/memos (각 문서 = <id>.json, 내용은 문서 본문).
 """
 import json, os, sys, datetime as dt
 
@@ -11,6 +11,7 @@ PLANNER = "https://claude.ai/artifact/AGrdmtMU9agaqqtpoBbqkV"
 VOCAB = "https://claude.ai/artifact/StK4zvRCC7kfHcVPJtjmHD"
 COACH = "https://claude.ai/artifact/ER7W1Mv79CCcMd9s6qR4f4"
 SPLIT = "https://claude.ai/artifact/QErpysS6X7mswxgv57EzeV"
+REMIND = "https://claude.ai/artifact/6iJZZVo4yQLSEoDhY3mHhM"
 # 플래너 과목 이름 → 오답 코치 과목 이름(같게 맞춰 둠)
 ORDER = ["확통", "독서", "현윤", "경제", "지역이해", "일본어", "문학과 영상", "영어"]
 
@@ -39,6 +40,8 @@ def main(base, today, now):
     vprog = load(base, "vocab", "progress").get("main", {})
     mistakes = load(base, "coach", "mistakes")
     plans = load(base, "split", "plans")
+    rtasks = load(base, "reminder", "tasks")
+    rmemos = load(base, "reminder", "memos")
 
     subj_by_id = {k: v for k, v in subjects.items()}
     todo, done_today, planned_today = [], 0, 0
@@ -160,6 +163,25 @@ def main(base, today, now):
                          "end": days[-1]["date"] if days else None, "late": len(late),
                          "todayDone": bool(tday and tday.get("done")), "hasToday": bool(tday)})
 
+    # 수행평가 알림장: 남은 수행평가(마감 순)와, 마감이 내일까지인 것·오늘 날짜 메모는 오늘 할 일에도 넣는다
+    assess = []
+    for rid, r in rtasks.items():
+        if r.get("done") or not r.get("due") or not r.get("title"):
+            continue
+        dday = (D(r["due"]) - t).days
+        assess.append({"subject": r.get("subject", ""), "title": r["title"], "due": r["due"],
+                       "time": r.get("time"), "dday": dday})
+        if dday <= 1:
+            when = (f"{-dday}일 지남" if dday < 0 else "오늘 마감" if dday == 0 else "내일 마감") + \
+                (f" {r['time']}까지" if r.get("time") and dday >= 0 else "")
+            todo.append({"group": "assess", "subject": r.get("subject", ""), "color": color_by_name.get(r.get("subject")),
+                         "title": r["title"], "detail": when, "url": REMIND, "app": "알림장"})
+    for mid, m in rmemos.items():
+        if m.get("remindOn") == today and m.get("text"):
+            todo.append({"group": "assess", "subject": "메모", "color": None,
+                         "title": m["text"].split("\n")[0][:60], "detail": "오늘 메모", "url": REMIND, "app": "알림장"})
+    assess.sort(key=lambda a: (a["due"], a.get("time") or "99:99"))
+
     exams, subs = [], []
     names = sorted(subjects.values(), key=lambda s: (ORDER.index(s["name"]) if s.get("name") in ORDER else 99, s.get("order", 0)))
     for sj in names:
@@ -174,7 +196,7 @@ def main(base, today, now):
                      "overdue": st.get("overdue", 0), "mistakesOpen": st.get("mistakesOpen", 0),
                      "mistakesDue": st.get("mistakesDue", 0)})
     exams.sort(key=lambda e: e["dday"])
-    order = {"plan": 0, "first": 1, "review": 2, "mistake": 3, "overdue": 4}
+    order = {"assess": -1, "plan": 0, "first": 1, "review": 2, "mistake": 3, "overdue": 4}
     todo.sort(key=lambda x: order.get(x["group"], 9))
 
     return {
@@ -188,6 +210,7 @@ def main(base, today, now):
         "coach": {"open": m_open, "due": m_due, "topCause": cause_name.get(top_cause), "url": COACH},
         "plannerUrl": PLANNER,
         "plans": plan_out, "splitUrl": SPLIT,
+        "assess": assess[:12], "assessOpen": len(assess), "remindUrl": REMIND,
     }
 
 
